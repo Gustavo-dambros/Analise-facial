@@ -83,6 +83,7 @@ CREATE TABLE public.analyses (
   verdict_text     text default '' CHECK (char_length(verdict_text) <= 5000),
   reviewed_by      uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   reviewed_at      timestamptz default null,
+  exercise_recommendations jsonb default '{}',
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );

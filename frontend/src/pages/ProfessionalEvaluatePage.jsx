@@ -1,13 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Send, Loader2, AlertTriangle, ScanFace, ImageOff, Save, Flag, X, User } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, AlertTriangle, ScanFace, ImageOff, Save, Flag, X, User, Dumbbell, Calendar, Minus, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { FadeIn, ScaleIn, StaggerContainer, StaggerItem } from '@/components/ui/page-transition';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const BUCKET = 'analysis-photos';
 const CATEGORY_OPTIONS = ['Excelente', 'Bom', 'Regular', 'Ajustável'];
@@ -17,6 +21,32 @@ const REPORT_CATEGORIES = [
   { value: 'informacoes_erradas', label: 'Informacoes Erradas' },
   { value: 'comportamento_inapropriado', label: 'Comportamento Inapropriado' },
   { value: 'outro', label: 'Outro' },
+];
+
+const FACIAL_ATTRIBUTES = [
+  { key: 'tercoSuperior', label: 'Terço Superior', icon: '📏' },
+  { key: 'tercoMedio', label: 'Terço Médio', icon: '📏' },
+  { key: 'tercoInferior', label: 'Terço Inferior', icon: '📏' },
+  { key: 'olhos', label: 'Olhos', icon: '👁️' },
+  { key: 'sobrancelhas', label: 'Sobrancelhas', icon: '🤨' },
+  { key: 'nariz', label: 'Nariz', icon: '👃' },
+  { key: 'lábios', label: 'Lábios', icon: '👄' },
+  { key: 'mandibula', label: 'Mandíbula', icon: '🦷' },
+  { key: 'queixo', label: 'Queixo', icon: '🦷' },
+  { key: 'macasRosto', label: 'Maçãs do Rosto', icon: '💎' },
+  { key: 'harmonia', label: 'Harmonia', icon: '⚖️' },
+  { key: 'testa', label: 'Testa', icon: '📐' },
+  { key: 'formatoRosto', label: 'Formato do Rosto', icon: '🔷' },
+];
+
+const WEEK_DAYS = [
+  { key: 'monday', label: 'Segunda', short: 'Seg' },
+  { key: 'tuesday', label: 'Terça', short: 'Ter' },
+  { key: 'wednesday', label: 'Quarta', short: 'Qua' },
+  { key: 'thursday', label: 'Quinta', short: 'Qui' },
+  { key: 'friday', label: 'Sexta', short: 'Sex' },
+  { key: 'saturday', label: 'Sábado', short: 'Sáb' },
+  { key: 'sunday', label: 'Domingo', short: 'Dom' },
 ];
 
 function getPhotoUrl(urlOrPath) {
@@ -50,6 +80,42 @@ function PhotoImage({ src, alt }) {
   );
 }
 
+function scoreToLabel(score) {
+  const num = Number(score);
+  if (num >= 7 && num <= 10) return 'Ótimo';
+  if (num >= 4 && num <= 6) return 'Bom';
+  if (num >= 1 && num <= 3) return 'Ok';
+  return '';
+}
+
+function labelToColor(label) {
+  switch (label) {
+    case 'Ótimo': return 'text-green-400 bg-green-400/10 border-green-400/20';
+    case 'Bom': return 'text-brand-accent bg-yellow-400/10 border-yellow-400/20';
+    case 'Ok': return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+    default: return 'text-text-muted bg-white/5 border-border';
+  }
+}
+
+function calculateSymmetry(attributes) {
+  const values = Object.values(attributes).map(Number).filter(v => !isNaN(v));
+  if (values.length === 0) return 0;
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function calculateOverall(symmetry, attractiveness) {
+  return ((symmetry + attractiveness) / 2) * 10;
+}
+
+function parseExercises(str) {
+  if (!str) return [];
+  return str.split(';').map(s => s.trim()).filter(Boolean);
+}
+
+function formatExercises(arr) {
+  return arr.join('; ');
+}
+
 export default function ProfessionalEvaluatePage() {
   const { id } = useParams();
   const { user, profile, loading: authLoading } = useAuth();
@@ -65,21 +131,19 @@ export default function ProfessionalEvaluatePage() {
   const [reportReason, setReportReason] = useState('');
   const [reporting, setReporting] = useState(false);
 
-  // Form state
-  const [overallScore, setOverallScore] = useState(50);
-  const [symmetryScore, setSymmetryScore] = useState(50);
-  const [tercoSuperior, setTercoSuperior] = useState(33);
-  const [tercoMedio, setTercoMedio] = useState(34);
-  const [tercoInferior, setTercoInferior] = useState(33);
-  const [catSuperior, setCatSuperior] = useState('Bom');
-  const [catMedio, setCatMedio] = useState('Bom');
-  const [catInferior, setCatInferior] = useState('Bom');
-  const [catMandibular, setCatMandibular] = useState('Bom');
+  // Form state - 13 facial attributes (1-10)
+  const [attributes, setAttributes] = useState({});
+  const [attractiveness, setAttractiveness] = useState(5);
   const [highlightsInput, setHighlightsInput] = useState('');
   const [cabelo, setCabelo] = useState('');
   const [barba, setBarba] = useState('');
   const [oculos, setOculos] = useState('');
   const [verdict, setVerdict] = useState('');
+
+  // Terços faciais (%)
+  const [tercoSuperior, setTercoSuperior] = useState(33);
+  const [tercoMedio, setTercoMedio] = useState(34);
+  const [tercoInferior, setTercoInferior] = useState(33);
   const [tercoError, setTercoError] = useState(false);
 
   // Body evaluation state
@@ -89,6 +153,12 @@ export default function ProfessionalEvaluatePage() {
   const [bodySimetria, setBodySimetria] = useState('Bom');
   const [bodyDefinicao, setBodyDefinicao] = useState('Bom');
   const [bodyNotes, setBodyNotes] = useState('');
+
+  // Weekly Exercise Recommendations
+  const [exerciseRecs, setExerciseRecs] = useState({
+    general: {},
+    facial: {},
+  });
 
   // Auth guard
   useEffect(() => {
@@ -108,10 +178,24 @@ export default function ProfessionalEvaluatePage() {
     }
   }, [id, authLoading, user, profile]);
 
+  // Validate terços sum = 100
   useEffect(() => {
     const sum = Number(tercoSuperior) + Number(tercoMedio) + Number(tercoInferior);
     setTercoError(sum !== 100);
   }, [tercoSuperior, tercoMedio, tercoInferior]);
+
+  // Computed values
+  const symmetryScore = useMemo(() => calculateSymmetry(attributes), [attributes]);
+  const overallScore = useMemo(() => calculateOverall(symmetryScore, attractiveness), [symmetryScore, attractiveness]);
+
+  const highlights = highlightsInput
+    .split(',')
+    .map((h) => h.trim())
+    .filter(Boolean);
+
+  const hasAllPhotos = Boolean(
+    analysis?.photo_front_url && analysis?.photo_left_url && analysis?.photo_right_url
+  );
 
   const fetchAnalysis = async () => {
     setLoading(true);
@@ -126,32 +210,47 @@ export default function ProfessionalEvaluatePage() {
       if (fetchError) throw fetchError;
       setAnalysis(data);
 
-      // Pre-fill form from existing result if available
       if (data?.result && typeof data.result === 'object' && Object.keys(data.result).length > 0) {
         const r = data.result;
-        if (r.overall_score != null) setOverallScore(r.overall_score);
-        if (r.symmetry_score != null) setSymmetryScore(r.symmetry_score);
+        
+        // Load 13 attributes
+        if (r.attributes) {
+          const loadedAttrs = {};
+          FACIAL_ATTRIBUTES.forEach(attr => {
+            if (r.attributes[attr.key] != null) {
+              loadedAttrs[attr.key] = r.attributes[attr.key];
+            }
+          });
+          setAttributes(loadedAttrs);
+        }
+
+        // Load terços
         if (r.thirds) {
           if (r.thirds.superior != null) setTercoSuperior(r.thirds.superior);
           if (r.thirds.medio != null) setTercoMedio(r.thirds.medio);
           if (r.thirds.inferior != null) setTercoInferior(r.thirds.inferior);
         }
-        if (r.categories) {
-          if (r.categories.terco_superior) setCatSuperior(r.categories.terco_superior);
-          if (r.categories.terco_medio) setCatMedio(r.categories.terco_medio);
-          if (r.categories.terco_inferior) setCatInferior(r.categories.terco_inferior);
-          if (r.categories.contorno_mandibular) setCatMandibular(r.categories.contorno_mandibular);
-        }
+
+        // Load attractiveness
+        if (r.attractiveness != null) setAttractiveness(r.attractiveness);
+
+        // Load highlights
         if (r.highlights && Array.isArray(r.highlights)) {
           setHighlightsInput(r.highlights.join(', '));
         }
+
+        // Load visagismo
         if (r.visagismo_tips) {
           if (r.visagismo_tips.cabelo) setCabelo(r.visagismo_tips.cabelo);
           if (r.visagismo_tips.barba) setBarba(r.visagismo_tips.barba);
           if (r.visagismo_tips.oculos) setOculos(r.visagismo_tips.oculos);
         }
+
+        // Load verdict
+        if (r.verdict_text) setVerdict(r.verdict_text);
       }
-      // Pre-fill body evaluation from existing result
+
+      // Load body evaluation
       if (data?.body_result && typeof data.body_result === 'object' && Object.keys(data.body_result).length > 0) {
         const b = data.body_result;
         if (b.score != null) setBodyScore(b.score);
@@ -161,7 +260,15 @@ export default function ProfessionalEvaluatePage() {
         if (b.definicao) setBodyDefinicao(b.definicao);
         if (b.notes) setBodyNotes(b.notes);
       }
-      if (data?.verdict_text) setVerdict(data.verdict_text);
+
+      // Load exercise recommendations
+      if (data?.exercise_recommendations && typeof data.exercise_recommendations === 'object') {
+        const ex = data.exercise_recommendations;
+        setExerciseRecs({
+          general: ex.general || {},
+          facial: ex.facial || {},
+        });
+      }
     } catch (err) {
       setError('Erro ao carregar analise.');
       console.error(err);
@@ -170,14 +277,28 @@ export default function ProfessionalEvaluatePage() {
     }
   };
 
-  const highlights = highlightsInput
-    .split(',')
-    .map((h) => h.trim())
-    .filter(Boolean);
+  const handleAttributeChange = (key, value) => {
+    const num = Number(value);
+    if (num >= 1 && num <= 10) {
+      setAttributes(prev => ({ ...prev, [key]: num }));
+    } else if (value === '') {
+      setAttributes(prev => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
 
-  const hasAllPhotos = Boolean(
-    analysis?.photo_front_url && analysis?.photo_left_url && analysis?.photo_right_url
-  );
+  const handleExerciseChange = (type, dayKey, value) => {
+    setExerciseRecs(prev => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        [dayKey]: value,
+      },
+    }));
+  };
 
   const handleSubmit = async () => {
     if (tercoError || submitting || !hasAllPhotos) return;
@@ -188,21 +309,18 @@ export default function ProfessionalEvaluatePage() {
       const supabase = createClient();
 
       const evaluationData = {
-        overall_score: Number(overallScore),
-        symmetry_score: Number(symmetryScore),
+        attributes,
+        attractiveness: Number(attractiveness),
+        symmetry_score: Number(symmetryScore.toFixed(2)),
+        overall_score: Number(overallScore.toFixed(1)),
         thirds: {
           superior: Number(tercoSuperior),
           medio: Number(tercoMedio),
           inferior: Number(tercoInferior),
         },
-        categories: {
-          terco_superior: catSuperior,
-          terco_medio: catMedio,
-          terco_inferior: catInferior,
-          contorno_mandibular: catMandibular,
-        },
         highlights,
         visagismo_tips: { cabelo, barba, oculos },
+        verdict_text: verdict.trim(),
         evaluatedAt: new Date().toISOString(),
       };
 
@@ -215,12 +333,18 @@ export default function ProfessionalEvaluatePage() {
         notes: bodyNotes,
       } : null;
 
+      const exerciseRecommendationsData = {
+        general: exerciseRecs.general,
+        facial: exerciseRecs.facial,
+      };
+
       const { error: updateError } = await supabase
         .from('analyses')
         .update({
           status: 'completed',
           result: evaluationData,
           body_result: bodyEvaluationData,
+          exercise_recommendations: exerciseRecommendationsData,
           verdict_text: verdict.trim(),
           reviewed_by: user.id,
           reviewed_at: new Date().toISOString(),
@@ -316,7 +440,7 @@ export default function ProfessionalEvaluatePage() {
   return (
     <div className="min-h-screen bg-black">
       <header className="border-b border-border bg-card-bg">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
           <button
             onClick={() => navigate('/professional/dashboard')}
             className="p-2 rounded-lg hover:bg-white/5 text-text-secondary hover:text-white transition-colors"
@@ -330,165 +454,404 @@ export default function ProfessionalEvaluatePage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 sm:pb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 sm:pb-8">
         <div className="space-y-6">
-            {/* Photos + Client Info */}
-            <FadeIn>
-              <section className="rounded-2xl border border-border bg-card-bg p-6">
-                <h2 className="text-sm font-semibold text-text-secondary mb-4">Fotos Enviadas</h2>
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  {[
-                    { key: 'photo_front_url', label: 'Frontal' },
-                    { key: 'photo_left_url', label: 'Perfil Esquerdo' },
-                    { key: 'photo_right_url', label: 'Perfil Direito' },
-                  ].map(({ key, label }) => {
-                    const photoUrl = getPhotoUrl(analysis?.[key]);
-                    return (
-                      <div key={key} className="bg-card-bg border border-border rounded-xl overflow-hidden">
-                        {photoUrl ? (
-                          <PhotoImage src={photoUrl} alt={label} />
-                        ) : (
-                          <div className="w-full aspect-[3/4] flex flex-col items-center justify-center gap-2 bg-white/[0.02]">
-                            <ScanFace className="w-8 h-8 text-text-muted" />
-                            <p className="text-[10px] text-text-muted">{label}</p>
-                          </div>
-                        )}
-                        <div className="px-2 py-1.5 border-t border-border">
-                          <p className="text-[10px] font-medium text-text-secondary text-center">{label}</p>
+          {/* Photos + Client Info */}
+          <FadeIn>
+            <section className="rounded-2xl border border-border bg-card-bg p-6">
+              <h2 className="text-sm font-semibold text-text-secondary mb-4">Fotos Enviadas</h2>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {[
+                  { key: 'photo_front_url', label: 'Frontal' },
+                  { key: 'photo_left_url', label: 'Perfil Esquerdo' },
+                  { key: 'photo_right_url', label: 'Perfil Direito' },
+                ].map(({ key, label }) => {
+                  const photoUrl = getPhotoUrl(analysis?.[key]);
+                  return (
+                    <div key={key} className="bg-card-bg border border-border rounded-xl overflow-hidden">
+                      {photoUrl ? (
+                        <PhotoImage src={photoUrl} alt={label} />
+                      ) : (
+                        <div className="w-full aspect-[3/4] flex flex-col items-center justify-center gap-2 bg-white/[0.02]">
+                          <ScanFace className="w-8 h-8 text-text-muted" />
+                          <p className="text-[10px] text-text-muted">{label}</p>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {/* Body photo */}
-                {analysis?.photo_body_url && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <User className="w-3.5 h-3.5 text-text-muted" />
-                      <p className="text-[11px] text-text-muted">Foto do Fisico</p>
-                    </div>
-                    <div className="bg-card-bg border border-border rounded-xl overflow-hidden max-w-xs">
-                      {getPhotoUrl(analysis.photo_body_url) ? (
-                        <img
-                          src={getPhotoUrl(analysis.photo_body_url)}
-                          alt="Fisico"
-                          className="w-full aspect-[4/3] object-cover"
-                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                        />
-                      ) : null}
-                      <div className="w-full aspect-[4/3] flex-col items-center justify-center gap-2 bg-white/[0.02] hidden">
-                        <ImageOff className="w-8 h-8 text-text-muted" />
-                        <p className="text-[10px] text-text-muted">Imagem indisponivel</p>
-                      </div>
+                      )}
                       <div className="px-2 py-1.5 border-t border-border">
-                        <p className="text-[10px] font-medium text-text-secondary text-center">Fisico</p>
+                        <p className="text-[10px] font-medium text-text-secondary text-center">{label}</p>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+              {/* Body photo */}
+              {analysis?.photo_body_url && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="w-3.5 h-3.5 text-text-muted" />
+                    <p className="text-[11px] text-text-muted">Foto do Fisico</p>
                   </div>
-                )}
-                <div className="flex items-center justify-between text-xs text-text-muted">
-                  <div className="flex items-center gap-4">
-                    <span>{analysis?.profiles?.full_name || 'N/A'}</span>
-                    <span>Enviado em: {formatDate(analysis?.created_at)}</span>
+                  <div className="bg-card-bg border border-border rounded-xl overflow-hidden max-w-xs">
+                    {getPhotoUrl(analysis.photo_body_url) ? (
+                      <img
+                        src={getPhotoUrl(analysis.photo_body_url)}
+                        alt="Fisico"
+                        className="w-full aspect-[4/3] object-cover"
+                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                      />
+                    ) : null}
+                    <div className="w-full aspect-[4/3] flex-col items-center justify-center gap-2 bg-white/[0.02] hidden">
+                      <ImageOff className="w-8 h-8 text-text-muted" />
+                      <p className="text-[10px] text-text-muted">Imagem indisponivel</p>
+                    </div>
+                    <div className="px-2 py-1.5 border-t border-border">
+                      <p className="text-[10px] font-medium text-text-secondary text-center">Fisico</p>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowReportModal(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-yellow-400 hover:bg-yellow-400/10 transition-colors"
-                  >
-                    <Flag className="w-3.5 h-3.5" />
-                    Denunciar
-                  </button>
                 </div>
-              </section>
-            </FadeIn>
+              )}
+              <div className="flex items-center justify-between text-xs text-text-muted">
+                <div className="flex items-center gap-4">
+                  <span>{analysis?.profiles?.full_name || 'N/A'}</span>
+                  <span>Enviado em: {formatDate(analysis?.created_at)}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-yellow-400 hover:bg-yellow-400/10 transition-colors"
+                >
+                  <Flag className="w-3.5 h-3.5" />
+                  Denunciar
+                </button>
+              </div>
+            </section>
+          </FadeIn>
 
-            {/* Scores Gerais */}
-            <FadeIn delay={0.1}>
-              <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
-                <h2 className="text-sm font-semibold text-text-secondary">Scores Gerais</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-2">
-                    <Label>Harmonia Geral ({overallScore})</Label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={overallScore}
-                      onChange={(e) => setOverallScore(e.target.value)}
-                      className="w-full accent-brand-accent"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Simetria ({symmetryScore})</Label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={symmetryScore}
-                      onChange={(e) => setSymmetryScore(e.target.value)}
-                      className="w-full accent-brand-accent"
-                    />
-                  </div>
-                </div>
-              </section>
-            </FadeIn>
+          {/* Scores Calculados (Display Only) */}
+          <FadeIn delay={0.05}>
+            <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Dumbbell className="w-4 h-4 text-brand-accent" />
+                <h2 className="text-sm font-semibold text-text-secondary">Scores Calculados</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Card className="bg-card-bg border border-border">
+                  <CardContent className="p-4 flex flex-col items-center">
+                    <p className="text-xs text-text-muted uppercase tracking-wide">Simetria Facial</p>
+                    <p className="text-3xl font-bold text-brand-accent font-playfair">{symmetryScore.toFixed(1)}</p>
+                    <p className="text-[10px] text-text-muted">Média dos 13 atributos (1-10)</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card-bg border border-border">
+                  <CardContent className="p-4 flex flex-col items-center">
+                    <p className="text-xs text-text-muted uppercase tracking-wide">Atratividade</p>
+                    <div className="w-full">
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        step="1"
+                        value={attractiveness}
+                        onChange={(e) => setAttractiveness(Number(e.target.value))}
+                        className="w-full accent-brand-accent"
+                      />
+                      <p className="text-center text-sm font-medium mt-1">{attractiveness}/10</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-brand-accent/10 border-brand-accent/30">
+                  <CardContent className="p-4 flex flex-col items-center">
+                    <p className="text-xs text-brand-accent uppercase tracking-wide">Overall Final</p>
+                    <p className="text-3xl font-bold text-brand-accent font-playfair">{overallScore.toFixed(0)}</p>
+                    <p className="text-[10px] text-text-muted">Escala 0-100 | ((Simetria + Atratividade) / 2) × 10</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+          </FadeIn>
 
-            {/* Terços Faciais */}
-            <FadeIn delay={0.15}>
-              <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-text-secondary">Divisao dos Tercos Faciais</h2>
-                  <span className={`text-xs font-medium ${tercoError ? 'text-red-400' : 'text-green-400'}`}>
-                    Soma: {Number(tercoSuperior) + Number(tercoMedio) + Number(tercoInferior)}%
-                    {tercoError && ' (deve ser 100%)'}
-                  </span>
+          {/* 13 Atributos Faciais */}
+          <FadeIn delay={0.1}>
+            <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Dumbbell className="w-4 h-4 text-brand-accent" />
+                  <h2 className="text-sm font-semibold text-text-secondary">13 Atributos Faciais (1 a 10)</h2>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                  <div className="space-y-2">
-                    <Label>Terco Superior (%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={tercoSuperior}
-                      onChange={(e) => setTercoSuperior(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Terco Medio (%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={tercoMedio}
-                      onChange={(e) => setTercoMedio(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Terco Inferior (%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={tercoInferior}
-                      onChange={(e) => setTercoInferior(e.target.value)}
-                    />
-                  </div>
+                <div className="flex items-center gap-1 text-xs text-text-muted">
+                  <span className="px-2 py-0.5 rounded bg-green-400/10 text-green-400 border border-green-400/20">7-10: Ótimo</span>
+                  <span className="px-2 py-0.5 rounded bg-yellow-400/10 text-yellow-400 border border-yellow-400/20">4-6: Bom</span>
+                  <span className="px-2 py-0.5 rounded bg-blue-400/10 text-blue-400 border border-blue-400/20">1-3: Ok</span>
                 </div>
-              </section>
-            </FadeIn>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {FACIAL_ATTRIBUTES.map((attr, index) => {
+                  const value = attributes[attr.key] || '';
+                  const label = value ? scoreToLabel(value) : '';
+                  return (
+                    <div key={attr.key} className="space-y-2 bg-white/[0.02] p-4 rounded-xl border border-border/50">
+                      <div className="flex items-center justify-between">
+                        <Label className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                          <span className="text-base">{attr.icon}</span>
+                          {attr.label}
+                        </Label>
+                        {label && (
+                          <Badge variant="secondary" className={`${labelToColor(label)} text-[10px] font-medium`}>
+                            {label}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => {
+                            const current = attributes[attr.key] || 1;
+                            handleAttributeChange(attr.key, Math.max(1, current - 1));
+                          }}
+                          className="w-8 h-8 rounded-lg border border-border bg-white/5 text-text-secondary hover:text-white hover:border-brand-accent/30 transition-colors flex items-center justify-center"
+                          disabled={!attributes[attr.key] || attributes[attr.key] <= 1}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={value}
+                          onChange={(e) => handleAttributeChange(attr.key, e.target.value)}
+                          className="flex-1 text-center text-lg font-mono"
+                          placeholder="—"
+                        />
+                        <button
+                          onClick={() => {
+                            const current = attributes[attr.key] || 1;
+                            handleAttributeChange(attr.key, Math.min(10, current + 1));
+                          }}
+                          className="w-8 h-8 rounded-lg border border-border bg-white/5 text-text-secondary hover:text-white hover:border-brand-accent/30 transition-colors flex items-center justify-center"
+                          disabled={attributes[attr.key] >= 10}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </FadeIn>
 
-            {/* Categorias */}
-            <FadeIn delay={0.2}>
+          {/* Terços Faciais */}
+          <FadeIn delay={0.15}>
+            <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-text-secondary">Divisao dos Tercos Faciais (%)</h2>
+                <span className={`text-xs font-medium ${tercoError ? 'text-red-400' : 'text-green-400'}`}>
+                  Soma: {Number(tercoSuperior) + Number(tercoMedio) + Number(tercoInferior)}%
+                  {tercoError && ' (deve ser 100%)'}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div className="space-y-2">
+                  <Label>Terco Superior (%)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={tercoSuperior}
+                    onChange={(e) => setTercoSuperior(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Terco Medio (%)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={tercoMedio}
+                    onChange={(e) => setTercoMedio(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Terco Inferior (%)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={tercoInferior}
+                    onChange={(e) => setTercoInferior(e.target.value)}
+                  />
+                </div>
+              </div>
+            </section>
+          </FadeIn>
+
+          {/* Highlights */}
+          <FadeIn delay={0.2}>
+            <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
+              <h2 className="text-sm font-semibold text-text-secondary">Pontos Fortes (Highlights)</h2>
+              <div className="space-y-2">
+                <Label>Separados por virgula</Label>
+                <Input
+                  placeholder="Ex: Simetria excelente, Contorno definido, Proporcao harmoniosa"
+                  value={highlightsInput}
+                  onChange={(e) => setHighlightsInput(e.target.value)}
+                />
+              </div>
+              {highlights.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {highlights.map((h, i) => (
+                    <Badge key={i}>{h}</Badge>
+                  ))}
+                </div>
+              )}
+            </section>
+          </FadeIn>
+
+          {/* Visagismo */}
+          <FadeIn delay={0.25}>
+            <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
+              <h2 className="text-sm font-semibold text-text-secondary">Recomendacoes de Visagismo</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div className="space-y-2">
+                  <Label>Corte de Cabelo</Label>
+                  <Textarea
+                    value={cabelo}
+                    onChange={(e) => setCabelo(e.target.value)}
+                    placeholder="Ex: Corte curto nas laterais, mais volume no topo..."
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Barba</Label>
+                  <Textarea
+                    value={barba}
+                    onChange={(e) => setBarba(e.target.value)}
+                    placeholder="Ex: Barba curta uniforme, sem bigode..."
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Oculos</Label>
+                  <Textarea
+                    value={oculos}
+                    onChange={(e) => setOculos(e.target.value)}
+                    placeholder="Ex: Arredondados, aro fino, tons neutros..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </section>
+          </FadeIn>
+
+          {/* Weekly Exercise Recommendations */}
+          <FadeIn delay={0.3}>
+            <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Dumbbell className="w-4 h-4 text-brand-accent" />
+                <h2 className="text-sm font-semibold text-text-secondary">Recomendacoes de Exercicios Semanais</h2>
+              </div>
+              <p className="text-xs text-text-muted mb-4">
+                Insira exercicios separados por ponto e virgula (;). Ex: "Exercicio 1; Exercicio 2; Exercicio 3"
+              </p>
+
+              {/* General Exercises */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-medium text-text-secondary uppercase tracking-wide">Exercicios Gerais</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 px-3 text-xs text-text-muted font-medium w-20">Dia</th>
+                        {WEEK_DAYS.map(day => (
+                          <th key={day.key} className="text-center py-2 px-1 text-xs text-text-muted font-medium">
+                            {day.short}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 px-3 text-text-primary font-medium">Exercicios</td>
+                        {WEEK_DAYS.map(day => (
+                          <td key={day.key} className="px-1 py-1">
+                            <Input
+                              type="text"
+                              value={exerciseRecs.general[day.key] || ''}
+                              onChange={(e) => handleExerciseChange('general', day.key, e.target.value)}
+                              placeholder="ex1; ex2"
+                              className="text-[11px] h-8"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <Separator className="my-4" />
+
+              {/* Facial Exercises */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-medium text-text-secondary uppercase tracking-wide">Exercicios Faciais</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 px-3 text-xs text-text-muted font-medium w-20">Dia</th>
+                        {WEEK_DAYS.map(day => (
+                          <th key={day.key} className="text-center py-2 px-1 text-xs text-text-muted font-medium">
+                            {day.short}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 px-3 text-text-primary font-medium">Exercicios</td>
+                        {WEEK_DAYS.map(day => (
+                          <td key={day.key} className="px-1 py-1">
+                            <Input
+                              type="text"
+                              value={exerciseRecs.facial[day.key] || ''}
+                              onChange={(e) => handleExerciseChange('facial', day.key, e.target.value)}
+                              placeholder="ex1; ex2"
+                              className="text-[11px] h-8"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </FadeIn>
+
+          {/* Avaliacao do Fisico */}
+          {analysis?.photo_body_url && (
+            <FadeIn delay={0.35}>
               <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
-                <h2 className="text-sm font-semibold text-text-secondary">Avaliacao por Categorias</h2>
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-brand-accent" />
+                  <h2 className="text-sm font-semibold text-text-secondary">Avaliacao do Fisico</h2>
+                </div>
+                <div className="space-y-2">
+                  <Label>Pontuacao Geral do Fisico ({bodyScore})</Label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={bodyScore}
+                    onChange={(e) => setBodyScore(e.target.value)}
+                    className="w-full accent-brand-accent"
+                  />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {[
-                    { label: 'Terco Superior', value: catSuperior, set: setCatSuperior },
-                    { label: 'Terco Medio', value: catMedio, set: setCatMedio },
-                    { label: 'Terco Inferior', value: catInferior, set: setCatInferior },
-                    { label: 'Contorno Mandibular', value: catMandibular, set: setCatMandibular },
+                    { label: 'Postura', value: bodyPostura, set: setBodyPostura },
+                    { label: 'Proporcao Corporal', value: bodyProporcao, set: setBodyProporcao },
+                    { label: 'Simetria Corporal', value: bodySimetria, set: setBodySimetria },
+                    { label: 'Definicao Muscular', value: bodyDefinicao, set: setBodyDefinicao },
                   ].map(({ label, value, set }) => (
                     <div key={label} className="space-y-2">
                       <Label>{label}</Label>
@@ -504,182 +867,77 @@ export default function ProfessionalEvaluatePage() {
                     </div>
                   ))}
                 </div>
-              </section>
-            </FadeIn>
-
-            {/* Highlights */}
-            <FadeIn delay={0.25}>
-              <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
-                <h2 className="text-sm font-semibold text-text-secondary">Pontos Fortes (Highlights)</h2>
                 <div className="space-y-2">
-                  <Label>Separados por virgula</Label>
-                  <Input
-                    placeholder="Ex: Simetria excelente, Contorno definido, Proporcao harmoniosa"
-                    value={highlightsInput}
-                    onChange={(e) => setHighlightsInput(e.target.value)}
+                  <Label>Observacoes sobre o Fisico</Label>
+                  <Textarea
+                    value={bodyNotes}
+                    onChange={(e) => setBodyNotes(e.target.value)}
+                    placeholder="Ex: Ombros largos, cintura definida, proporcao ideal de 1.618..."
+                    rows={3}
                   />
                 </div>
-                {highlights.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {highlights.map((h, i) => (
-                      <Badge key={i}>{h}</Badge>
-                    ))}
-                  </div>
+              </section>
+            </FadeIn>
+          )}
+
+          {/* Veredito */}
+          <FadeIn delay={0.4}>
+            <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
+              <h2 className="text-sm font-semibold text-text-secondary">Veredito Profissional</h2>
+              <Textarea
+                value={verdict}
+                onChange={(e) => setVerdict(e.target.value)}
+                placeholder="Escreva sua avaliacao profissional aqui..."
+                rows={6}
+                className="w-full bg-[#0a0a0a] border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-brand-accent/40 focus:border-brand-accent/30 resize-none transition-colors"
+              />
+              <p className="text-[10px] text-text-muted">
+                {verdict.length}/5000 caracteres
+              </p>
+            </section>
+          </FadeIn>
+
+          {/* Error */}
+          {error && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Photo validation warning */}
+          {!hasAllPhotos && (
+            <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-sm">
+              Nao e possivel enviar a avaliacao. A analise precisa ter as 3 fotos (frontal, perfil esquerdo e perfil direito).
+            </div>
+          )}
+
+          {/* Submit */}
+          <FadeIn delay={0.45}>
+            <div className="flex justify-end">
+              <button
+                onClick={handleSubmit}
+                disabled={tercoError || submitting || !hasAllPhotos}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
+                  !tercoError && !submitting && hasAllPhotos
+                    ? 'bg-brand-accent text-background hover:opacity-90'
+                    : 'bg-white/5 text-text-muted border border-border cursor-not-allowed'
+                }`}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Enviar Avaliacao
+                  </>
                 )}
-              </section>
-            </FadeIn>
-
-            {/* Visagismo */}
-            <FadeIn delay={0.3}>
-              <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
-                <h2 className="text-sm font-semibold text-text-secondary">Recomendacoes de Visagismo</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                  <div className="space-y-2">
-                    <Label>Corte de Cabelo</Label>
-                    <textarea
-                      value={cabelo}
-                      onChange={(e) => setCabelo(e.target.value)}
-                      placeholder="Ex: Corte curto nas laterais, mais volume no topo..."
-                      rows={3}
-                      className="flex w-full rounded-md border border-border bg-card-bg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background resize-none"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Barba</Label>
-                    <textarea
-                      value={barba}
-                      onChange={(e) => setBarba(e.target.value)}
-                      placeholder="Ex: Barba curta uniforme, sem bigode..."
-                      rows={3}
-                      className="flex w-full rounded-md border border-border bg-card-bg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background resize-none"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Oculos</Label>
-                    <textarea
-                      value={oculos}
-                      onChange={(e) => setOculos(e.target.value)}
-                      placeholder="Ex: Arredondados, aro fino, tons neutros..."
-                      rows={3}
-                      className="flex w-full rounded-md border border-border bg-card-bg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background resize-none"
-                    />
-                  </div>
-                </div>
-              </section>
-            </FadeIn>
-
-            {/* Avaliacao do Fisico */}
-            {analysis?.photo_body_url && (
-              <FadeIn delay={0.32}>
-                <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-brand-accent" />
-                    <h2 className="text-sm font-semibold text-text-secondary">Avaliacao do Fisico</h2>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Pontuacao Geral do Fisico ({bodyScore})</Label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={bodyScore}
-                      onChange={(e) => setBodyScore(e.target.value)}
-                      className="w-full accent-brand-accent"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {[
-                      { label: 'Postura', value: bodyPostura, set: setBodyPostura },
-                      { label: 'Proporcao Corporal', value: bodyProporcao, set: setBodyProporcao },
-                      { label: 'Simetria Corporal', value: bodySimetria, set: setBodySimetria },
-                      { label: 'Definicao Muscular', value: bodyDefinicao, set: setBodyDefinicao },
-                    ].map(({ label, value, set }) => (
-                      <div key={label} className="space-y-2">
-                        <Label>{label}</Label>
-                        <select
-                          value={value}
-                          onChange={(e) => set(e.target.value)}
-                          className="flex h-10 w-full rounded-md border border-border bg-card-bg px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                        >
-                          {CATEGORY_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Observacoes sobre o Fisico</Label>
-                    <textarea
-                      value={bodyNotes}
-                      onChange={(e) => setBodyNotes(e.target.value)}
-                      placeholder="Ex: Ombros largos, cintura definida, proporcao ideal de 1.618..."
-                      rows={3}
-                      className="flex w-full rounded-md border border-border bg-card-bg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background resize-none"
-                    />
-                  </div>
-                </section>
-              </FadeIn>
-            )}
-
-            {/* Veredito */}
-            <FadeIn delay={0.35}>
-              <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
-                <h2 className="text-sm font-semibold text-text-secondary">Veredito Profissional</h2>
-                <textarea
-                  value={verdict}
-                  onChange={(e) => setVerdict(e.target.value)}
-                  placeholder="Escreva sua avaliacao profissional aqui..."
-                  rows={6}
-                  className="w-full bg-[#0a0a0a] border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-brand-accent/40 focus:border-brand-accent/30 resize-none transition-colors"
-                />
-                <p className="text-[10px] text-text-muted">
-                  {verdict.length}/5000 caracteres
-                </p>
-              </section>
-            </FadeIn>
-
-            {/* Error */}
-            {error && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* Photo validation warning */}
-            {!hasAllPhotos && (
-              <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-sm">
-                Nao e possivel enviar a avaliacao. A analise precisa ter as 3 fotos (frontal, perfil esquerdo e perfil direito).
-              </div>
-            )}
-
-            {/* Submit */}
-            <FadeIn delay={0.4}>
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSubmit}
-                  disabled={tercoError || submitting || !hasAllPhotos}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
-                    !tercoError && !submitting && hasAllPhotos
-                      ? 'bg-brand-accent text-background hover:opacity-90'
-                      : 'bg-white/5 text-text-muted border border-border cursor-not-allowed'
-                  }`}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Enviar Avaliacao
-                    </>
-                  )}
-                </button>
-              </div>
-            </FadeIn>
-          </div>
+              </button>
+            </div>
+          </FadeIn>
+        </div>
       </main>
 
       {/* Report Modal */}
@@ -727,12 +985,11 @@ export default function ProfessionalEvaluatePage() {
             {/* Reason */}
             <div className="space-y-2">
               <Label>Descricao</Label>
-              <textarea
+              <Textarea
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
                 placeholder="Descreva o motivo da denuncia..."
                 rows={4}
-                className="w-full bg-[#0a0a0a] border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/30 resize-none transition-colors"
               />
             </div>
 
