@@ -4,7 +4,15 @@ import httpx
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.analysis_repository import AnalysisRepository
-from app.schemas.analysis import AnalysisCreate, AnalysisResponse
+from app.schemas.analysis import (
+    AnalysisCreate,
+    AnalysisResponse,
+    AttributeItem,
+    ATTRIBUTE_NAMES,
+    attribute_score_to_label,
+    compute_symmetry,
+    compute_overall,
+)
 from app.core.config import settings
 from app.core.exceptions import SanitizedHTTPException
 
@@ -12,57 +20,56 @@ logger = logging.getLogger(__name__)
 
 
 SYSTEM_PROMPT = """\
-Voce e um especialista mundial em Visagismo e Estetica Facial, com mais de 30 anos de experiencia em analise morfologica, proporcionalidade facial e harmonia estetica.
+You are a world-class expert in Visagism and Facial Aesthetics with over 30 years of experience in morphological analysis, facial proportionality, and aesthetic harmony.
 
-Analise a fotografia facial frontal fornecida e produza uma avaliacao qualitativa e quantitativa completa da anatomia facial do utilizador.
+Analyze the provided frontal facial photograph and produce a complete qualitative and quantitative evaluation of the user's facial anatomy.
 
-## Regras de Analise
-1. Avalie a simetria facial comparando os lados esquerdo e direito.
-2. Analise os tercos faciais (superior, medio, inferior) e o equilibrio entre eles.
-3. Avalie o contorno mandibular e a definicao do perfil.
-4. Identifique pontos fortes e areas de melhoria de forma construtiva.
-5. As pontuacoes devem ser realistas e justas — nao inflacione nem deprecie artificialmente.
+## Analysis Rules
+1. Evaluate facial symmetry comparing left and right sides.
+2. Analyze the facial thirds (superior, middle, inferior) and their balance.
+3. Assess mandibular contour and profile definition.
+4. Identify strengths and areas for improvement constructively.
+5. Age estimates should be realistic and fair — do not artificially inflate or deflate.
 
-## Validacao
-Se a imagem nao contiver um rosto humano (por exemplo: imagens de animais, objetos, paisagens, ou imagens corrompidas), retorne EXATAMENTE:
-{"error": true, "message": "Rosto humano nao detectado na imagem fornecida"}
+## Validation
+If the image does not contain a human face (animals, objects, or corrupted images), return EXACTLY:
+{"error": true, "message": "No human face detected in the provided image"}
 
-## Formato de Saida
-Retorne APENAS um JSON valido, sem nenhum texto adicional antes ou depois. O JSON deve seguir EXATAMENTE esta estrutura:
+## Output Format
+Return ONLY valid JSON, without any additional text before or after. The JSON must EXACTLY follow this structure:
 
 {
-  "overall_score": <inteiro 0-100>,
-  "symmetry_score": <inteiro 0-100>,
-  "categories": {
-    "terco_superior": {"score": <0-100>, "badge": "<Excelente|Muito Bom|Bom|Regular>"},
-    "terco_medio": {"score": <0-100>, "badge": "<Excelente|Muito Bom|Bom|Regular>"},
-    "terco_inferior": {"score": <0-100>, "badge": "<Excelente|Muito Bom|Bom|Regular>"},
-    "contorno_mandibular": {"score": <0-100>, "badge": "<Excelente|Muito Bom|Bom|Regular>"}
+  "attractiveness": <0-10>,
+  "attributes": {
+    "Terco Superior": <ordinal scale 0-10>,
+    "Terco Medio": <ordinal scale 0-10>,
+    "Terco Inferior": <ordinal scale 0-10>,
+    "Olhos": <ordinal scale 0-10>,
+    "Sobrancelhas": <ordinal scale 0-10>,
+    "Nariz": <ordinal scale 0-10>,
+    "Labios": <ordinal scale 0-10>,
+    "Mandibula": <ordinal scale 0-10>,
+    "Queixo": <ordinal scale 0-10>,
+    "Maçãs do Rosto": <ordinal scale 0-10>,
+    "Harmonia": <ordinal scale 0-10>,
+    "Testa": <ordinal scale 0-10>,
+    "Formato do Rosto": <ordinal scale 0-10>
   },
-  "thirds_data": [<percentual_superior>, <percentual_medio>, <percentual_inferior>],
-  "highlights": ["<destaque_1>", "<destaque_2>", "<destaque_3>", "<destaque_4>"],
+  "thirds_data": [<superior_third>, <middle_third>, <inferior_third>],
+  "highlights": ["<highlight_1>", "<highlight_2>", "<highlight_3>", "<highlight_4>"],
   "visagismo_tips": {
-    "formato_rosto": "<descricao do formato>",
-    "cabelo": "<recomendacoes de corte>",
-    "barba": "<recomendacoes de barba, se aplicavel>",
-    "oculos": "<recomendacoes de oculos>"
+    "formato_rosto": "<face shape description>",
+    "cabelo": "<haircut recommendations>",
+    "barba": "<beard recommendations, if applicable>",
+    "oculos": "<glasses recommendations>"
   }
 }
 
-Os thirds_data devem somar approximadamente 100 (ex: [33.3, 33.3, 33.4]).
-O overall_score e symmetry_score devem ser inteiros.
-Os highlights devem ter entre 1 e 4 strings descrevendo os pontos mais positivos.
+The attributes must be integers from 0 - 10.
+The thirds_data must sum to approximately 100 (e.g., [33.3, 33.3, 33.4]).
+The highlights must contain between 1 and 4 strings describing the most positive aspects.
+The attractiveness must be an integer from 0-10 representing the Atratividade grade.
 """
-
-
-def _badge(score: float) -> str:
-    if score >= 90:
-        return "Excelente"
-    if score >= 75:
-        return "Muito Bom"
-    if score >= 60:
-        return "Bom"
-    return "Regular"
 
 
 def _get_http_client() -> httpx.AsyncClient:
@@ -119,7 +126,7 @@ class AnalysisService:
                     "content": [
                         {
                             "type": "text",
-                            "text": "Analise esta fotografia facial frontal e retorne a avaliacao estruturada em JSON conforme as instrucoes do sistema.",
+                            "text": "Analyze this frontal facial photograph and return the structured JSON evaluation as per the system instructions.",
                         },
                         {
                             "type": "image_url",
@@ -168,29 +175,38 @@ class AnalysisService:
             raise SanitizedHTTPException(
                 status.HTTP_502_BAD_GATEWAY,
                 "A API de analise retornou uma resposta invalida.",
-                f"Invalid JSON from OpenRouter: {raw[:200]}",
+                f"Invalid JSON from AI: {raw[:200]}",
             )
 
-        # Check for face detection failure
         if isinstance(result, dict) and result.get("error"):
             raise SanitizedHTTPException(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
                 result.get("message", "Rosto humano nao detectado na imagem fornecida"),
-                "AI detected no face in image",
+                "IA detectou ausencia de rosto",
             )
 
         return result
 
     def _map_to_response(self, ai_result: dict) -> dict:
-        """Map AI JSON output to the format the frontend expects."""
-        overall = int(ai_result.get("overall_score", 50))
-        symmetry = int(ai_result.get("symmetry_score", 50))
+        """Map AI JSON output with 13 attributes + automatic scoring."""
+        attractiveness = int(ai_result.get("attractiveness", 5))
+        raw_attributes = ai_result.get("attributes", {})
 
-        cats = ai_result.get("categories", {})
-        terco_sup = cats.get("terco_superior", {}).get("score", 50)
-        terco_med = cats.get("terco_medio", {}).get("score", 50)
-        terco_inf = cats.get("terco_inferior", {}).get("score", 50)
-        mandibular = cats.get("contorno_mandibular", {}).get("score", 50)
+        # Merge with partial attributes if present, fallback for signers
+        attributes: dict[str, int] = {}
+        for name in ATTRIBUTE_NAMES:
+            value = raw_attributes.get(name, 5)
+            attributes[name] = max(1, min(10, int(value)))
+
+        # Generate attribute items with labels
+        attribute_items = [
+            {"name": name, "score": score, "label": attribute_score_to_label(score)}
+            for name, score in attributes.items()
+        ]
+
+        # All scores
+        symmetry = compute_symmetry(attributes)
+        overall = compute_overall(symmetry, attractiveness)
 
         thirds_pcts = ai_result.get("thirds_data", [33.3, 33.3, 33.4])
         thirds_data = [
@@ -199,25 +215,13 @@ class AnalysisService:
             {"label": "Terco Inferior (Mandibula)", "value": round(thirds_pcts[2], 1)},
         ]
 
-        radar_data = [
-            {"feature": "Simetria", "score": symmetry},
-            {"feature": "Terco Superior", "score": terco_sup},
-            {"feature": "Terco Medio", "score": terco_med},
-            {"feature": "Terco Inferior", "score": terco_inf},
-            {"feature": "Contorno Mandibular", "score": mandibular},
-        ]
+        radar_data = [{"feature": name, "score": score} for name, score in attributes.items()]
 
         highlights = ai_result.get("highlights", [])
         if not highlights:
             highlights = ["Analise facial completa"]
 
-        categories = [
-            {"name": "Simetria Lateral", "score": symmetry, "badge": _badge(symmetry)},
-            {"name": "Terco Superior", "score": terco_sup, "badge": _badge(terco_sup)},
-            {"name": "Terco Medio", "score": terco_med, "badge": _badge(terco_med)},
-            {"name": "Terco Inferior", "score": terco_inf, "badge": _badge(terco_inf)},
-            {"name": "Contorno Mandibular", "score": mandibular, "badge": _badge(mandibular)},
-        ]
+        categories = attribute_items
 
         return {
             "overall_score": overall,
@@ -229,6 +233,8 @@ class AnalysisService:
             "highlights": highlights[:4],
             "categories": categories,
             "visagismo_tips": ai_result.get("visagismo_tips", {}),
+            "attractiveness": attractiveness,
+            "attributes": attributes,
         }
 
     async def analyze(self, data: AnalysisCreate, user_id: str) -> AnalysisResponse:
@@ -237,7 +243,16 @@ class AnalysisService:
 
         db_analysis = await self.analysis_repo.create({
             "user_id": user_id,
-            **result,
+            "overall_score": result["overall_score"],
+            "confidence": result["confidence"],
+            "harmony_score": result["harmony_score"],
+            "symmetry_score": result["symmetry_score"],
+            "thirds_data": result["thirds_data"],
+            "radar_data": result["radar_data"],
+            "highlights": result["highlights"],
+            "categories": result["categories"],
+            "attractiveness": result["attractiveness"],
+            "attributes_data": result["attributes"],
             "photo_front_url": None,
             "photo_right_url": None,
             "photo_left_url": None,
@@ -256,6 +271,8 @@ class AnalysisService:
                 {"name": cat.name, "score": cat.score, "badge": cat.badge}
                 for cat in db_analysis.categories
             ],
+            attractiveness=db_analysis.attractiveness,
+            attributes=[AttributeItem(**attr) for attr in (db_analysis.attributes_data or [])],
             created_at=db_analysis.created_at,
         )
 
@@ -275,6 +292,8 @@ class AnalysisService:
                     {"name": cat.name, "score": cat.score, "badge": cat.badge}
                     for cat in a.categories
                 ],
+                attractiveness=a.attractiveness,
+                attributes=[AttributeItem(**attr) for attr in (a.attributes_data or [])],
                 created_at=a.created_at,
             )
             for a in analyses

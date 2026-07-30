@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import WeeklyRoutineTable from '@/components/evaluation/WeeklyRoutineTable';
 import { StaggerContainer, StaggerItem, FadeIn, ScaleIn } from '@/components/ui/page-transition';
 
 const BUCKET = 'analysis-photos';
@@ -41,12 +42,30 @@ export default function ProgressPage() {
   const { user } = useAuth();
   const [pending, setPending] = useState([]);
   const [evaluated, setEvaluated] = useState([]);
+  const [routine, setRoutine] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
     fetchData();
+    fetchRoutine();
   }, [user]);
+
+  const fetchRoutine = async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('weekly_routines')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!error && data) {
+        setRoutine(data.exercises || {});
+      }
+    } catch (err) {
+      console.error('Failed to fetch weekly routine:', err);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -333,6 +352,15 @@ export default function ProgressPage() {
             </TabsContent>
           </Tabs>
           </FadeIn>
+
+          {/* Weekly Routine */}
+          {routine && (
+            <ScaleIn delay={0.4}>
+              <div className="mt-8">
+                <WeeklyRoutineTable exercises={routine} />
+              </div>
+            </ScaleIn>
+          )}
         </div>
       </div>
   );

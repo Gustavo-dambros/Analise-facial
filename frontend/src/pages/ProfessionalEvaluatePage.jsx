@@ -7,6 +7,7 @@ import { ArrowLeft, Send, Loader2, AlertTriangle, ScanFace, ImageOff, Save, Flag
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import WeeklyRoutineEditor from '@/components/evaluation/WeeklyRoutineEditor';
 import { FadeIn, ScaleIn, StaggerContainer, StaggerItem } from '@/components/ui/page-transition';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -15,6 +16,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const BUCKET = 'analysis-photos';
 const CATEGORY_OPTIONS = ['Excelente', 'Bom', 'Regular', 'Ajustável'];
+const ATTRIBUTE_DEFS = [
+  'Terco Superior',
+  'Terco Medio',
+  'Terco Inferior',
+  'Olhos',
+  'Sobrancelhas',
+  'Nariz',
+  'Labios',
+  'Mandibula',
+  'Queixo',
+  'Macas do Rosto',
+  'Harmonia',
+  'Testa',
+  'Formato do Rosto',
+];
 const REPORT_CATEGORIES = [
   { value: 'avaliacao_incorreta', label: 'Avaliacao Incorreta' },
   { value: 'resultado_inadequado', label: 'Resultado Inadequado' },
@@ -131,9 +147,11 @@ export default function ProfessionalEvaluatePage() {
   const [reportReason, setReportReason] = useState('');
   const [reporting, setReporting] = useState(false);
 
-  // Form state - 13 facial attributes (1-10)
+// Form state - 13 facial attributes (1-10), computed scores
   const [attributes, setAttributes] = useState({});
   const [attractiveness, setAttractiveness] = useState(5);
+  const [overallScore, setOverallScore] = useState(50);
+  const [symmetryScore, setSymmetryScore] = useState(50);
   const [highlightsInput, setHighlightsInput] = useState('');
   const [cabelo, setCabelo] = useState('');
   const [barba, setBarba] = useState('');
@@ -212,6 +230,8 @@ export default function ProfessionalEvaluatePage() {
 
       if (data?.result && typeof data.result === 'object' && Object.keys(data.result).length > 0) {
         const r = data.result;
+if (data?.result && typeof data.result === 'object' && Object.keys(data.result).length > 0) {
+        const r = data.result;
         
         // Load 13 attributes
         if (r.attributes) {
@@ -230,8 +250,7 @@ export default function ProfessionalEvaluatePage() {
           if (r.thirds.medio != null) setTercoMedio(r.thirds.medio);
           if (r.thirds.inferior != null) setTercoInferior(r.thirds.inferior);
         }
-
-        // Load attractiveness
+// Load attractiveness
         if (r.attractiveness != null) setAttractiveness(r.attractiveness);
 
         // Load highlights
@@ -308,7 +327,18 @@ export default function ProfessionalEvaluatePage() {
     try {
       const supabase = createClient();
 
+      const hasAllAttributes = ATTRIBUTE_DEFS.every((name) => attributes[name] != null);
+
+      const evalAttrs = {};
+      ATTRIBUTE_DEFS.forEach((name) => {
+        evalAttrs[name] = attributes[name] ?? 5;
+      });
+
+      const attrSymmetry = ATTRIBUTE_DEFS.reduce((sum, name) => sum + (evalAttrs[name] || 0), 0) / ATTRIBUTE_DEFS.length;
+      const attrOverall = ((attrSymmetry + Number(attractiveness)) / 2) * 10;
+
       const evaluationData = {
+const evaluationData = {
         attributes,
         attractiveness: Number(attractiveness),
         symmetry_score: Number(symmetryScore.toFixed(2)),
@@ -318,6 +348,7 @@ export default function ProfessionalEvaluatePage() {
           medio: Number(tercoMedio),
           inferior: Number(tercoInferior),
         },
+        attributes: evalAttrs,
         highlights,
         visagismo_tips: { cabelo, barba, oculos },
         verdict_text: verdict.trim(),
@@ -527,7 +558,7 @@ export default function ProfessionalEvaluatePage() {
             </section>
           </FadeIn>
 
-          {/* Scores Calculados (Display Only) */}
+{/* Scores Calculados (Display Only) */}
           <FadeIn delay={0.05}>
             <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-4">
               <div className="flex items-center gap-2 mb-4">
@@ -639,7 +670,7 @@ export default function ProfessionalEvaluatePage() {
             </section>
           </FadeIn>
 
-          {/* Terços Faciais */}
+{/* Terços Faciais */}
           <FadeIn delay={0.15}>
             <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
               <div className="flex items-center justify-between">
@@ -866,36 +897,10 @@ export default function ProfessionalEvaluatePage() {
                       </select>
                     </div>
                   ))}
-                </div>
-                <div className="space-y-2">
-                  <Label>Observacoes sobre o Fisico</Label>
-                  <Textarea
-                    value={bodyNotes}
-                    onChange={(e) => setBodyNotes(e.target.value)}
-                    placeholder="Ex: Ombros largos, cintura definida, proporcao ideal de 1.618..."
-                    rows={3}
-                  />
-                </div>
+</div>
               </section>
             </FadeIn>
           )}
-
-          {/* Veredito */}
-          <FadeIn delay={0.4}>
-            <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
-              <h2 className="text-sm font-semibold text-text-secondary">Veredito Profissional</h2>
-              <Textarea
-                value={verdict}
-                onChange={(e) => setVerdict(e.target.value)}
-                placeholder="Escreva sua avaliacao profissional aqui..."
-                rows={6}
-                className="w-full bg-[#0a0a0a] border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-brand-accent/40 focus:border-brand-accent/30 resize-none transition-colors"
-              />
-              <p className="text-[10px] text-text-muted">
-                {verdict.length}/5000 caracteres
-              </p>
-            </section>
-          </FadeIn>
 
           {/* Error */}
           {error && (
@@ -937,7 +942,6 @@ export default function ProfessionalEvaluatePage() {
               </button>
             </div>
           </FadeIn>
-        </div>
       </main>
 
       {/* Report Modal */}

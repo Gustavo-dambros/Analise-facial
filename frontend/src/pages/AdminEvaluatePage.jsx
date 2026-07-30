@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +6,21 @@ import { Badge } from '@/components/ui/badge';
 import { FadeIn, ScaleIn, StaggerContainer, StaggerItem } from '@/components/ui/page-transition';
 
 const CATEGORY_OPTIONS = ['Excelente', 'Bom', 'Regular', 'Ajustável'];
+const ATTRIBUTE_DEFS = [
+  'Terco Superior',
+  'Terco Medio',
+  'Terco Inferior',
+  'Olhos',
+  'Sobrancelhas',
+  'Nariz',
+  'Labios',
+  'Mandibula',
+  'Queixo',
+  'Macas do Rosto',
+  'Harmonia',
+  'Testa',
+  'Formato do Rosto',
+];
 
 export default function AdminEvaluatePage() {
   const { id } = useParams();
@@ -15,15 +29,11 @@ export default function AdminEvaluatePage() {
   const [submitted, setSubmitted] = useState(false);
 
   // Form state
-  const [overallScore, setOverallScore] = useState(50);
-  const [symmetryScore, setSymmetryScore] = useState(50);
+  const [attractiveness, setAttractiveness] = useState(5);
   const [tercoSuperior, setTercoSuperior] = useState(33);
   const [tercoMedio, setTercoMedio] = useState(34);
   const [tercoInferior, setTercoInferior] = useState(33);
-  const [catSuperior, setCatSuperior] = useState('Bom');
-  const [catMedio, setCatMedio] = useState('Bom');
-  const [catInferior, setCatInferior] = useState('Bom');
-  const [catMandibular, setCatMandibular] = useState('Bom');
+  const [attributes, setAttributes] = useState({});
   const [highlightsInput, setHighlightsInput] = useState('');
   const [cabelo, setCabelo] = useState('');
   const [barba, setBarba] = useState('');
@@ -50,20 +60,24 @@ export default function AdminEvaluatePage() {
     e.preventDefault();
     if (tercoError) return;
 
+    const evalAttrs = {};
+    ATTRIBUTE_DEFS.forEach((name) => {
+      evalAttrs[name] = attributes[name] ?? 5;
+    });
+
+    const attrSymmetry = ATTRIBUTE_DEFS.reduce((sum, name) => sum + (evalAttrs[name] || 0), 0) / ATTRIBUTE_DEFS.length;
+    const attrOverall = ((attrSymmetry + Number(attractiveness)) / 2) * 10;
+
     const evaluation = {
-      overall_score: Number(overallScore),
-      symmetry_score: Number(symmetryScore),
+      overall_score: Math.round(attrOverall * 10) / 10,
+      symmetry_score: Math.round(attrSymmetry * 100) / 100,
+      attractiveness: Number(attractiveness),
       thirds: {
         superior: Number(tercoSuperior),
         medio: Number(tercoMedio),
         inferior: Number(tercoInferior),
       },
-      categories: {
-        terco_superior: catSuperior,
-        terco_medio: catMedio,
-        terco_inferior: catInferior,
-        contorno_mandibular: catMandibular,
-      },
+      attributes: evalAttrs,
       highlights,
       visagismo_tips: { cabelo, barba, oculos },
       evaluatedAt: new Date().toISOString(),
@@ -158,27 +172,28 @@ export default function AdminEvaluatePage() {
               <h2 className="text-sm font-semibold text-text-secondary">Scores Gerais</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label>Harmonia Geral ({overallScore})</Label>
+                  <Label>Atratividade (1-10): {attractiveness}</Label>
                   <input
                     type="range"
-                    min="0"
-                    max="100"
-                    value={overallScore}
-                    onChange={(e) => setOverallScore(e.target.value)}
+                    min="1"
+                    max="10"
+                    value={attractiveness}
+                    onChange={(e) => setAttractiveness(Number(e.target.value))}
                     className="w-full accent-brand-accent"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Simetria ({symmetryScore})</Label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={symmetryScore}
-                    onChange={(e) => setSymmetryScore(e.target.value)}
-                    className="w-full accent-brand-accent"
-                  />
+                  <Label>Simetria (Media automatica)</Label>
+                  <div className="h-10 flex items-center text-sm text-text-muted">
+                    Media dos 13 atributos = {(() => {
+                      const vals = ATTRIBUTE_DEFS.map((n) => attributes[n] ?? 5).filter((v) => v != null);
+                      return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100 : '--';
+                    })()}/10
+                  </div>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Overall (0-100): {Math.round((((ATTRIBUTE_DEFS.reduce((sum, name) => sum + (attributes[name] ?? 5), 0) / ATTRIBUTE_DEFS.length) + Number(attractiveness || 5)) / 2) * 10)}</Label>
               </div>
             </section>
           </FadeIn>
@@ -228,30 +243,32 @@ export default function AdminEvaluatePage() {
             </section>
           </FadeIn>
 
-          {/* Categorias */}
+          {/* 13 Atributos Faciais */}
           <FadeIn delay={0.3}>
             <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
-              <h2 className="text-sm font-semibold text-text-secondary">Avaliação por Categorias</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {[
-                  { label: 'Terço Superior', value: catSuperior, set: setCatSuperior },
-                  { label: 'Terço Médio', value: catMedio, set: setCatMedio },
-                  { label: 'Terço Inferior', value: catInferior, set: setCatInferior },
-                  { label: 'Contorno Mandibular', value: catMandibular, set: setCatMandibular },
-                ].map(({ label, value, set }) => (
-                  <div key={label} className="space-y-2">
-                    <Label>{label}</Label>
-                    <select
-                      value={value}
-                      onChange={(e) => set(e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-border bg-card-bg px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    >
-                      {CATEGORY_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
+              <h2 className="text-sm font-semibold text-text-secondary">13 Atributos Faciais (1-10)</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {ATTRIBUTE_DEFS.map((attrName) => {
+                  const currentVal = attributes[attrName] ?? 5;
+                  const label = currentVal <= 3 ? 'Ok' : currentVal <= 6 ? 'Bom' : 'Otimo';
+                  return (
+                    <div key={attrName} className="space-y-1.5">
+                      <Label className="text-[11px]">{attrName}</Label>
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        value={currentVal}
+                        onChange={(e) => setAttributes((prev) => ({ ...prev, [attrName]: Number(e.target.value) }))}
+                        className="w-full accent-brand-accent h-5"
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-text-muted font-medium">{label}</span>
+                        <span className="text-[10px] text-brand-accent font-bold">{currentVal}/10</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           </FadeIn>

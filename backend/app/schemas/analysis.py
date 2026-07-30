@@ -4,6 +4,48 @@ from datetime import datetime
 
 
 # ------------------------------------------------------------------ #
+#  Constants — 13 Attributes & Classification
+# ------------------------------------------------------------------ #
+
+ATTRIBUTE_NAMES = [
+    "Terco Superior",
+    "Terco Medio",
+    "Terco Inferior",
+    "Olhos",
+    "Sobrancelhas",
+    "Nariz",
+    "Labios",
+    "Mandibula",
+    "Queixo",
+    "Macas do Rosto",
+    "Harmonia",
+    "Testa",
+    "Formato do Rosto",
+]
+
+
+def attribute_score_to_label(score: int) -> str:
+    """Convert numeric score (1-10) to textual label."""
+    if score <= 3:
+        return "Ok"
+    if score <= 6:
+        return "Bom"
+    return "Otimo"
+
+
+def compute_symmetry(attributes: dict[str, int]) -> float:
+    """Facial Symmetry = simple average of all 13 attributes (scale 1-10)."""
+    if not attributes:
+        return 0.0
+    return round(sum(attributes.values()) / len(attributes), 2)
+
+
+def compute_overall(symmetry: float, attractiveness: int) -> float:
+    """Overall (0-100) = ((Symmetry + Attractiveness) / 2) * 10."""
+    return round(((symmetry + attractiveness) / 2) * 10, 1)
+
+
+# ------------------------------------------------------------------ #
 #  Existing schemas (image-based analysis)
 # ------------------------------------------------------------------ #
 
@@ -23,6 +65,12 @@ class CategoryResult(BaseModel):
     badge: str
 
 
+class AttributeItem(BaseModel):
+    name: str
+    score: int
+    label: str
+
+
 class AnalysisResponse(BaseModel):
     id: str
     overall_score: float
@@ -34,6 +82,8 @@ class AnalysisResponse(BaseModel):
     highlights: List[str]
     categories: List[CategoryResult]
     created_at: datetime
+    attractiveness: Optional[int] = None
+    attributes: Optional[List[AttributeItem]] = None
 
     model_config = {"from_attributes": True}
 
@@ -48,6 +98,33 @@ class AnalysisPendingResponse(BaseModel):
     user_name: str
     overall_score: float
     created_at: datetime
+
+
+# ------------------------------------------------------------------ #
+#  Weekly exercises schemas
+# ------------------------------------------------------------------ #
+
+DAY_NAMES = ["Segunda", "Terca", "Quarta", "Quinta", "Sexta", "Sabado", "Domingo"]
+
+
+class DayExercises(BaseModel):
+    general: List[str] = Field(default_factory=list, description="General exercises for this day")
+    facial: List[str] = Field(default_factory=list, description="Facial exercises for this day")
+
+
+class WeeklyRoutineCreate(BaseModel):
+    user_id: str
+    days: dict[str, DayExercises]  # key: "Monday".."Sunday"
+
+
+class WeeklyRoutineResponse(BaseModel):
+    id: str
+    user_id: str
+    exercises: dict  # {"Monday": {"general": [...], "facial": [...]}, ...}
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
 
 
 # ------------------------------------------------------------------ #

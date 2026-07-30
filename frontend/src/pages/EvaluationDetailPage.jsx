@@ -7,6 +7,7 @@ import ChartRadialText from '@/components/evaluation/ChartRadialText';
 import RadarAttributes from '@/components/evaluation/RadarAttributes';
 import FacialThirds from '@/components/evaluation/FacialThirds';
 import HighlightBadges from '@/components/evaluation/HighlightBadges';
+import AttributeTable from '@/components/evaluation/AttributeTable';
 import BodyRadarChart from '@/components/evaluation/BodyRadarChart';
 import { FadeIn, ScaleIn, SlideInLeft, SlideInRight, StaggerContainer, StaggerItem } from '@/components/ui/page-transition';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -197,9 +198,11 @@ export default function EvaluationDetailPage() {
   const ev = entry.evaluation;
   const exRecs = entry.exercise_recommendations;
 
-  // Prepare radar data
-  const radarData = useMemo(() => {
-    const data = [
+const radarData = useMemo(() => {
+    if (ev.attributes && Object.keys(ev.attributes).length > 0) {
+      return Object.entries(ev.attributes).map(([feature, score]) => ({ feature, score }));
+    }
+    return [
       { feature: 'Simetria', score: Math.round((ev.symmetry_score || 0) * 10) },
       { feature: 'Terço Sup.', score: ev.attributes?.tercoSuperior || 0 },
       { feature: 'Terço Médio', score: ev.attributes?.tercoMedio || 0 },
@@ -210,8 +213,11 @@ export default function EvaluationDetailPage() {
       { feature: 'Lábios', score: ev.attributes?.lábios || 0 },
       { feature: 'Harmonia', score: ev.attributes?.harmonia || 0 },
     ];
-    return data;
   }, [ev]);
+
+  const attrEntries = ev.attributes && Object.keys(ev.attributes).length > 0
+    ? ev.attributes
+    : null;
 
   const thirdsData = useMemo(() => [
     { label: 'Terço Superior (Testa)', value: ev.thirds?.superior ?? 0 },
@@ -448,14 +454,16 @@ export default function EvaluationDetailPage() {
                 </Card>
               </FadeIn>
 
-              {/* Categories (Legacy) */}
-              {ev.categories && (
-                <FadeIn delay={0.45}>
-                  <Card className="bg-card-bg border border-border rounded-2xl backdrop-blur-md">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm text-text-primary">Categorias (Legado)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+{attrEntries && (
+                <FadeIn delay={0.32}>
+                  <AttributeTable attributes={attrEntries} overall={ev.overall_score} />
+                </FadeIn>
+              )}
+
+              {ev.categories && !attrEntries && (
+                <FadeIn delay={0.35}>
+                  <div className="rounded-2xl border border-border bg-card-bg p-6">
+                    <h3 className="text-sm font-semibold text-text-secondary mb-4">Categorias</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         {[
                           { label: 'Terço Superior', value: ev.categories.terco_superior },
@@ -469,9 +477,8 @@ export default function EvaluationDetailPage() {
                           </div>
                         ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                </FadeIn>
+                    </div>
+                  </FadeIn>
               )}
 
               {/* Radar Attributes */}
