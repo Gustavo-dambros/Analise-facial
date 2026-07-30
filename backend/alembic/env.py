@@ -12,7 +12,15 @@ from app.core.config import settings
 from app.models import User, FacialAnalysis, AnalysisCategory
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
+# Convert async DB URL to sync for alembic
+db_url = settings.DATABASE_URL
+if "+asyncpg" in db_url:
+    db_url = db_url.replace("+asyncpg", "+psycopg2")
+elif "+aiosqlite" in db_url:
+    db_url = db_url.replace("+aiosqlite", "")
+
+config.set_main_option("sqlalchemy.url", db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
