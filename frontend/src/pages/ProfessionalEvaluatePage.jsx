@@ -150,8 +150,6 @@ export default function ProfessionalEvaluatePage() {
 // Form state - 13 facial attributes (1-10), computed scores
   const [attributes, setAttributes] = useState({});
   const [attractiveness, setAttractiveness] = useState(5);
-  const [overallScore, setOverallScore] = useState(50);
-  const [symmetryScore, setSymmetryScore] = useState(50);
   const [highlightsInput, setHighlightsInput] = useState('');
   const [cabelo, setCabelo] = useState('');
   const [barba, setBarba] = useState('');
@@ -229,8 +227,6 @@ export default function ProfessionalEvaluatePage() {
       setAnalysis(data);
 
       if (data?.result && typeof data.result === 'object' && Object.keys(data.result).length > 0) {
-        const r = data.result;
-if (data?.result && typeof data.result === 'object' && Object.keys(data.result).length > 0) {
         const r = data.result;
         
         // Load 13 attributes
@@ -338,7 +334,6 @@ if (data?.result && typeof data.result === 'object' && Object.keys(data.result).
       const attrOverall = ((attrSymmetry + Number(attractiveness)) / 2) * 10;
 
       const evaluationData = {
-const evaluationData = {
         attributes,
         attractiveness: Number(attractiveness),
         symmetry_score: Number(symmetryScore.toFixed(2)),
@@ -942,7 +937,8 @@ const evaluationData = {
               </button>
             </div>
           </FadeIn>
-      </main>
+    </div>
+  </main>
 
       {/* Report Modal */}
       {showReportModal && (

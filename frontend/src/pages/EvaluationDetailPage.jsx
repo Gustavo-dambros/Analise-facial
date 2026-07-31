@@ -629,7 +629,7 @@ const radarData = useMemo(() => {
                       <p className="text-xs text-text-muted mb-1">Observações sobre o Físico</p>
                       <p className="text-sm text-text-primary">{entry.body_evaluation.notes}</p>
                     </div>
-                  )
+                  )}
                 </FadeIn>
               )}
 
