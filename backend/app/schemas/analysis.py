@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 # ------------------------------------------------------------------ #
-#  Constants — 13 Attributes & Classification
+#  Constants — 12 Attributes & Classification
 # ------------------------------------------------------------------ #
 
 ATTRIBUTE_NAMES = [
@@ -18,7 +18,6 @@ ATTRIBUTE_NAMES = [
     "Mandibula",
     "Queixo",
     "Macas do Rosto",
-    "Harmonia",
     "Testa",
     "Formato do Rosto",
 ]

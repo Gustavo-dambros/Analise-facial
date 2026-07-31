@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import WeeklyRoutineEditor from '@/components/evaluation/WeeklyRoutineEditor';
+import FaceShapeSelector from '@/components/evaluation/FaceShapeSelector';
+import { FACE_SHAPE_OPTIONS } from '@/components/evaluation/FaceShapeSelector';
 import { FadeIn, ScaleIn, StaggerContainer, StaggerItem } from '@/components/ui/page-transition';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -27,7 +29,6 @@ const ATTRIBUTE_DEFS = [
   'Mandibula',
   'Queixo',
   'Macas do Rosto',
-  'Harmonia',
   'Testa',
   'Formato do Rosto',
 ];
@@ -50,7 +51,6 @@ const FACIAL_ATTRIBUTES = [
   { key: 'mandibula', label: 'Mandíbula', icon: '🦷' },
   { key: 'queixo', label: 'Queixo', icon: '🦷' },
   { key: 'macasRosto', label: 'Maçãs do Rosto', icon: '💎' },
-  { key: 'harmonia', label: 'Harmonia', icon: '⚖️' },
   { key: 'testa', label: 'Testa', icon: '📐' },
   { key: 'formatoRosto', label: 'Formato do Rosto', icon: '🔷' },
 ];
@@ -150,6 +150,7 @@ export default function ProfessionalEvaluatePage() {
 // Form state - 13 facial attributes (1-10), computed scores
   const [attributes, setAttributes] = useState({});
   const [attractiveness, setAttractiveness] = useState(5);
+  const [faceShape, setFaceShape] = useState('');
   const [highlightsInput, setHighlightsInput] = useState('');
   const [cabelo, setCabelo] = useState('');
   const [barba, setBarba] = useState('');
@@ -248,6 +249,8 @@ export default function ProfessionalEvaluatePage() {
         }
 // Load attractiveness
         if (r.attractiveness != null) setAttractiveness(r.attractiveness);
+        if (r.face_shape) setFaceShape(r.face_shape);
+        if (r.face_shape) setFaceShape(r.face_shape);
 
         // Load highlights
         if (r.highlights && Array.isArray(r.highlights)) {
@@ -335,6 +338,7 @@ export default function ProfessionalEvaluatePage() {
 
       const evaluationData = {
         attributes,
+        face_shape: faceShape,
         attractiveness: Number(attractiveness),
         symmetry_score: Number(symmetryScore.toFixed(2)),
         overall_score: Number(overallScore.toFixed(1)),
@@ -614,6 +618,15 @@ export default function ProfessionalEvaluatePage() {
                 {FACIAL_ATTRIBUTES.map((attr, index) => {
                   const value = attributes[attr.key] || '';
                   const label = value ? scoreToLabel(value) : '';
+                  if (attr.key === 'formatoRosto') {
+                    return (
+                      <div key={attr.key} className="col-span-full space-y-3">
+                        <Label className="text-base">Formato do Rosto (selecione uma imagem)</Label>
+                        <FaceShapeSelector value={faceShape} onChange={(v) => { setFaceShape(v); handleAttributeChange(attr.key, 7); }} />
+                        {faceShape && <p className="text-xs text-text-secondary text-center">Selecionado: {faceShape}</p>}
+                      </div>
+                    );
+                  }
                   return (
                     <div key={attr.key} className="space-y-2 bg-white/[0.02] p-4 rounded-xl border border-border/50">
                       <div className="flex items-center justify-between">
@@ -645,7 +658,7 @@ export default function ProfessionalEvaluatePage() {
                           value={value}
                           onChange={(e) => handleAttributeChange(attr.key, e.target.value)}
                           className="flex-1 text-center text-lg font-mono"
-                          placeholder="—"
+                          placeholder="Ó"
                         />
                         <button
                           onClick={() => {

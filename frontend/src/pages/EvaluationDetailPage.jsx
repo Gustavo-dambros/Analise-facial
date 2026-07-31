@@ -42,7 +42,6 @@ const FACIAL_ATTRIBUTES = [
   { key: 'mandibula', label: 'Mandíbula', icon: '🦷' },
   { key: 'queixo', label: 'Queixo', icon: '🦷' },
   { key: 'macasRosto', label: 'Maçãs do Rosto', icon: '💎' },
-  { key: 'harmonia', label: 'Harmonia', icon: '⚖️' },
   { key: 'testa', label: 'Testa', icon: '📐' },
   { key: 'formatoRosto', label: 'Formato do Rosto', icon: '🔷' },
 ];
@@ -211,7 +210,6 @@ const radarData = useMemo(() => {
       { feature: 'Olhos', score: ev.attributes?.olhos || 0 },
       { feature: 'Nariz', score: ev.attributes?.nariz || 0 },
       { feature: 'Lábios', score: ev.attributes?.lábios || 0 },
-      { feature: 'Harmonia', score: ev.attributes?.harmonia || 0 },
     ];
   }, [ev]);
 
@@ -494,11 +492,11 @@ const radarData = useMemo(() => {
                     <CardContent>
                       <div className="text-center py-4">
                         <p className="text-4xl font-bold text-brand-accent font-playfair">
-                          {ev.attributes?.harmonia ?? ev.attractiveness ?? '—'}/10
+                          {ev.attractiveness ?? '—'}/10
                         </p>
-                        <p className="text-xs text-text-muted mt-1">Nota de Atratividade / Harmonia</p>
+                        <p className="text-xs text-text-muted mt-1">Nota de Atratividade</p>
                         <div className="mt-3">
-                          <Progress value={(ev.attributes?.harmonia ?? ev.attractiveness ?? 0) * 10} className="h-2" />
+                          <Progress value={(ev.attractiveness ?? 0) * 10} className="h-2" />
                         </div>
                       </div>
                     </CardContent>

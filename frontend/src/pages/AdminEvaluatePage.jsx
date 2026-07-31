@@ -17,7 +17,6 @@ const ATTRIBUTE_DEFS = [
   'Mandibula',
   'Queixo',
   'Macas do Rosto',
-  'Harmonia',
   'Testa',
   'Formato do Rosto',
 ];

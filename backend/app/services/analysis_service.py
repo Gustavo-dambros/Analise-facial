@@ -51,7 +51,6 @@ Return ONLY valid JSON, without any additional text before or after. The JSON mu
     "Mandibula": <ordinal scale 0-10>,
     "Queixo": <ordinal scale 0-10>,
     "Maçãs do Rosto": <ordinal scale 0-10>,
-    "Harmonia": <ordinal scale 0-10>,
     "Testa": <ordinal scale 0-10>,
     "Formato do Rosto": <ordinal scale 0-10>
   },
