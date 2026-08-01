@@ -47,3 +47,13 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     user_id: Optional[str] = None
+
+
+class SendVerificationEmailRequest(BaseModel):
+    email: EmailStr = Field(..., max_length=255)
+    confirmation_link: str = Field(..., min_length=1, max_length=2048)
+
+
+class SendVerificationEmailResponse(BaseModel):
+    status: str
+    id: Optional[str] = None

@@ -37,5 +37,8 @@ asyncpg>=0.29.0
 # HTTP client / AI (OpenRouter)
 httpx>=0.28.0
 
+# Email
+resend>=2.8.0
+
 # Utilities
 python-dotenv>=1.0.1

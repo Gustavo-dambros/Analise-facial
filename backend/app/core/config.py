@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     # Request limits
     MAX_IMAGE_BASE64_SIZE_MB: int = 10
 
+    # Resend Email
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = "FaceMax <noreply@facemax.app>"
+
 
 settings = Settings()
 

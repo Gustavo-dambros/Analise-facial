@@ -3,8 +3,9 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.connection import get_db
-from app.schemas.auth import UserCreate, Token
+from app.schemas.auth import UserCreate, Token, SendVerificationEmailRequest, SendVerificationEmailResponse
 from app.services.auth_service import AuthService
+from app.services.email_service import send_verification_email as send_mail
 from app.core.config import settings
 
 router = APIRouter()

@@ -1,8 +1,23 @@
-from sqlalchemy import Column, String, Float, ForeignKey, JSON, DateTime, Integer, Boolean
+from sqlalchemy import Column, String, Float, ForeignKey, JSON, DateTime, Integer, Boolean, Enum as SQLEnum, Numeric
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database.connection import Base
 import uuid
+import enum
+
+
+class OrderStatus(str, enum.Enum):
+    pending = "pending"
+    paid = "paid"
+    cancelled = "cancelled"
+    refunded = "refunded"
+
+
+class ShippingStatus(str, enum.Enum):
+    pending = "pending"
+    in_transit = "in_transit"
+    delivered = "delivered"
+    failed = "failed"
 
 
 class FacialAnalysis(Base):
@@ -41,6 +56,57 @@ class AnalysisCategory(Base):
 
     # Relationships
     analysis = relationship("FacialAnalysis", back_populates="categories")
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    analysis_id = Column(String(36), ForeignKey("facial_analyses.id"), nullable=True)
+    amount = Column(Numeric(10, 2), nullable=False)
+    currency = Column(String(3), default="BRL")
+    status = Column(SQLEnum(OrderStatus), default=OrderStatus.pending, nullable=False, index=True)
+    payment_method = Column(String(50), nullable=True)
+    payment_id = Column(String(100), nullable=True)
+    description = Column(String(255), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+
+    user = relationship("User")
+    analysis = relationship("FacialAnalysis")
+
+
+class FinancialLog(Base):
+    __tablename__ = "financial_logs"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    order_id = Column(String(36), ForeignKey("orders.id"), nullable=False, index=True)
+    amount = Column(Numeric(10, 2), nullable=False)
+    type = Column(String(20), nullable=False)
+    description = Column(String(255), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    order = relationship("Order")
+
+
+class Shipping(Base):
+    __tablename__ = "shippings"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    order_id = Column(String(36), ForeignKey("orders.id"), nullable=False, unique=True, index=True)
+    status = Column(SQLEnum(ShippingStatus), default=ShippingStatus.pending, nullable=False, index=True)
+    tracking_code = Column(String(100), nullable=True)
+    carrier = Column(String(50), nullable=True)
+    estimated_delivery = Column(DateTime(timezone=True), nullable=True)
+    delivered_at = Column(DateTime(timezone=True), nullable=True)
+    address = Column(JSON, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    order = relationship("Order")
 
 
 class WeeklyRoutine(Base):

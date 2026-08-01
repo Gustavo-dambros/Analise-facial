@@ -14,6 +14,7 @@ import ReportsPage from '@/pages/ReportsPage';
 import PhotoGuidePage from '@/pages/PhotoGuidePage';
 import AdminQueuePage from '@/pages/AdminQueuePage';
 import AdminEvaluatePage from '@/pages/AdminEvaluatePage';
+import AdminDashboardPage from '@/pages/AdminDashboardPage';
 import ProgressPage from '@/pages/ProgressPage';
 import EvaluationDetailPage from '@/pages/EvaluationDetailPage';
 import ProfilePage from '@/pages/ProfilePage';
@@ -47,7 +48,8 @@ const router = createBrowserRouter([
       {
         element: <AdminRoute />,
         children: [
-          { path: '/dashboard/admin', element: <AdminQueuePage /> },
+          { path: '/dashboard/admin', element: <AdminDashboardPage /> },
+          { path: '/dashboard/admin/queue', element: <AdminQueuePage /> },
           { path: '/dashboard/admin/evaluate/:id', element: <AdminEvaluatePage /> },
         ],
       },
