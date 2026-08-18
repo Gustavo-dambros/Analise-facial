@@ -1,8 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.models.analysis import FacialAnalysis, AnalysisCategory
 from app.models.user import User
+from datetime import datetime, timezone
 
 
 class AnalysisRepository:
@@ -25,6 +26,20 @@ class AnalysisRepository:
             .order_by(FacialAnalysis.created_at.desc())
         )
         return list(result.scalars().all())
+
+    async def count_monthly_analyses(self, user_id: str) -> int:
+        """Count analyses created by the user in the current calendar month."""
+        now = datetime.now(timezone.utc)
+        first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        result = await self.db.execute(
+            select(func.count(FacialAnalysis.id)).where(
+                and_(
+                    FacialAnalysis.user_id == user_id,
+                    FacialAnalysis.created_at >= first_of_month,
+                )
+            )
+        )
+        return result.scalar() or 0
 
     async def create(self, analysis_data: dict) -> FacialAnalysis:
         categories_data = analysis_data.pop("categories", [])

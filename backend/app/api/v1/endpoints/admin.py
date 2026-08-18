@@ -18,15 +18,16 @@ from app.schemas.admin import (
     AdminDashboardParams,
     PeriodType,
     ChartDataPoint,
-    ShippingStatusChartResponse,
+    FinancialLogResponse,
 )
 from app.models.user import User
 from app.models.analysis import FacialAnalysis, Order, FinancialLog, Shipping, OrderStatus, ShippingStatus
 from app.core.security import get_current_user, require_role
 from app.core.config import settings
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from decimal import Decimal
 from typing import Optional
+from sqlalchemy import inspect as sqla_inspect
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -51,6 +52,24 @@ def get_period_dates(period: PeriodType, start_date: Optional[datetime], end_dat
         start = start_date or (now - timedelta(days=30))
         end = end_date or now
     return start, end
+
+
+def _format_date_column(db: AsyncSession, column, group_format: str):
+    """Generate a date-grouping expression compatible with SQLite and PostgreSQL.
+
+    SQLite uses strftime; PostgreSQL uses to_char with different format specifiers.
+    """
+    dialect_name = "sqlite"
+    if db.bind is not None:
+        try:
+            dialect_name = sqla_inspect(db.bind).dialect.name
+        except Exception:
+            dialect_name = "sqlite"
+    if dialect_name == "postgresql":
+        pg_fmt = group_format.replace("%Y", "YYYY").replace("%m", "MM").replace("%d", "DD")
+        return func.to_char(column, pg_fmt)
+    # SQLite / default
+    return func.strftime(group_format, column)
 
 
 @router.get("/kpis", response_model=AdminKPIsResponse)
@@ -178,7 +197,7 @@ async def get_revenue_chart(
 
     query = (
         select(
-            func.to_char(Order.paid_at, group_format).label("period"),
+            _format_date_column(db, Order.paid_at, group_format).label("period"),
             func.coalesce(func.sum(Order.amount), 0).label("total"),
         )
         .where(
@@ -188,8 +207,8 @@ async def get_revenue_chart(
                 Order.paid_at <= end,
             )
         )
-        .group_by(func.to_char(Order.paid_at, group_format))
-        .order_by(func.to_char(Order.paid_at, group_format))
+        .group_by(_format_date_column(db, Order.paid_at, group_format))
+        .order_by(_format_date_column(db, Order.paid_at, group_format))
     )
 
     result = await db.execute(query)
@@ -225,7 +244,7 @@ async def get_user_growth_chart(
 
     query = (
         select(
-            func.to_char(User.created_at, group_format).label("period"),
+            _format_date_column(db, User.created_at, group_format).label("period"),
             func.count(User.id).label("count"),
         )
         .where(
@@ -234,8 +253,8 @@ async def get_user_growth_chart(
                 User.created_at <= end,
             )
         )
-        .group_by(func.to_char(User.created_at, group_format))
-        .order_by(func.to_char(User.created_at, group_format))
+        .group_by(_format_date_column(db, User.created_at, group_format))
+        .order_by(_format_date_column(db, User.created_at, group_format))
     )
 
     result = await db.execute(query)

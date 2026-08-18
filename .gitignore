@@ -1,199 +1,35 @@
-# Node.js dependencies
-node_modules/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-.yarn/
-.pnp.*
-
-# Build outputs
-dist/
-build/
-.out/
-.coverage/
-.nyc_output/
-.cache/
-.temp/
-.parcel-cache/
-
-# Vite specific
-.vite/
-/dist/
-/.out/
-
-# Environment variables
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
 .env
-.env.*
-!.env.example
-.env.local
-.env.*.local
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Instrumentation
-.nyc_output
-coverage
-.lcov*
-*.lcov
-*.lcov.info
-
-# Test artifacts
-__tests__/
-*.test.js
-*.test.ts
-*.spec.js
-*.spec.ts
-/jest.config.js
-/jest.config.ts
-/vitest.config.js
-/vitest.config.ts
-
-# Optional caches
-.npm
-.eslintcache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-.rts2_cache_es5/
-.node_repl_history
-
-# Package files
-*.tgz
-.yarn-integrity
-
-# Environment variables files
-.env.test
-.env.production
-
-# IDEs and editors
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-*.komodoproject
-
-# OS generated files
-.DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-[Dd]esktop.ini
-$Recycle.Bin
-*.lk*
-*.mjs
-.nfs*
-
-# Temporary files
-*~
-*.swp
-*~~
-.*.swp
- .*#
-#*#
-.#*
-
-# Compiled source
-*.com
-*.class
-*.dll
-*.exe
-*.o
-*.so
-
-# Packages
-*.7z
-*.dmg
-*.gz
-*.iso
-*.jar
-*.rar
-*.tar
-*.zip
-
-# Logs and databases
-*.log
-*.sql
-*.sqlite
+*.db
 *.sqlite3
 
-# OS produced files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Network Trash Folder
-Temporary Items
-.apdisk
-
-# Possible ignored files
-__MACOSX
-Thumbs.db
-ehthumbs.desktop
-Desktop.ini
-$RECYCLE.BIN/
-*.DS_Store
-*.apdisk
-_.*
-.*__
-._*
-
-# Files that might appear on external disks
-.Spotlight-V100
-.Trashes
-Desktop.ini
-$RECYCLE.BIN/
-*.tmp
-*.temp
-.Cache
-.cache
+# Node
+node_modules/
+dist/
+build/
 *.log
-*.swp
-*~
-.nfs*
 
-# Specific to this project - shader cache from @shadergradient/react
-.shader-cache/
-.shadertemp/
-threejs-cache/
-
-# Miscellaneous
-*.bak
-*.backup
-*.bk
-*.old
-*.orig
-*.rej
-*.tmp
-*.temp
+# IDE
+.vscode/
+.idea/
 *.swp
-*~
-.*.swp
- .*~
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docker
+docker-compose.override.yml

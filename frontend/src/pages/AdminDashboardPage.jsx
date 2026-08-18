@@ -37,23 +37,16 @@ const API_BASE = "/api/v1"
 
 const COLORS = ["#d4a853", "#f59e0b", "#10b981", "#ef4444", "#6366f1", "#8b5cf6"]
 
-function formatCurrency(value: number | string) {
+function formatCurrency(value) {
   const num = typeof value === "string" ? parseFloat(value) : value
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(num)
 }
 
-function formatNumber(value: number) {
+function formatNumber(value) {
   return new Intl.NumberFormat("pt-BR").format(value)
 }
 
-function KPICard({ title, value, icon: Icon, trend, trendLabel, color = "text-brand-accent" }: {
-  title: string
-  value: string | number
-  icon: React.ComponentType<{ className?: string }>
-  trend?: number
-  trendLabel?: string
-  color?: string
-}) {
+function KPICard({ title, value, icon: Icon, trend, trendLabel, color = "text-brand-accent" }) {
   return (
     <Card className="bg-card-bg border border-border rounded-2xl">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -76,7 +69,7 @@ function KPICard({ title, value, icon: Icon, trend, trendLabel, color = "text-br
   )
 }
 
-function RevenueChart({ data }: { data: Array<{ date: string; value: number }> }) {
+function RevenueChart({ data }) {
   if (!data.length) return <div className="h-64 flex items-center justify-center text-text-muted">Sem dados</div>
 
   return (
@@ -111,7 +104,7 @@ function RevenueChart({ data }: { data: Array<{ date: string; value: number }> }
   )
 }
 
-function UserGrowthChart({ data }: { data: Array<{ date: string; value: number }> }) {
+function UserGrowthChart({ data }) {
   if (!data.length) return <div className="h-64 flex items-center justify-center text-text-muted">Sem dados</div>
 
   return (
@@ -137,12 +130,7 @@ function UserGrowthChart({ data }: { data: Array<{ date: string; value: number }
   )
 }
 
-function ShippingStatusChart({ pending, in_transit, delivered, failed }: {
-  pending: number
-  in_transit: number
-  delivered: number
-  failed: number
-}) {
+function ShippingStatusChart({ pending, in_transit, delivered, failed }) {
   const data = [
     { name: "Pendente", value: pending, color: COLORS[1] },
     { name: "Em Trânsito", value: in_transit, color: COLORS[4] },
@@ -189,7 +177,7 @@ function ShippingStatusChart({ pending, in_transit, delivered, failed }: {
   )
 }
 
-function OrdersTable({ orders, loading }: { orders: any[]; loading: boolean }) {
+function OrdersTable({ orders, loading }) {
   if (loading) return <div className="h-64 flex items-center justify-center text-text-muted">Carregando...</div>
 
   return (
@@ -264,7 +252,7 @@ function OrdersTable({ orders, loading }: { orders: any[]; loading: boolean }) {
   )
 }
 
-function UsersTable({ users, loading }: { users: any[]; loading: boolean }) {
+function UsersTable({ users, loading }) {
   if (loading) return <div className="h-64 flex items-center justify-center text-text-muted">Carregando...</div>
 
   return (
@@ -318,7 +306,7 @@ function UsersTable({ users, loading }: { users: any[]; loading: boolean }) {
   )
 }
 
-function PeriodSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function PeriodSelector({ value, onChange }) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-[180px] bg-card-bg border-border">
@@ -337,12 +325,12 @@ function PeriodSelector({ value, onChange }: { value: string; onChange: (v: stri
 export default function AdminDashboardPage() {
   const { user } = useAuth()
   const [period, setPeriod] = useState("this_month")
-  const [kpis, setKpis] = useState<any>(null)
-  const [revenueData, setRevenueData] = useState<any[]>([])
-  const [userData, setUserData] = useState<any[]>([])
-  const [shippingData, setShippingData] = useState<any>(null)
-  const [orders, setOrders] = useState<any[]>([])
-  const [users, setUsers] = useState<any[]>([])
+  const [kpis, setKpis] = useState(null)
+  const [revenueData, setRevenueData] = useState([])
+  const [userData, setUserData] = useState([])
+  const [shippingData, setShippingData] = useState(null)
+  const [orders, setOrders] = useState([])
+  const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
 
   const fetchData = async () => {

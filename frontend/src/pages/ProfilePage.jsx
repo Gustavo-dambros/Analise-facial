@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Camera, Save, CheckCircle2, User, Mail, Sparkles, Lock, Pencil, X, LogOut } from 'lucide-react';
+import { Camera, Save, CheckCircle2, User, Mail, Sparkles, Lock, Pencil, X, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Field, FieldLabel, FieldContent, FieldDescription, FieldGroup } from '@/components/ui/field';
 import { FadeIn, ScaleIn } from '@/components/ui/page-transition';
+import { Link } from 'react-router-dom';
 
 const GENDER_OPTIONS = ['Masculino', 'Feminino', 'Neutro'];
 const STYLE_OPTIONS = [
@@ -422,8 +423,42 @@ export default function ProfilePage() {
           )}
         </form>
 
-        {/* Logout Section */}
+        {/* Security Section */}
         <FadeIn delay={0.5}>
+          <div className="mt-8 sm:mt-10 pt-6 border-t border-border">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-brand-accent" />
+                  <CardTitle className="text-base font-alpino">Seguranca</CardTitle>
+                </div>
+                <CardDescription>Gerencie sua senha e a seguranca da conta</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-text-primary">Alterar senha</h3>
+                    <p className="text-xs text-text-muted mt-0.5">Recomendamos alterar sua senha periodicamente.</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    asChild
+                    className="gap-2 shrink-0"
+                  >
+                    <Link to="/dashboard/change-password">
+                      <Lock className="w-4 h-4" />
+                      Mudar senha
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </FadeIn>
+
+        {/* Logout Section */}
+        <FadeIn delay={0.6}>
           <div className="mt-8 sm:mt-10 pt-6 border-t border-border">
             <Card className="border-red-500/20">
               <CardContent className="p-5">

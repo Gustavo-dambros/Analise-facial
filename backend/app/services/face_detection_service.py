@@ -11,18 +11,49 @@ MODEL_PATH = os.path.join(
     "face_landmarker.task",
 )
 
-_base_options = mp.tasks.BaseOptions(model_asset_path=MODEL_PATH)
-_face_landmarker_options = mp.tasks.vision.FaceLandmarkerOptions(
-    base_options=_base_options,
-    running_mode=mp.tasks.vision.RunningMode.IMAGE,
-    num_faces=1,
-    min_face_detection_confidence=0.5,
-    min_tracking_confidence=0.5,
-)
-_face_landmarker = mp.tasks.vision.FaceLandmarker.create_from_options(_face_landmarker_options)
 
-# Lock to serialize concurrent MediaPipe detect() calls within a single worker
-_face_landmarker_lock = asyncio.Lock()
+class _LazyFaceLandmarker:
+    """Lazy-initialized MediaPipe FaceLandmarker with a serialization lock.
+
+    The heavy model is only loaded when the first request arrives,
+    avoiding slow startup and import-time crashes if the model file is
+    missing.
+    """
+
+    def __init__(self):
+        self._landmarker: "mp.tasks.vision.FaceLandmarker | None" = None
+        self._lock: "asyncio.Lock | None" = None
+
+    def _ensure_initialized(self) -> "mp.tasks.vision.FaceLandmarker":
+        if self._landmarker is None:
+            if not os.path.exists(MODEL_PATH):
+                raise FileNotFoundError(
+                    f"MediaPipe model not found at {MODEL_PATH}. "
+                    "Download face_landmarker.task into the backend/models directory."
+                )
+            base_options = mp.tasks.BaseOptions(model_asset_path=MODEL_PATH)
+            options = mp.tasks.vision.FaceLandmarkerOptions(
+                base_options=base_options,
+                running_mode=mp.tasks.vision.RunningMode.IMAGE,
+                num_faces=1,
+                min_face_detection_confidence=0.5,
+                min_tracking_confidence=0.5,
+            )
+            self._landmarker = mp.tasks.vision.FaceLandmarker.create_from_options(options)
+            self._lock = asyncio.Lock()
+        return self._landmarker
+
+    @property
+    def landmarker(self) -> "mp.tasks.vision.FaceLandmarker":
+        return self._ensure_initialized()
+
+    @property
+    def lock(self) -> asyncio.Lock:
+        self._ensure_initialized()
+        return self._lock  # type: ignore[return-value]
+
+
+_face_landmarker = _LazyFaceLandmarker()
 
 
 class FaceDetectionService:
@@ -65,6 +96,7 @@ class FaceDetectionService:
 
         Raises:
             ValueError: if no face is detected
+            FileNotFoundError: if the model file is missing
         """
         # Decode base64 to numpy array
         image_data = base64.b64decode(base64_image.split(",")[-1])
@@ -79,8 +111,8 @@ class FaceDetectionService:
         # Detect face with MediaPipe FaceLandmarker (thread-safe via lock)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-        async with _face_landmarker_lock:
-            result = await asyncio.to_thread(_face_landmarker.detect, mp_image)
+        async with _face_landmarker.lock:
+            result = await asyncio.to_thread(_face_landmarker.landmarker.detect, mp_image)
 
         if not result.face_landmarks:
             raise ValueError("Nenhum rosto detectado na imagem")

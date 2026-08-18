@@ -1,7 +1,8 @@
 import json
 import logging
 import httpx
-from fastapi import status
+from datetime import datetime, timezone
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.analysis_repository import AnalysisRepository
 from app.schemas.analysis import (
@@ -15,8 +16,17 @@ from app.schemas.analysis import (
 )
 from app.core.config import settings
 from app.core.exceptions import SanitizedHTTPException
+from app.models.user import PlanType
 
 logger = logging.getLogger(__name__)
+
+
+# ---- Monthly analysis limits per plan ----
+PLAN_MONTHLY_LIMITS: dict[PlanType | str, int] = {
+    PlanType.free: 3,
+    PlanType.pro: 5,
+    PlanType.enterprise: -1,  # unlimited
+}
 
 
 SYSTEM_PROMPT = """\
@@ -92,6 +102,37 @@ class AnalysisService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.analysis_repo = AnalysisRepository(db)
+
+    async def check_monthly_limit(self, user) -> None:
+        """Verify the user has not exceeded their monthly analysis quota.
+
+        Raises HTTPException(403) when the limit is reached.
+        Admin/superuser users are exempt from limits.
+        """
+        if user.is_superuser or user.is_superuser:
+            logger.info("User %s is superuser — skipping monthly limit check", user.id)
+            return
+
+        plan = user.plan
+        limit = PLAN_MONTHLY_LIMITS.get(plan, PLAN_MONTHLY_LIMITS[PlanType.free])
+
+        # Unlimited plans (-1)
+        if limit == -1:
+            return
+
+        count = await self.analysis_repo.count_monthly_analyses(user.id)
+
+        if count >= limit:
+            plan_label = "Gratuito" if plan == PlanType.free else "Profissional" if plan == PlanType.pro else str(plan)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Limite mensal de analises atingido no plano {plan_label}.",
+            )
+
+        logger.info(
+            "User %s plan=%s — monthly usage %d/%d",
+            user.id, plan, count, limit,
+        )
 
     async def _call_ai(self, image_b64: str) -> dict:
         """Send image to OpenRouter and return structured JSON analysis."""
@@ -197,9 +238,9 @@ class AnalysisService:
             value = raw_attributes.get(name, 5)
             attributes[name] = max(1, min(10, int(value)))
 
-        # Generate attribute items with labels
+        # Generate attribute items with badges
         attribute_items = [
-            {"name": name, "score": score, "label": attribute_score_to_label(score)}
+            {"name": name, "score": score, "badge": attribute_score_to_label(score)}
             for name, score in attributes.items()
         ]
 
@@ -236,7 +277,11 @@ class AnalysisService:
             "attributes": attributes,
         }
 
-    async def analyze(self, data: AnalysisCreate, user_id: str) -> AnalysisResponse:
+    async def analyze(self, data: AnalysisCreate, user_id: str, current_user=None) -> AnalysisResponse:
+        # Enforce monthly usage limits (security: backend is the authority)
+        if current_user is not None:
+            await self.check_monthly_limit(current_user)
+
         ai_result = await self._call_ai(data.photo_front)
         result = self._map_to_response(ai_result)
 

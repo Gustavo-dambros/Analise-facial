@@ -1,4 +1,5 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import ProfessionalRoute from './ProfessionalRoute';
 import AdminRoute from './AdminRoute';
@@ -8,6 +9,8 @@ import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
 import CheckoutSimulationPage from '@/pages/CheckoutSimulationPage';
+import CheckoutSuccessPage from '@/pages/CheckoutSuccessPage';
+import CheckoutPendingPage from '@/pages/CheckoutPendingPage';
 import FaceAnalyzer from '@/components/evaluation/FaceAnalyzer';
 import ResultsPage from '@/pages/ResultsPage';
 import ReportsPage from '@/pages/ReportsPage';
@@ -21,13 +24,20 @@ import ProfilePage from '@/pages/ProfilePage';
 import ProfessionalLoginPage from '@/pages/ProfessionalLoginPage';
 import ProfessionalDashboardPage from '@/pages/ProfessionalDashboardPage';
 import ProfessionalEvaluatePage from '@/pages/ProfessionalEvaluatePage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
+import ChangePasswordPage from '@/pages/ChangePasswordPage';
 
-const router = createBrowserRouter([
+const router = [
   // PUBLIC routes — standalone, no DashboardLayout
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/signup', element: <SignupPage /> },
   { path: '/checkout-simulation', element: <CheckoutSimulationPage /> },
+  { path: '/checkout-success', element: <CheckoutSuccessPage /> },
+  { path: '/checkout-pending', element: <CheckoutPendingPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
 
   // DASHBOARD routes — wrapped in DashboardLayout + auth guards
   {
@@ -43,6 +53,7 @@ const router = createBrowserRouter([
           { path: '/dashboard/progress', element: <ProgressPage /> },
           { path: '/dashboard/evaluation/:id', element: <EvaluationDetailPage /> },
           { path: '/dashboard/profile', element: <ProfilePage /> },
+          { path: '/dashboard/change-password', element: <ChangePasswordPage /> },
         ],
       },
       {
@@ -65,6 +76,6 @@ const router = createBrowserRouter([
       { path: '/professional/dashboard/evaluate/:id', element: <ProfessionalEvaluatePage /> },
     ],
   },
-]);
+];
 
 export default router;

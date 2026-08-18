@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Check, X, ShieldCheck } from 'lucide-react';
+import { Loader2, Check, X, ShieldCheck, Mail, ArrowLeft } from 'lucide-react';
 
 const GENDER_OPTIONS = ['Masculino', 'Feminino', 'Neutro'];
 const STYLE_OPTIONS = [
@@ -33,6 +33,12 @@ export default function SignupPage() {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsModalTab, setTermsModalTab] = useState('terms');
   const [showConsentError, setShowConsentError] = useState(false);
+
+  useEffect(() => {
+    if (error || successMessage) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [error, successMessage]);
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -79,7 +85,6 @@ export default function SignupPage() {
             navigate('/dashboard');
           }
         } else {
-          // Email confirmation required — don't navigate, show message
           setSuccessMessage(result.message || 'Conta criada! Verifique seu email para ativar.');
         }
       } else {
@@ -109,8 +114,14 @@ export default function SignupPage() {
                 </div>
               )}
               {successMessage && (
-                <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm text-center">
-                  {successMessage}
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm text-center flex flex-col items-center gap-3">
+                  <Mail className="w-8 h-8" />
+                  <div>
+                    <p className="font-semibold text-green-300">{successMessage}</p>
+                    <p className="text-green-400/70 text-xs mt-1">
+                      Verifique sua caixa de entrada e a pasta de spam. O link de confirmacao expira em 24 horas.
+                    </p>
+                  </div>
                 </div>
               )}
               <div className="grid gap-2">

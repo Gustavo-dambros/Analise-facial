@@ -337,7 +337,6 @@ export default function ProfessionalEvaluatePage() {
       const attrOverall = ((attrSymmetry + Number(attractiveness)) / 2) * 10;
 
       const evaluationData = {
-        attributes,
         face_shape: faceShape,
         attractiveness: Number(attractiveness),
         symmetry_score: Number(symmetryScore.toFixed(2)),

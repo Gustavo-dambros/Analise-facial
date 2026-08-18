@@ -37,8 +37,12 @@ asyncpg>=0.29.0
 # HTTP client / AI (OpenRouter)
 httpx>=0.28.0
 
-# Email
-resend>=2.8.0
+# Payments
+mercadopago>=3.2.0
+
+# Email (Gmail SMTP via stdlib smtplib)
+# Uses Python's built-in smtplib module (no extra package required)
+# Note: Flask-Mail is a Flask extension; this FastAPI project uses smtplib directly.
 
 # Utilities
 python-dotenv>=1.0.1

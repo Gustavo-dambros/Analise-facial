@@ -24,7 +24,7 @@ async def analyze_face(
 ):
     """Analyze facial features from photo. Requires authentication."""
     analysis_service = AnalysisService(db)
-    return await analysis_service.analyze(data, current_user.id)
+    return await analysis_service.analyze(data, current_user.id, current_user=current_user)
 
 
 @router.get("/history", response_model=list[AnalysisResponse])

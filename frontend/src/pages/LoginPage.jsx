@@ -84,6 +84,11 @@ export default function LoginPage() {
                   required
                 />
               </div>
+              <div className="text-right -mt-3">
+                <Link to="/forgot-password" className="text-xs text-text-muted hover:text-brand-accent transition-colors underline underline-offset-4">
+                  Esqueci minha senha?
+                </Link>
+              </div>
               <Button
                 type="submit"
                 disabled={loading}

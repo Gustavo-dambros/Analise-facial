@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Supabase Auth (JWT) — for validating tokens issued by Supabase Auth
+    SUPABASE_URL: str = ""
+    SUPABASE_JWT_SECRET: str = ""
+    SUPABASE_JWT_ALGORITHM: str = "HS256"
+
     # Rate Limiting
     RATE_LIMIT_AUTH: str = "5/minute"
     RATE_LIMIT_ANALYSIS: str = "10/hour"
@@ -57,9 +62,20 @@ class Settings(BaseSettings):
     # Request limits
     MAX_IMAGE_BASE64_SIZE_MB: int = 10
 
-    # Resend Email
-    RESEND_API_KEY: str = ""
-    RESEND_FROM_EMAIL: str = "FaceMax <noreply@facemax.app>"
+    # Mercado Pago
+    MERCADOPAGO_ACCESS_TOKEN: str = ""
+    MERCADOPAGO_WEBHOOK_SECRET: str = ""
+
+    # Application URL (used in email links)
+    BASE_URL: str = "http://localhost:8000"
+
+    # SMTP Email (Gmail)
+    MAIL_SERVER: str = "smtp.gmail.com"
+    MAIL_PORT: int = 587
+    MAIL_USE_TLS: bool = True
+    MAIL_USERNAME: str = ""
+    MAIL_PASSWORD: str = ""
+    MAIL_FROM_EMAIL: str = "FaceMax <noreply@facemax.app>"
 
 
 settings = Settings()
