@@ -109,7 +109,7 @@ class AnalysisService:
         Raises HTTPException(403) when the limit is reached.
         Admin/superuser users are exempt from limits.
         """
-        if user.is_superuser or user.is_superuser:
+        if user.is_superuser or user.role == "admin":
             logger.info("User %s is superuser — skipping monthly limit check", user.id)
             return
 

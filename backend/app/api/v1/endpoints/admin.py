@@ -24,7 +24,7 @@ from app.models.user import User
 from app.models.analysis import FacialAnalysis, Order, FinancialLog, Shipping, OrderStatus, ShippingStatus
 from app.core.security import get_current_user, require_role
 from app.core.config import settings
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from decimal import Decimal
 from typing import Optional
 from sqlalchemy import inspect as sqla_inspect
@@ -34,7 +34,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 def get_period_dates(period: PeriodType, start_date: Optional[datetime], end_date: Optional[datetime]):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if period == PeriodType.today:
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -104,8 +104,8 @@ async def get_admin_kpis(
     total_revenue = total_revenue_result.scalar() or Decimal("0")
 
     # Today revenue
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    today_end = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=999999)
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
     today_revenue_query = select(func.coalesce(func.sum(Order.amount), 0)).where(
         and_(
             Order.status == OrderStatus.paid,
@@ -117,24 +117,24 @@ async def get_admin_kpis(
     revenue_today = today_revenue_result.scalar() or Decimal("0")
 
     # Last 7 days revenue
-    last_7_start = (datetime.utcnow() - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+    last_7_start = (datetime.now(timezone.utc) - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
     last_7_revenue_query = select(func.coalesce(func.sum(Order.amount), 0)).where(
         and_(
             Order.status == OrderStatus.paid,
             Order.paid_at >= last_7_start,
-            Order.paid_at <= datetime.utcnow(),
+            Order.paid_at <= datetime.now(timezone.utc),
         )
     )
     last_7_revenue_result = await db.execute(last_7_revenue_query)
     revenue_last_7_days = last_7_revenue_result.scalar() or Decimal("0")
 
     # This month revenue
-    this_month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    this_month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     this_month_revenue_query = select(func.coalesce(func.sum(Order.amount), 0)).where(
         and_(
             Order.status == OrderStatus.paid,
             Order.paid_at >= this_month_start,
-            Order.paid_at <= datetime.utcnow(),
+            Order.paid_at <= datetime.now(timezone.utc),
         )
     )
     this_month_revenue_result = await db.execute(this_month_revenue_query)

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.user_repository import UserRepository
@@ -29,7 +29,7 @@ class AuthService:
         user = await self.user_repo.create(user_data)
 
         token = generate_secure_token()
-        expires = datetime.utcnow() + timedelta(hours=VERIFICATION_TOKEN_HOURS)
+        expires = datetime.now(timezone.utc) + timedelta(hours=VERIFICATION_TOKEN_HOURS)
         await self.user_repo.set_verification_token(user.id, token, expires)
 
         from app.services.email_service import send_verification_email
@@ -76,7 +76,7 @@ class AuthService:
                 detail="Token de verificação invalido.",
             )
 
-        if user.verification_token_expires and user.verification_token_expires < datetime.utcnow():
+        if user.verification_token_expires and user.verification_token_expires < datetime.now(timezone.utc):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Token de verificação expirado. Solicite um novo envio.",
@@ -98,7 +98,7 @@ class AuthService:
             return "Se o cadastro existir e nao estiver verificado, um novo link sera enviado."
 
         token = generate_secure_token()
-        expires = datetime.utcnow() + timedelta(hours=VERIFICATION_TOKEN_HOURS)
+        expires = datetime.now(timezone.utc) + timedelta(hours=VERIFICATION_TOKEN_HOURS)
         await self.user_repo.set_verification_token(user.id, token, expires)
 
         asyncio.create_task(
@@ -117,7 +117,7 @@ class AuthService:
             return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado."
 
         token = generate_secure_token()
-        expires = datetime.utcnow() + timedelta(minutes=RESET_TOKEN_MINUTES)
+        expires = datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_MINUTES)
         await self.user_repo.set_reset_token(user, token, expires)
 
         asyncio.create_task(
@@ -136,7 +136,7 @@ class AuthService:
                 detail="Token de redefinição invalido.",
             )
 
-        if user.reset_token_expires and user.reset_token_expires < datetime.utcnow():
+        if user.reset_token_expires and user.reset_token_expires < datetime.now(timezone.utc):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Token de redefinição expirado. Solicite um novo link.",

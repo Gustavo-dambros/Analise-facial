@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.payment import Payment, PaymentStatus
@@ -52,8 +52,8 @@ class PaymentRepository:
             .where(Payment.id == payment_id)
             .values(
                 status=status,
-                updated_at=datetime.utcnow(),
-                paid_at=datetime.utcnow() if status == PaymentStatus.approved else None,
+                updated_at=datetime.now(timezone.utc),
+                paid_at=datetime.now(timezone.utc) if status == PaymentStatus.approved else None,
             )
         )
         if mercado_pago_payment_id is not None:
