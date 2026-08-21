@@ -8,7 +8,6 @@ from app.models.payment import PaymentStatus, PaymentMethod
 class PaymentCreateRequest(BaseModel):
     """Payload for POST /payments/create."""
     plan_id: str = Field(..., description="Identificador do plano selecionado (e.g. 'plan_monthly', 'plan_annual').")
-    amount: condecimal(gt=Decimal("0.01"), max_digits=10, decimal_places=2) = Field(..., description="Valor em BRL (centavos opcional).")
     payment_method: Literal["pix", "credit_card"] = Field(default="pix", description="Método de pagamento desejado.")
     success_url: str = Field(..., min_length=1, max_length=2048, description="URL para redirecionamento após pagamento aprovado.")
     pending_url: str = Field(..., min_length=1, max_length=2048, description="URL para redirecionamento enquanto pagamento está pendente.")

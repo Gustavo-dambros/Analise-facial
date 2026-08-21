@@ -33,15 +33,26 @@ class PaymentService:
     # ------------------------------------------------------------------
     # Create payment (PIX or Checkout Pro / Credit Card)
     # ------------------------------------------------------------------
+    def _get_plan_amount(self, plan_id: str) -> float:
+        """Get plan amount from server-side configuration."""
+        return settings.PLAN_PRICES.get(plan_id, 0.0)
+
     async def create_pix_payment(
         self,
         user: object,
         plan_id: str,
-        amount: float,
         success_url: str,
         pending_url: str,
     ) -> dict:
         """Create a PIX payment via Mercado Pago and return the checkout data."""
+        amount = self._get_plan_amount(plan_id)
+        if amount <= 0:
+            raise SanitizedHTTPException(
+                status_code=400,
+                public_message="Plano invalido ou preco nao configurado.",
+                internal_detail=f"Plan {plan_id} not found in PLAN_PRICES",
+            )
+
         try:
             payment_data = {
                 "transaction_amount": float(amount),
@@ -110,11 +121,18 @@ class PaymentService:
         self,
         user: object,
         plan_id: str,
-        amount: float,
         success_url: str,
         pending_url: str,
     ) -> dict:
         """Create a Checkout Pro preference (credit card + redirect)."""
+        amount = self._get_plan_amount(plan_id)
+        if amount <= 0:
+            raise SanitizedHTTPException(
+                status_code=400,
+                public_message="Plano invalido ou preco nao configurado.",
+                internal_detail=f"Plan {plan_id} not found in PLAN_PRICES",
+            )
+
         try:
             preference_data = {
                 "items": [

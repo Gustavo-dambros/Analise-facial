@@ -112,7 +112,6 @@ class DayExercises(BaseModel):
 
 
 class WeeklyRoutineCreate(BaseModel):
-    user_id: str
     days: dict[str, DayExercises]  # key: "Monday".."Sunday"
 
 

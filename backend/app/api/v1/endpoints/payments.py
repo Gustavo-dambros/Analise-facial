@@ -32,7 +32,6 @@ async def create_payment(
         result = await service.create_pix_payment(
             user=current_user,
             plan_id=payment_data.plan_id,
-            amount=float(payment_data.amount),
             success_url=payment_data.success_url,
             pending_url=payment_data.pending_url,
         )
@@ -40,7 +39,6 @@ async def create_payment(
         result = await service.create_checkout_pro_payment(
             user=current_user,
             plan_id=payment_data.plan_id,
-            amount=float(payment_data.amount),
             success_url=payment_data.success_url,
             pending_url=payment_data.pending_url,
         )

@@ -32,8 +32,10 @@ async def create_or_update_routine(
             "facial": ex.facial if hasattr(ex, "facial") else ex.get("facial", []),
         }
 
+    target_user_id = current_user.id
+
     result = await db.execute(
-        select(WeeklyRoutine).where(WeeklyRoutine.user_id == data.user_id)
+        select(WeeklyRoutine).where(WeeklyRoutine.user_id == target_user_id)
     )
     existing = result.scalar_one_or_none()
 
@@ -43,7 +45,7 @@ async def create_or_update_routine(
         await db.refresh(existing)
         routine = existing
     else:
-        routine = WeeklyRoutine(user_id=data.user_id, exercises=exercises)
+        routine = WeeklyRoutine(user_id=target_user_id, exercises=exercises)
         db.add(routine)
         await db.commit()
         await db.refresh(routine)

@@ -62,6 +62,14 @@ class Settings(BaseSettings):
     # Request limits
     MAX_IMAGE_BASE64_SIZE_MB: int = 10
 
+    # Plan Pricing (BRL) - Server-side pricing to prevent client-side manipulation
+    PLAN_PRICES: dict[str, float] = {
+        "plan_monthly": 29.90,
+        "plan_annual": 299.90,
+        "plan_pro_monthly": 49.90,
+        "plan_pro_annual": 499.90,
+    }
+
     # Mercado Pago
     MERCADOPAGO_ACCESS_TOKEN: str = ""
     MERCADOPAGO_WEBHOOK_SECRET: str = ""
