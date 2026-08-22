@@ -1,0 +1,13 @@
+services:
+  - type: static
+    name: facemax-frontend
+    rootDir: frontend
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://facemax-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
