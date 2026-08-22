@@ -21,6 +21,10 @@ class Settings(BaseSettings):
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
+        # Produção (frontend no Render / domínio próprio)
+        "https://facemax-frontend-h1me.onrender.com",
+        "https://facemax.pro",
+        "https://www.facemax.pro",
     ]
 
     # Database
