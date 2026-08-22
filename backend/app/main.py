@@ -1,5 +1,6 @@
 import logging
 import time
+import sqlalchemy
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -37,9 +38,30 @@ def _rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    # Startup — create tables and verify DB connection
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Verify tables were actually created (catch silent failures on read-only FS)
+    try:
+        async with engine.connect() as conn:
+            from sqlalchemy import inspect
+
+            has_users = await conn.run_sync(
+                lambda sync_conn: inspect(sync_conn).has_table("users")
+            )
+            if not has_users:
+                raise RuntimeError("users table was not created — DATABASE_URL may be read-only or misconfigured")
+        logger.info("Database tables verified at startup")
+    except RuntimeError:
+        raise
+    except Exception as db_check_exc:
+        logger.error("Database health check failed at startup: %s", db_check_exc)
+        raise RuntimeError(
+            "Database is not accessible or tables could not be created. "
+            "Check DATABASE_URL and database connectivity."
+        ) from db_check_exc
+
     yield
     # Shutdown
     await engine.dispose()
@@ -97,6 +119,30 @@ def create_app() -> FastAPI:
         return JSONResponse(
             status_code=exc.status_code,
             content={"detail": exc.detail},
+        )
+
+    # Catch-all for SQLAlchemy OperationalError — surface a clean message
+    @app.exception_handler(sqlalchemy.exc.OperationalError)
+    async def db_operational_error_handler(request: Request, exc: Exception):
+        logger.exception("Database operational error on %s %s", request.method, request.url.path)
+        return JSONResponse(
+            status_code=502,
+            content={
+                "detail": "Nao foi possivel conectar ao banco de dados. "
+                          "Tente novamente em instantes ou entre em contato com o suporte."
+            },
+        )
+
+    # Catch-all for SQLAlchemy StatementError (bad SQL, missing table, etc.)
+    @app.exception_handler(sqlalchemy.exc.StatementError)
+    async def db_statement_error_handler(request: Request, exc: Exception):
+        logger.exception("Database statement error on %s %s", request.method, request.url.path)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Erro interno ao processar a solicitacao. "
+                          "Entre em contato com o suporte."
+            },
         )
 
     # Include routers
