@@ -38,7 +38,9 @@ class AuthService:
 
         # Cria o usuario no Supabase Auth (dispara o e-mail de confirmacao)
         try:
-            await supabase_service.sign_up(user_data.email, user_data.password)
+            await supabase_service.sign_up(
+                user_data.email, user_data.password, full_name=user_data.full_name
+            )
         except SupabaseAuthError as exc:
             raise HTTPException(
                 status_code=exc.status_code,

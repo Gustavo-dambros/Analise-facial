@@ -63,20 +63,23 @@ def _extract_error_message(exc: Exception) -> str:
     return message or "Erro ao comunicar com o servico de autenticacao."
 
 
-async def sign_up(email: str, password: str) -> dict:
+async def sign_up(email: str, password: str, full_name: Optional[str] = None) -> dict:
     """Create the user in Supabase Auth, triggering the confirmation email.
 
     Returns the Supabase response dict on success.
     Raises SupabaseAuthError on failure.
     """
     def _call():
+        options: dict = {
+            "email_redirect_to": settings.SUPABASE_EMAIL_REDIRECT_TO,
+        }
+        if full_name:
+            options["data"] = {"full_name": full_name}
         return _get_client().auth.sign_up(
             {
                 "email": email,
                 "password": password,
-                "options": {
-                    "email_redirect_to": settings.SUPABASE_EMAIL_REDIRECT_TO,
-                },
+                "options": options,
             }
         )
 
