@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { createClient } from "@/lib/supabase/client"
-import { parseJsonSafe } from "@/lib/api"
 import {
   ChartContainer,
   ChartTooltip,
@@ -34,7 +33,9 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/page-tran
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
-const API_BASE = "/api/v1"
+import { parseJsonSafe, API_BASE as API_ROOT } from "@/lib/api"
+
+const API_BASE = `${API_ROOT}/api/v1`
 
 const COLORS = ["#d4a853", "#f59e0b", "#10b981", "#ef4444", "#6366f1", "#8b5cf6"]
 

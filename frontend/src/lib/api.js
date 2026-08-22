@@ -7,7 +7,14 @@
  * - Headers de autorização (Bearer token) do localStorage
  */
 
-export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+/**
+ * Base da API FastAPI.
+ * Aceita VITE_API_URL com ou sem o sufixo "/api/v1" (normalizado abaixo).
+ * Fallback: URL de produção no Render.
+ */
+const RAW_API_URL = import.meta.env.VITE_API_URL || 'https://facemax-api.onrender.com';
+
+export const API_BASE = RAW_API_URL.replace(/\/+$/, '').replace(/\/api\/v1$/, '');
 
 const TOKEN_KEY = 'facemax_access_token';
 
