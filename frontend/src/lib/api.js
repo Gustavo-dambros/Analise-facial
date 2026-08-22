@@ -10,11 +10,22 @@
 /**
  * Base da API FastAPI.
  * Aceita VITE_API_URL com ou sem o sufixo "/api/v1" (normalizado abaixo).
- * Fallback: URL de produção no Render.
+ * Sanitiza aspas/espaços e exige protocolo http(s) — caso contrário usa o
+ * fallback de produção. Sem isso uma env var mal formatada gera URLs
+ * relativas (ex: https://facemax.pro/https://facemax-api.onrender.com/...).
  */
-const RAW_API_URL = import.meta.env.VITE_API_URL || 'https://facemax-api.onrender.com';
+const DEFAULT_API_URL = 'https://facemax-api.onrender.com';
 
-export const API_BASE = RAW_API_URL.replace(/\/+$/, '').replace(/\/api\/v1$/, '');
+function resolveApiBase() {
+  const raw = (import.meta.env.VITE_API_URL || '')
+    .trim()
+    .replace(/^["'`]+|["'`]+$/g, '');
+
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : DEFAULT_API_URL;
+  return withProtocol.replace(/\/+$/, '').replace(/\/api\/v1$/i, '');
+}
+
+export const API_BASE = resolveApiBase();
 
 const TOKEN_KEY = 'facemax_access_token';
 
