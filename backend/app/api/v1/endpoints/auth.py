@@ -10,13 +10,16 @@ from app.schemas.auth import (
     VerifyEmailResponse,
     ResendConfirmationRequest,
     ResendConfirmationResponse,
-    ForgotPasswordRequest,
-    ForgotPasswordResponse,
-    ResetPasswordRequest,
-    ResetPasswordResponse,
+    EsqueciSenhaRequest,
+    EsqueciSenhaResponse,
+    RedefinirSenhaRequest,
+    RedefinirSenhaResponse,
+    AlterarSenhaRequest,
+    AlterarSenhaResponse,
 )
 from app.services.auth_service import AuthService
 from app.core.config import settings
+from app.core.security import get_current_user
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -63,23 +66,45 @@ async def resend_confirmation(
     return ResendConfirmationResponse(message=message)
 
 
-@router.post("/forgot-password", response_model=ForgotPasswordResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/esqueci-senha",
+    response_model=EsqueciSenhaResponse,
+    status_code=status.HTTP_200_OK,
+)
 @limiter.limit(settings.RATE_LIMIT_AUTH)
-async def forgot_password(
-    request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
+async def esqueci_senha(
+    request: Request, body: EsqueciSenhaRequest, db: AsyncSession = Depends(get_db)
 ):
     """Request a password reset link. Generic response to prevent email enumeration."""
     auth_service = AuthService(db)
-    message = await auth_service.forgot_password(body.email)
-    return ForgotPasswordResponse(message=message)
+    message = await auth_service.esqueci_senha(body.email)
+    return EsqueciSenhaResponse(message=message)
 
 
-@router.post("/reset-password", response_model=ResetPasswordResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/redefinir-senha",
+    response_model=RedefinirSenhaResponse,
+    status_code=status.HTTP_200_OK,
+)
 @limiter.limit(settings.RATE_LIMIT_AUTH)
-async def reset_password(
-    request: Request, body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
+async def redefinir_senha(
+    request: Request, body: RedefinirSenhaRequest, db: AsyncSession = Depends(get_db)
 ):
-    """Reset password using a valid reset token received by email."""
+    """Reset password using the JWT reset token received by email."""
     auth_service = AuthService(db)
-    message = await auth_service.reset_password(body.token, body.new_password)
-    return ResetPasswordResponse(message=message)
+    message = await auth_service.redefinir_senha(body.token, body.nova_senha)
+    return RedefinirSenhaResponse(message=message)
+
+
+@router.post(
+    "/alterar-senha",
+    response_model=AlterarSenhaResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def alterar_senha(
+    body: AlterarSenhaRequest, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    """Change the password of the authenticated user (logged-in flow)."""
+    auth_service = AuthService(db)
+    message = await auth_service.alterar_senha(current_user, body.nova_senha)
+    return AlterarSenhaResponse(message=message)

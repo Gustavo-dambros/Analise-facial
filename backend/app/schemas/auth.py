@@ -66,19 +66,19 @@ class ResendConfirmationResponse(BaseModel):
     message: str
 
 
-class ForgotPasswordRequest(BaseModel):
+class EsqueciSenhaRequest(BaseModel):
     email: EmailStr = Field(..., max_length=255)
 
 
-class ForgotPasswordResponse(BaseModel):
+class EsqueciSenhaResponse(BaseModel):
     message: str = "Se o e-mail estiver cadastrado, um link de recuperação foi enviado."
 
 
-class ResetPasswordRequest(BaseModel):
-    token: str = Field(..., min_length=1, max_length=256)
-    new_password: str = Field(..., min_length=8, max_length=128)
+class RedefinirSenhaRequest(BaseModel):
+    token: str = Field(..., min_length=1, max_length=2048)
+    nova_senha: str = Field(..., min_length=8, max_length=128)
 
-    @field_validator("new_password")
+    @field_validator("nova_senha")
     @classmethod
     def validate_password_strength(cls, v):
         if not any(c.isupper() for c in v):
@@ -90,7 +90,26 @@ class ResetPasswordRequest(BaseModel):
         return v
 
 
-class ResetPasswordResponse(BaseModel):
+class RedefinirSenhaResponse(BaseModel):
+    message: str
+
+
+class AlterarSenhaRequest(BaseModel):
+    nova_senha: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("nova_senha")
+    @classmethod
+    def validate_password_strength(cls, v):
+        if not any(c.isupper() for c in v):
+            raise ValueError("A senha deve conter pelo menos uma letra maiuscula")
+        if not any(c.islower() for c in v):
+            raise ValueError("A senha deve conter pelo menos uma letra minuscula")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("A senha deve conter pelo menos um numero")
+        return v
+
+
+class AlterarSenhaResponse(BaseModel):
     message: str
 
 

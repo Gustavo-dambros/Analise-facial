@@ -178,7 +178,7 @@ def _build_password_reset_html(reset_link: str, user_email: str) -> str:
               <h2 style="color:#fff;font-size:16px;margin:0 0 8px">Recuperação de Senha</h2>
               <p style="color:#aaa;font-size:13px;line-height:1.6;margin:0">
                 Recebemos uma solicitação para redefinir a senha da sua conta no FaceMax.
-                Clique no botão abaixo para criar uma nova senha. Este link é válido por 1 hora.
+                Clique no botão abaixo para criar uma nova senha. Este link é válido por 30 minutos.
               </p>
             </td>
           </tr>
@@ -222,7 +222,7 @@ def _build_password_reset_html(reset_link: str, user_email: str) -> str:
 
 
 async def send_verification_email(email_to: str, token: str) -> dict:
-    confirmation_link = f"{settings.BASE_URL}/api/v1/auth/verificar-email/{token}"
+    confirmation_link = f"{settings.FRONTEND_URL}/verificar-email?token={token}"
     return await _send_email_async(
         to_email=email_to,
         subject="Confirme seu e-mail",
@@ -231,7 +231,7 @@ async def send_verification_email(email_to: str, token: str) -> dict:
 
 
 async def send_password_reset_email(email_to: str, token: str) -> dict:
-    reset_link = f"{settings.BASE_URL}/api/v1/auth/resetar-senha?token={token}"
+    reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
     return await _send_email_async(
         to_email=email_to,
         subject="Redefinir sua senha",

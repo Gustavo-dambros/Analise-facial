@@ -77,6 +77,9 @@ class Settings(BaseSettings):
     # Application URL (used in email links)
     BASE_URL: str = "http://localhost:8000"
 
+    # Frontend URL (used in password reset links)
+    FRONTEND_URL: str = "http://localhost:5173"
+
     # SMTP Email (Gmail)
     MAIL_SERVER: str = "smtp.gmail.com"
     MAIL_PORT: int = 587

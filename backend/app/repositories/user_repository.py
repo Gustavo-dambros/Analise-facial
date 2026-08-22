@@ -25,7 +25,6 @@ class UserRepository:
     async def get_by_reset_token(self, token: str) -> User | None:
         result = await self.db.execute(select(User).where(User.reset_token == token))
         return result.scalar_one_or_none()
-
     async def create(self, user_data: UserCreate) -> User:
         user = User(
             email=user_data.email,
@@ -62,15 +61,7 @@ class UserRepository:
         )
         await self.db.commit()
 
-    async def set_reset_token(self, user: User, token: str, expires: datetime) -> None:
-        await self.db.execute(
-            update(User)
-            .where(User.id == user.id)
-            .values(reset_token=token, reset_token_expires=expires)
-        )
-        await self.db.commit()
-
-    async def update_password_and_clear_reset(self, user: User, new_password: str) -> None:
+    async def update_password(self, user: User, new_password: str) -> None:
         await self.db.execute(
             update(User)
             .where(User.id == user.id)

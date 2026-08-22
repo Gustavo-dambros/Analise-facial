@@ -1,10 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { register, login, logout as apiLogout, getProfile, isAuthenticated, getToken, forgotPassword, resetPassword as apiResetPassword, changePassword as apiChangePassword } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-
-const BASE_URL = import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-const EMAIL_REDIRECT_TO = `${BASE_URL}/login`;
 
 const AuthContext = createContext(null);
 
@@ -16,187 +14,113 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
   const supabase = createClient();
 
-  const fetchProfile = useCallback(async (userId) => {
+  const fetchProfile = useCallback(async (token) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, role, plan, status, avatar_url')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Failed to fetch profile:', error.message);
-        setProfile(null);
-        return;
-      }
-      setProfile(data);
+      const profileData = await getProfile();
+      setProfile(profileData);
+      return profileData;
     } catch (err) {
-      console.error('Profile fetch error:', err);
+      console.error('Failed to fetch profile:', err);
       setProfile(null);
+      throw err;
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
-      if (session?.user) {
-        setUser(session.user);
-        setToken(session.access_token);
-        await fetchProfile(session.user.id);
-      } else {
-        setUser(null);
-        setToken(null);
-      }
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-
-        // Handle different auth events
-        if (event === 'PASSWORD_RECOVERY') {
-          // User clicked password reset link in email
-          // Supabase creates a temporary session for password recovery
-          setSession(session);
-          setUser(session?.user ?? null);
-          setToken(session?.access_token ?? null);
-
-          toast.info('Por favor, digite sua nova senha no formulário abaixo.');
-          navigate('/reset-password');
-          return;
-        }
-
-        if (event === 'SIGNED_IN') {
-          // User signed in (could be regular login or email confirmation)
-          setSession(session);
-          setUser(session?.user ?? null);
-          setToken(session?.access_token ?? null);
-
-          if (session?.user) {
-            await fetchProfile(session.user.id);
+    // Tenta restaurar sessão do localStorage
+    const savedToken = getToken();
+    if (savedToken) {
+      setToken(savedToken);
+      // Valida o token buscando o perfil
+      fetchProfile(savedToken)
+        .then(() => {
+          if (mounted) setLoading(false);
+        })
+        .catch(() => {
+          if (mounted) {
+            // Token inválido — limpa
+            apiLogout();
+            setUser(null);
+            setProfile(null);
+            setToken(null);
+            setLoading(false);
           }
-
-          // Check if this is a fresh email confirmation (user was just verified)
-          // The user.email_confirmed_at would be set recently
-          if (session?.user?.email_confirmed_at) {
-            const confirmedAt = new Date(session.user.email_confirmed_at).getTime();
-            const now = Date.now();
-            // If confirmed in the last 30 seconds, treat as email verification
-            if (now - confirmedAt < 30000) {
-              toast.success('E-mail verificado com sucesso! Bem-vindo ao Face Max.');
-            }
-          }
-
-          navigate('/dashboard');
-          return;
-        }
-
-        if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setProfile(null);
-          setToken(null);
-          return;
-        }
-
-        // Handle other events (TOKEN_REFRESHED, USER_UPDATED, etc.)
-        if (session?.user) {
-          setUser(session.user);
-          setToken(session.access_token);
-          await fetchProfile(session.user.id);
-        } else {
-          setUser(null);
-          setProfile(null);
-          setToken(null);
-        }
-      }
-    );
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [fetchProfile, navigate]);
-
-  // Helper to set session data
-  const setSession = (session) => {
-    // This is handled inline in onAuthStateChange
-  };
+        });
+    } else {
+      if (mounted) setLoading(false);
+    }
+  }, [fetchProfile]);
 
   const signUp = useCallback(async (email, password, fullName) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: EMAIL_REDIRECT_TO,
-      },
-    });
-
-    if (error) {
-      const message = mapAuthError(error.message);
-      return { success: false, error: message };
+    try {
+      const result = await register(email, password, fullName);
+      
+      // O backend retorna: { message, requires_verification }
+      // Se requires_verification é true, não há session ainda
+      if (result.requires_verification) {
+        return { success: true, message: result.message || 'Confirme seu email para ativar a conta.' };
+      }
+      
+      // Se não precisa verificação, faz login automático
+      const loginResult = await login(email, password);
+      setToken(loginResult.access_token);
+      await fetchProfile(loginResult.access_token);
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
     }
-
-    if (data.user && !data.session) {
-      return { success: true, message: 'Confirme seu email para ativar a conta.' };
-    }
-
-    return { success: true };
-  }, [supabase]);
+  }, [fetchProfile]);
 
   const signIn = useCallback(async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      const message = mapAuthError(error.message);
-      return { success: false, error: message };
+    try {
+      const result = await login(email, password);
+      setToken(result.access_token);
+      await fetchProfile(result.access_token);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
     }
-
-    return { success: true };
-  }, [supabase]);
-
-  const resetPassword = useCallback(async (email) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${BASE_URL}/reset-password`,
-    });
-
-    if (error) {
-      const message = mapAuthError(error.message);
-      return { success: false, error: message };
-    }
-
-    return { success: true };
-  }, [supabase]);
-
-  const updatePassword = useCallback(async (newPassword) => {
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    if (error) {
-      const message = mapAuthError(error.message);
-      return { success: false, error: message };
-    }
-
-    if (data.user) {
-      setUser(data.user);
-    }
-
-    return { success: true };
-  }, [supabase]);
+  }, [fetchProfile]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    apiLogout();
     setUser(null);
     setProfile(null);
     setToken(null);
-  }, [supabase]);
+    // Também faz logout do Supabase (para limpar sessão de storage se houver)
+    await supabase.auth.signOut();
+    navigate('/login');
+  }, [navigate]);
+
+  const resetPassword = useCallback(async (email) => {
+    try {
+      await forgotPassword(email);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, []);
+
+  const resetPasswordWithToken = useCallback(async (token, newPassword) => {
+    try {
+      await apiResetPassword(token, newPassword);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, []);
+
+  const updatePassword = useCallback(async (newPassword) => {
+    try {
+      await apiChangePassword(newPassword);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, []);
 
   const mergedUser = user && profile
     ? {
@@ -223,6 +147,7 @@ export function AuthProvider({ children }) {
         signIn,
         signOut,
         resetPassword,
+        resetPasswordWithToken,
         updatePassword,
         login: signIn,
         register: signUp,
@@ -240,15 +165,4 @@ export function useAuth() {
     throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
-}
-
-function mapAuthError(message) {
-  const map = {
-    'Invalid login credentials': 'Email ou senha incorretos.',
-    'User already registered': 'Este email já está cadastrado.',
-    'Password should be at least 6 caracteres': 'A senha deve ter pelo menos 6 caracteres.',
-    'Unable to validate email address: invalid format': 'Formato de email inválido.',
-    'Email not confirmed': 'Email ainda não confirmado. Verifique sua caixa de entrada.',
-  };
-  return map[message] || message;
 }

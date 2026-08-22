@@ -1,8 +1,58 @@
-export const API_BASE = import.meta.env.DEV ? '/api/v1' : (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1');
+/**
+ * API Client para FastAPI Backend (Render)
+ * 
+ * Configuração centralizada de chamadas HTTP com:
+ * - Base URL via VITE_API_URL
+ * - Tratamento de erros padronizado
+ * - Headers de autorização (Bearer token) do localStorage
+ */
+
+export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const TOKEN_KEY = 'facemax_access_token';
+
+/**
+ * Obtém o token de acesso salvo no localStorage
+ */
+export function getToken() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+/**
+ * Salva o token de acesso no localStorage
+ */
+export function setToken(token) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+/**
+ * Remove o token de acesso do localStorage
+ */
+export function clearToken() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+/**
+ * Cria headers padrão com Content-Type e Authorization (se token existir)
+ */
+function authHeaders(includeContentType = true) {
+  const headers = {};
+  if (includeContentType) {
+    headers['Content-Type'] = 'application/json';
+  }
+  const token = getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 /**
  * Trata erros de resposta da API, incluindo rate limiting (429).
- * Lanca Error com mensagem amigavel ao usuario.
+ * Lança Error com mensagem amigável ao usuário.
  */
 async function handleApiError(response) {
   const body = await response.json().catch(() => ({}));
@@ -11,31 +61,53 @@ async function handleApiError(response) {
     const retryAfter = body.retry_after || 60;
     const minutes = Math.ceil(retryAfter / 60);
     throw new Error(
-      `Limite de requisicoes atingido. Tente novamente em ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}.`
+      `Limite de requisições atingido. Tente novamente em ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}.`
     );
   }
 
-  throw new Error(body.detail || 'Erro na requisicao');
+  if (response.status === 401) {
+    // Token expirado ou inválido — limpa e força logout
+    clearToken();
+    throw new Error('Sessão expirada. Faça login novamente.');
+  }
+
+  throw new Error(body.detail || 'Erro na requisição');
 }
 
 /**
- * Envia 1 foto frontal para analise via IA.
- * POST /api/v1/analyze/
- *
- * @param {string} photoFront - Base64 da foto frontal
- * @param {string} token      - JWT de autenticacao
- * @returns {Promise<Object>} - Resultado da analise
+ * Função genérica para requisições autenticadas
  */
-export async function analyzeWithAI(photoFront, token) {
-  const response = await fetch(`${API_BASE}/analyze/`, {
-    method: 'POST',
+async function apiFetch(endpoint, options = {}) {
+  const url = `${API_BASE}${endpoint}`;
+  const response = await fetch(url, {
+    ...options,
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      ...authHeaders(options.body instanceof FormData ? false : true),
+      ...options.headers,
     },
-    body: JSON.stringify({
-      photo_front: photoFront,
-    }),
+  });
+
+  if (!response.ok) {
+    await handleApiError(response);
+  }
+
+  // Para 204 No Content, retorna null
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
+}
+
+/**
+ * Registra um novo usuário
+ * POST /api/v1/auth/register
+ */
+export async function register(email, password, fullName) {
+  const response = await fetch(`${API_BASE}/api/v1/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, full_name: fullName }),
   });
 
   if (!response.ok) {
@@ -46,21 +118,15 @@ export async function analyzeWithAI(photoFront, token) {
 }
 
 /**
- * Detecta o rosto na imagem e retorna a versao recortada.
- * POST /api/v1/analysis/detect-face
- *
- * @param {string} base64Image - data:image/...;base64,...
- * @param {string} token      - JWT de autenticacao (Supabase ou FastAPI)
- * @returns {Promise<string>} - data:image/jpeg;base64,... (cropped)
+ * Login do usuário
+ * POST /api/v1/auth/login
+ * Retorna { access_token, token_type }
  */
-export async function detectFace(base64Image, token) {
-  const response = await fetch(`${API_BASE}/analysis/detect-face`, {
+export async function login(email, password) {
+  const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({ image: base64Image }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
   });
 
   if (!response.ok) {
@@ -68,24 +134,145 @@ export async function detectFace(base64Image, token) {
   }
 
   const data = await response.json();
-  return data.cropped_image;
+  if (data.access_token) {
+    setToken(data.access_token);
+  }
+  return data;
 }
 
 /**
- * Create a Mercado Pago payment (PIX or Checkout Pro).
- * POST /api/v1/payments/create
- *
- * @param {object} params - { planId, amount, paymentMethod, successUrl, pendingUrl }
- * @param {string} token - JWT de autenticacao
- * @returns {Promise<object>} - Payment creation response
+ * Confirma o e-mail do usuário com o token recebido por e-mail
+ * GET /api/v1/auth/verificar-email/{token}
+ * Retorna { message }
  */
-export async function createPayment(params, token) {
-  const response = await fetch(`${API_BASE}/payments/create`, {
+export async function verifyEmail(token) {
+  const response = await fetch(
+    `${API_BASE}/api/v1/auth/verificar-email/${encodeURIComponent(token)}`,
+  );
+
+  if (!response.ok) {
+    await handleApiError(response);
+  }
+
+  return response.json();
+}
+
+/**
+ * Reenvia o e-mail de verificação
+ * POST /api/v1/auth/reenviar-confirmacao
+ * Retorna { message } — resposta genérica para evitar enumeração de e-mails
+ */
+export async function resendConfirmation(email) {
+  const response = await fetch(`${API_BASE}/api/v1/auth/reenviar-confirmacao`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!response.ok) {
+    await handleApiError(response);
+  }
+
+  return response.json();
+}
+
+/**
+ * Solicita link de recuperação de senha
+ * POST /api/v1/auth/esqueci-senha
+ */
+export async function forgotPassword(email) {
+  const response = await fetch(`${API_BASE}/api/v1/auth/esqueci-senha`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!response.ok) {
+    await handleApiError(response);
+  }
+
+  return response.json();
+}
+
+/**
+ * Redefine a senha usando o token JWT recebido por e-mail
+ * POST /api/v1/auth/redefinir-senha
+ * Retorna { message }
+ */
+export async function resetPassword(token, novaSenha) {
+  const response = await fetch(`${API_BASE}/api/v1/auth/redefinir-senha`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, nova_senha: novaSenha }),
+  });
+
+  if (!response.ok) {
+    await handleApiError(response);
+  }
+
+  return response.json();
+}
+
+/**
+ * Altera a senha do usuário autenticado (fluxo logado)
+ * POST /api/v1/auth/alterar-senha
+ * Retorna { message }
+ */
+export async function changePassword(novaSenha) {
+  return apiFetch('/api/v1/auth/alterar-senha', {
+    method: 'POST',
+    body: JSON.stringify({ nova_senha: novaSenha }),
+  });
+}
+
+/**
+ * Obtém o perfil do usuário autenticado
+ * GET /api/v1/profile/
+ */
+export async function getProfile() {
+  return apiFetch('/api/v1/profile/');
+}
+
+/**
+ * Atualiza o perfil do usuário autenticado
+ * PUT /api/v1/profile/
+ */
+export async function updateProfile(data) {
+  return apiFetch('/api/v1/profile/', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Envia foto frontal para análise via IA
+ * POST /api/v1/analyze/
+ */
+export async function analyzeWithAI(photoFront) {
+  return apiFetch('/api/v1/analyze/', {
+    method: 'POST',
+    body: JSON.stringify({ photo_front: photoFront }),
+  });
+}
+
+/**
+ * Detecta o rosto na imagem e retorna a versão recortada
+ * POST /api/v1/analysis/detect-face
+ */
+export async function detectFace(base64Image) {
+  return apiFetch('/api/v1/analysis/detect-face', {
+    method: 'POST',
+    body: JSON.stringify({ image: base64Image }),
+  });
+}
+
+/**
+ * Cria um pagamento Mercado Pago (PIX ou Checkout Pro)
+ * POST /api/v1/payments/create
+ */
+export async function createPayment(params) {
+  return apiFetch('/api/v1/payments/create', {
+    method: 'POST',
     body: JSON.stringify({
       plan_id: params.planId,
       amount: params.amount,
@@ -94,33 +281,34 @@ export async function createPayment(params, token) {
       pending_url: params.pendingUrl,
     }),
   });
-
-  if (!response.ok) {
-    await handleApiError(response);
-  }
-
-  return response.json();
 }
 
 /**
- * Poll payment status.
+ * Consulta status do pagamento
  * GET /api/v1/payments/{paymentId}/status
- *
- * @param {string} paymentId - Internal payment ID
- * @param {string} token - JWT
- * @returns {Promise<object>} - Payment status response
  */
-export async function getPaymentStatus(paymentId, token) {
-  const response = await fetch(`${API_BASE}/payments/${paymentId}/status`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export async function getPaymentStatus(paymentId) {
+  return apiFetch(`/api/v1/payments/${paymentId}/status`);
+}
 
-  if (!response.ok) {
-    await handleApiError(response);
-  }
+/**
+ * Obtém histórico de análises do usuário
+ * GET /api/v1/analyze/history
+ */
+export async function getAnalysisHistory() {
+  return apiFetch('/api/v1/analyze/history');
+}
 
-  return response.json();
+/**
+ * Logout — limpa token local
+ */
+export function logout() {
+  clearToken();
+}
+
+/**
+ * Verifica se o usuário está autenticado (tem token salvo)
+ */
+export function isAuthenticated() {
+  return !!getToken();
 }

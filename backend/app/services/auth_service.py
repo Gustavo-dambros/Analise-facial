@@ -5,12 +5,21 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import UserCreate, Token, RegisterResponse
-from app.core.security import create_access_token, generate_secure_token
+from app.core.security import create_access_token, decode_token, generate_secure_token
+from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
 VERIFICATION_TOKEN_HOURS = 24
-RESET_TOKEN_MINUTES = 60
+RESET_TOKEN_MINUTES = 30
+RESET_TOKEN_TYPE = "password_reset"
+
+
+def _as_aware_utc(dt: datetime | None) -> datetime | None:
+    """Normalize DB datetimes (naive on SQLite) to timezone-aware UTC."""
+    if dt is None or dt.tzinfo is not None:
+        return dt
+    return dt.replace(tzinfo=timezone.utc)
 
 
 class AuthService:
@@ -76,7 +85,7 @@ class AuthService:
                 detail="Token de verificação invalido.",
             )
 
-        if user.verification_token_expires and user.verification_token_expires < datetime.now(timezone.utc):
+        if user.verification_token_expires and _as_aware_utc(user.verification_token_expires) < datetime.now(timezone.utc):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Token de verificação expirado. Solicite um novo envio.",
@@ -108,7 +117,11 @@ class AuthService:
         logger.info("Verification email re-sent — id=%s email=%s", user.id, user.email)
         return "Se o cadastro existir e nao estiver verificado, um novo link sera enviado."
 
-    async def forgot_password(self, email: str) -> str:
+    async def esqueci_senha(self, email: str) -> str:
+        """Gera um JWT de recuperação (30 min) e envia o link por e-mail.
+
+        Resposta genérica para evitar enumeração de e-mails.
+        """
         from app.services.email_service import send_password_reset_email
 
         user = await self.user_repo.get_by_email(email)
@@ -116,9 +129,10 @@ class AuthService:
             logger.info("Forgot password for non-existent/unverified email: %s", email)
             return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado."
 
-        token = generate_secure_token()
-        expires = datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_MINUTES)
-        await self.user_repo.set_reset_token(user, token, expires)
+        token = create_access_token(
+            data={"sub": str(user.id), "type": RESET_TOKEN_TYPE},
+            expires_delta=timedelta(minutes=RESET_TOKEN_MINUTES),
+        )
 
         asyncio.create_task(
             _send_reset_email_safe(send_password_reset_email, user.email, token)
@@ -127,24 +141,31 @@ class AuthService:
         logger.info("Password reset requested — id=%s email=%s", user.id, user.email)
         return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado."
 
-    async def reset_password(self, token: str, new_password: str) -> str:
-        user = await self.user_repo.get_by_reset_token(token)
-
-        if not user:
+    async def redefinir_senha(self, token: str, nova_senha: str) -> str:
+        """Valida o JWT de recuperação e atualiza a senha do usuário."""
+        payload = decode_token(token)
+        if not payload or payload.get("type") != RESET_TOKEN_TYPE or not payload.get("sub"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Token de redefinição invalido.",
+                detail="Link inválido ou expirado. Solicite um novo link de recuperação.",
             )
 
-        if user.reset_token_expires and user.reset_token_expires < datetime.now(timezone.utc):
+        user = await self.user_repo.get_by_id(payload["sub"])
+        if not user or not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Token de redefinição expirado. Solicite um novo link.",
+                detail="Link inválido ou expirado. Solicite um novo link de recuperação.",
             )
 
-        await self.user_repo.update_password_and_clear_reset(user, new_password)
+        await self.user_repo.update_password(user, nova_senha)
         logger.info("Password reset — user %s email=%s", user.id, user.email)
         return "Senha redefinida com sucesso."
+
+    async def alterar_senha(self, user: User, nova_senha: str) -> str:
+        """Altera a senha do usuário autenticado (sem e-mail/logado)."""
+        await self.user_repo.update_password(user, nova_senha)
+        logger.info("Password changed — user %s email=%s", user.id, user.email)
+        return "Senha alterada com sucesso."
 
 
 async def _send_verification_email_safe(send_func, to_email: str, token: str):

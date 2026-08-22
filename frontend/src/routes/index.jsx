@@ -26,6 +26,7 @@ import ProfessionalDashboardPage from '@/pages/ProfessionalDashboardPage';
 import ProfessionalEvaluatePage from '@/pages/ProfessionalEvaluatePage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
+import VerificarEmailPage from '@/pages/VerificarEmailPage';
 import ChangePasswordPage from '@/pages/ChangePasswordPage';
 
 const router = [
@@ -38,6 +39,7 @@ const router = [
   { path: '/checkout-pending', element: <CheckoutPendingPage /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
+  { path: '/verificar-email', element: <VerificarEmailPage /> },
 
   // DASHBOARD routes — wrapped in DashboardLayout + auth guards
   {

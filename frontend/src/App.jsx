@@ -23,6 +23,7 @@ import ProfessionalDashboardPage from '@/pages/ProfessionalDashboardPage';
 import ProfessionalEvaluatePage from '@/pages/ProfessionalEvaluatePage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
+import VerificarEmailPage from '@/pages/VerificarEmailPage';
 import ChangePasswordPage from '@/pages/ChangePasswordPage';
 
 import ProtectedRoute from '@/routes/ProtectedRoute';
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/checkout-pending" element={<CheckoutPendingPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verificar-email" element={<VerificarEmailPage />} />
 
         {/* DASHBOARD routes — wrapped in DashboardLayout + auth guards */}
         <Route element={<Layout />}>

@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function ResetPasswordPage() {
-  const { updatePassword } = useAuth();
+  const { resetPasswordWithToken } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -36,12 +38,12 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      const result = await updatePassword(password);
+      const result = await resetPasswordWithToken(token, password);
 
       if (result.success) {
         setSuccess(true);
       } else {
-        setError(result.error);
+        setError(result.error || 'Link invalido ou expirado. Solicite um novo link.');
       }
     } catch {
       setError('Ocorreu um erro inesperado. Tente novamente.');
@@ -49,6 +51,34 @@ export default function ResetPasswordPage() {
       setLoading(false);
     }
   };
+
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
+        <div className="w-full max-w-sm">
+          <Card className="overflow-hidden bg-card-bg border-border">
+            <CardContent className="p-5 sm:p-8">
+              <div className="flex flex-col items-center text-center gap-4">
+                <AlertTriangle className="w-12 h-12 text-red-400" />
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-text-primary">Link invalido</h1>
+                  <p className="text-sm text-text-secondary mt-2">
+                    Este link de redefinicao e invalido ou expirou. Solicite um novo link para continuar.
+                  </p>
+                </div>
+                <Link
+                  to="/forgot-password"
+                  className="underline underline-offset-4 text-brand-accent hover:text-brand-accent/80 text-sm"
+                >
+                  Solicitar novo link
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
@@ -65,10 +95,10 @@ export default function ResetPasswordPage() {
                   </p>
                 </div>
                 <Button
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/login')}
                   className="w-full h-11 bg-brand-accent text-background font-semibold hover:opacity-90 rounded-xl"
                 >
-                  Ir para o dashboard
+                  Ir para o login
                 </Button>
               </div>
             ) : (
