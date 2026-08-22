@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { createClient } from "@/lib/supabase/client"
+import { parseJsonSafe } from "@/lib/api"
 import {
   ChartContainer,
   ChartTooltip,
@@ -343,12 +344,12 @@ export default function AdminDashboardPage() {
       const headers = { Authorization: `Bearer ${token}` }
 
       const [kpisRes, revenueRes, userRes, shippingRes, ordersRes, usersRes] = await Promise.all([
-        fetch(`${API_BASE}/admin/kpis?period=${period}`, { headers }).then(r => r.json()),
-        fetch(`${API_BASE}/admin/charts/revenue?period=${period}`, { headers }).then(r => r.json()),
-        fetch(`${API_BASE}/admin/charts/users?period=${period}`, { headers }).then(r => r.json()),
-        fetch(`${API_BASE}/admin/charts/shipping`, { headers }).then(r => r.json()),
-        fetch(`${API_BASE}/admin/orders?page_size=20`, { headers }).then(r => r.json()),
-        fetch(`${API_BASE}/admin/users?page_size=20`, { headers }).then(r => r.json()),
+        fetch(`${API_BASE}/admin/kpis?period=${period}`, { headers }).then(parseJsonSafe),
+        fetch(`${API_BASE}/admin/charts/revenue?period=${period}`, { headers }).then(parseJsonSafe),
+        fetch(`${API_BASE}/admin/charts/users?period=${period}`, { headers }).then(parseJsonSafe),
+        fetch(`${API_BASE}/admin/charts/shipping`, { headers }).then(parseJsonSafe),
+        fetch(`${API_BASE}/admin/orders?page_size=20`, { headers }).then(parseJsonSafe),
+        fetch(`${API_BASE}/admin/users?page_size=20`, { headers }).then(parseJsonSafe),
       ])
 
       setKpis(kpisRes)

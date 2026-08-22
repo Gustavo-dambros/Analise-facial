@@ -51,11 +51,26 @@ function authHeaders(includeContentType = true) {
 }
 
 /**
+ * Faz o parse seguro do corpo da resposta JSON.
+ * Retorna {} para corpo vazio (ex: HTTP 204) ou JSON inválido,
+ * evitando "JSON.parse: unexpected end of data".
+ */
+export async function parseJsonSafe(response) {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Trata erros de resposta da API, incluindo rate limiting (429).
  * Lança Error com mensagem amigável ao usuário.
  */
 async function handleApiError(response) {
-  const body = await response.json().catch(() => ({}));
+  const body = await parseJsonSafe(response);
 
   if (response.status === 429) {
     const retryAfter = body.retry_after || 60;
@@ -96,7 +111,7 @@ async function apiFetch(endpoint, options = {}) {
     return null;
   }
 
-  return response.json();
+  return parseJsonSafe(response);
 }
 
 /**
@@ -114,7 +129,7 @@ export async function register(email, password, fullName) {
     await handleApiError(response);
   }
 
-  return response.json();
+  return parseJsonSafe(response);
 }
 
 /**
@@ -133,7 +148,7 @@ export async function login(email, password) {
     await handleApiError(response);
   }
 
-  const data = await response.json();
+  const data = await parseJsonSafe(response);
   if (data.access_token) {
     setToken(data.access_token);
   }
@@ -154,7 +169,7 @@ export async function verifyEmail(token) {
     await handleApiError(response);
   }
 
-  return response.json();
+  return parseJsonSafe(response);
 }
 
 /**
@@ -173,7 +188,7 @@ export async function resendConfirmation(email) {
     await handleApiError(response);
   }
 
-  return response.json();
+  return parseJsonSafe(response);
 }
 
 /**
@@ -191,7 +206,7 @@ export async function forgotPassword(email) {
     await handleApiError(response);
   }
 
-  return response.json();
+  return parseJsonSafe(response);
 }
 
 /**
@@ -210,7 +225,7 @@ export async function resetPassword(token, novaSenha) {
     await handleApiError(response);
   }
 
-  return response.json();
+  return parseJsonSafe(response);
 }
 
 /**
