@@ -43,6 +43,13 @@ class Settings(BaseSettings):
     SUPABASE_JWT_SECRET: str = ""
     SUPABASE_JWT_ALGORITHM: str = "HS256"
 
+    # Supabase Auth (signup) — anon key for client ops, service role for admin ops
+    SUPABASE_ANON_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+
+    # Redirect after e-mail confirmation (Supabase email_redirect_to)
+    SUPABASE_EMAIL_REDIRECT_TO: str = "https://facemax.pro/email-confirmado"
+
     # Rate Limiting
     RATE_LIMIT_AUTH: str = "5/minute"
     RATE_LIMIT_ANALYSIS: str = "10/hour"

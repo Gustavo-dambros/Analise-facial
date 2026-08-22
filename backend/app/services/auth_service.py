@@ -5,12 +5,13 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import UserCreate, Token, RegisterResponse
-from app.core.security import create_access_token, decode_token, generate_secure_token
+from app.core.security import create_access_token, decode_token
 from app.models.user import User
+from app.services import supabase_service
+from app.services.supabase_service import SupabaseAuthError
 
 logger = logging.getLogger(__name__)
 
-VERIFICATION_TOKEN_HOURS = 24
 RESET_TOKEN_MINUTES = 30
 RESET_TOKEN_TYPE = "password_reset"
 
@@ -35,19 +36,23 @@ class AuthService:
                 detail="Email ja cadastrado.",
             )
 
+        # Cria o usuario no Supabase Auth (dispara o e-mail de confirmacao)
+        try:
+            await supabase_service.sign_up(user_data.email, user_data.password)
+        except SupabaseAuthError as exc:
+            raise HTTPException(
+                status_code=exc.status_code,
+                detail=exc.message,
+            )
+
+        # Mantem o registro local (login/perfil usam o banco proprio)
         user = await self.user_repo.create(user_data)
 
-        token = generate_secure_token()
-        expires = datetime.now(timezone.utc) + timedelta(hours=VERIFICATION_TOKEN_HOURS)
-        await self.user_repo.set_verification_token(user.id, token, expires)
-
-        from app.services.email_service import send_verification_email
-
-        asyncio.create_task(
-            _send_verification_email_safe(send_verification_email, user.email, token)
+        logger.info(
+            "User registered via Supabase — id=%s email=%s — confirmation email sent by Supabase",
+            user.id,
+            user.email,
         )
-
-        logger.info("User registered — id=%s email=%s — verification email queued", user.id, user.email)
         return RegisterResponse(
             message="Conta criada. Verifique seu e-mail para ativa-la.",
             requires_verification=True,
@@ -62,10 +67,15 @@ class AuthService:
             )
 
         if not user.is_verified:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Por favor, confirme seu e-mail antes de fazer login.",
-            )
+            # O link de confirmacao vem do Supabase — sincroniza o status local
+            if await supabase_service.is_email_confirmed(email):
+                await self.user_repo.verify_user(user)
+                logger.info("User verified via Supabase at login — email=%s", email)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Por favor, confirme seu e-mail antes de fazer login.",
+                )
 
         if not user.is_active:
             raise HTTPException(
@@ -99,20 +109,15 @@ class AuthService:
         return "E-mail verificado com sucesso. Sua conta foi ativada."
 
     async def resend_verification(self, email: str) -> str:
-        from app.services.email_service import send_verification_email
-
         user = await self.user_repo.get_by_email(email)
         if not user or user.is_verified:
             logger.info("Resend verification for non-existent/verified email: %s", email)
             return "Se o cadastro existir e nao estiver verificado, um novo link sera enviado."
 
-        token = generate_secure_token()
-        expires = datetime.now(timezone.utc) + timedelta(hours=VERIFICATION_TOKEN_HOURS)
-        await self.user_repo.set_verification_token(user.id, token, expires)
-
-        asyncio.create_task(
-            _send_verification_email_safe(send_verification_email, user.email, token)
-        )
+        try:
+            await supabase_service.resend_confirmation(email)
+        except SupabaseAuthError as exc:
+            logger.warning("Supabase resend failed for %s: %s", email, exc.message)
 
         logger.info("Verification email re-sent — id=%s email=%s", user.id, user.email)
         return "Se o cadastro existir e nao estiver verificado, um novo link sera enviado."
@@ -158,21 +163,16 @@ class AuthService:
             )
 
         await self.user_repo.update_password(user, nova_senha)
+        await supabase_service.update_password_by_email(user.email, nova_senha)
         logger.info("Password reset — user %s email=%s", user.id, user.email)
         return "Senha redefinida com sucesso."
 
     async def alterar_senha(self, user: User, nova_senha: str) -> str:
         """Altera a senha do usuário autenticado (sem e-mail/logado)."""
         await self.user_repo.update_password(user, nova_senha)
+        await supabase_service.update_password_by_email(user.email, nova_senha)
         logger.info("Password changed — user %s email=%s", user.id, user.email)
         return "Senha alterada com sucesso."
-
-
-async def _send_verification_email_safe(send_func, to_email: str, token: str):
-    try:
-        await send_func(to_email, token)
-    except Exception as exc:
-        logger.exception("Background verification email failed for %s: %s", to_email, exc)
 
 
 async def _send_reset_email_safe(send_func, to_email: str, token: str):

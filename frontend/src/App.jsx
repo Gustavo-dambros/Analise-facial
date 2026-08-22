@@ -24,6 +24,7 @@ import ProfessionalEvaluatePage from '@/pages/ProfessionalEvaluatePage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import VerificarEmailPage from '@/pages/VerificarEmailPage';
+import EmailConfirmadoPage from '@/pages/EmailConfirmadoPage';
 import ChangePasswordPage from '@/pages/ChangePasswordPage';
 
 import ProtectedRoute from '@/routes/ProtectedRoute';
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verificar-email" element={<VerificarEmailPage />} />
+        <Route path="/email-confirmado" element={<EmailConfirmadoPage />} />
 
         {/* DASHBOARD routes — wrapped in DashboardLayout + auth guards */}
         <Route element={<Layout />}>
