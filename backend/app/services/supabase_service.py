@@ -6,9 +6,16 @@ so calls are wrapped in ``asyncio.to_thread`` to avoid blocking the event loop.
 
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, Tuple
+
+import httpx
 
 from app.core.config import settings
+from supabase_auth.errors import (
+    AuthApiError,
+    AuthInvalidCredentialsError,
+    AuthWeakPasswordError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,16 +58,76 @@ def reset_client() -> None:
     _client = None
 
 
-def _extract_error_message(exc: Exception) -> str:
-    """Extract a friendly message from a supabase/gotrue exception."""
-    message = str(getattr(exc, "message", "") or exc)
-    if "already" in message.lower() and "regist" in message.lower():
-        return "Email ja cadastrado."
-    if "invalid" in message.lower() and ("email" in message.lower() or "password" in message.lower()):
-        return "E-mail ou senha invalidos conforme as regras do Supabase."
-    if "rate" in message.lower():
-        return "Muitas tentativas. Aguarde alguns minutos e tente novamente."
-    return message or "Erro ao comunicar com o servico de autenticacao."
+def _extract_error_info(exc: Exception) -> Tuple[str, int]:
+    """Extract a user-friendly message and HTTP status from a Supabase/Gotrax exception.
+
+    Returns a tuple of (message, status_code).
+    """
+
+    # Preserve our own SupabaseAuthError (e.g. config errors with 500)
+    if isinstance(exc, SupabaseAuthError):
+        # Don't leak internal configuration details to the end user
+        if exc.status_code >= 500:
+            logger.error("Supabase config/sever error: %s", exc.message)
+            return "Erro interno do servidor de autenticacao. Tente novamente mais tarde.", exc.status_code
+        return exc.message, exc.status_code
+
+    raw_msg = str(getattr(exc, "message", "") or exc)
+    lowered = raw_msg.lower()
+
+    # Weak password — include the specific reasons from Supabase
+    if isinstance(exc, AuthWeakPasswordError):
+        reasons = getattr(exc, "reasons", [])
+        if reasons:
+            detail = "; ".join(reasons)
+            return (
+                f"Senha fraca. {detail}. Use pelo menos 8 caracteres, "
+                "com letras maiusculas, minusculas e numeros.",
+                400,
+            )
+        return (
+            "Senha fraca. Use pelo menos 8 caracteres com letras maiusculas, "
+            "minusculas e numeros.",
+            400,
+        )
+
+    # Invalid credentials (wrong shape, missing fields, etc.)
+    if isinstance(exc, AuthInvalidCredentialsError):
+        if "email" in lowered:
+            return "E-mail invalido.", 400
+        return "Credenciais invalidas. Verifique os dados e tente novamente.", 400
+
+    # Generic API error from Supabase — use the HTTP status it reports
+    if isinstance(exc, AuthApiError):
+        status = getattr(exc, "status", None) or 400
+        if status >= 500:
+            return "Erro interno do servidor de autenticacao. Tente novamente mais tarde.", 502
+        if status == 429:
+            return "Muitas tentativas. Aguarde alguns minutos e tente novamente.", 429
+        if "already" in lowered and "regist" in lowered:
+            return "Email ja cadastrado.", 409
+        if "invalid" in lowered and ("email" in lowered or "password" in lowered):
+            return "E-mail ou senha invalidos conforme as regras do Supabase.", 400
+        return raw_msg or "Erro ao comunicar com o servico de autenticacao.", status
+
+    # Network / communication errors (timeout, connection refused, DNS, etc.)
+    if isinstance(exc, (httpx.NetworkError, httpx.TimeoutException)):
+        return (
+            "Nao foi possivel conectar ao servico de autenticacao. "
+            "Verifique sua conexao e tente novamente.",
+            502,
+        )
+
+    # HTTP status errors from Supabase API
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code if exc.response is not None else 500
+        if status >= 500:
+            return "Erro interno do servidor de autenticacao. Tente novamente mais tarde.", 502
+        return raw_msg or "Erro ao comunicar com o servico de autenticacao.", status
+
+    # Fallback — don't leak internal details
+    logger.warning("Unhandled Supabase error type: %s — %s", type(exc).__name__, exc)
+    return "Erro ao comunicar com o servico de autenticacao. Tente novamente mais tarde.", 500
 
 
 async def sign_up(email: str, password: str, full_name: Optional[str] = None) -> dict:
@@ -89,7 +156,8 @@ async def sign_up(email: str, password: str, full_name: Optional[str] = None) ->
         return getattr(response, "model_dump", lambda: response)()
     except Exception as exc:  # noqa: BLE001 — gotrue raises generic ApiException
         logger.error("Supabase sign_up failed — email=%s: %s", email, exc)
-        raise SupabaseAuthError(_extract_error_message(exc)) from exc
+        message, status_code = _extract_error_info(exc)
+        raise SupabaseAuthError(message, status_code=status_code) from exc
 
 
 async def resend_confirmation(email: str) -> None:
@@ -110,7 +178,8 @@ async def resend_confirmation(email: str) -> None:
         logger.info("Supabase resend confirmation OK — email=%s", email)
     except Exception as exc:  # noqa: BLE001
         logger.error("Supabase resend failed — email=%s: %s", email, exc)
-        raise SupabaseAuthError(_extract_error_message(exc)) from exc
+        message, status_code = _extract_error_info(exc)
+        raise SupabaseAuthError(message, status_code=status_code) from exc
 
 
 async def get_user_by_email(email: str) -> Optional[dict]:
@@ -143,7 +212,7 @@ async def update_password_by_email(email: str, new_password: str) -> None:
         user = client.auth.admin.get_user_by_email(email)
         user_id = getattr(user, "id", None) or (user.get("id") if isinstance(user, dict) else None)
         if not user_id:
-            raise SupabaseAuthError("Usuario nao encontrado no Supabase.")
+            raise SupabaseAuthError("Usuario nao encontrado no Supabase.", status_code=404)
         return client.auth.admin.update_user_by_id(
             user_id, {"password": new_password}
         )
@@ -152,7 +221,9 @@ async def update_password_by_email(email: str, new_password: str) -> None:
         await asyncio.to_thread(_call)
         logger.info("Supabase password synced — email=%s", email)
     except Exception as exc:  # noqa: BLE001
-        logger.error("Supabase password sync failed — email=%s: %s", email, exc)
+        message, status_code = _extract_error_info(exc)
+        logger.error("Supabase password sync failed — email=%s: %s", email, message)
+        return None
 
 
 async def is_email_confirmed(email: str) -> bool:
