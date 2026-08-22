@@ -1,4 +1,76 @@
 services:
+  - type: web
+    name: facemax-backend
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromSecret: DATABASE_URL
+      - key: SUPABASE_URL
+        value: https://lchmfruaaukeqorfmwvg.supabase.co
+      - key: SUPABASE_ANON_KEY
+        fromSecret: SUPABASE_ANON_KEY
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        fromSecret: SUPABASE_SERVICE_ROLE_KEY
+      - key: SUPABASE_EMAIL_REDIRECT_TO
+        value: https://facemax.pro/email-confirmado
+      - key: SUPABASE_JWT_SECRET
+        fromSecret: SUPABASE_JWT_SECRET
+      - key: SECRET_KEY
+        fromSecret: SECRET_KEY
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: OPENROUTER_API_KEY
+        fromSecret: OPENROUTER_API_KEY
+      - key: OPENROUTER_MODEL
+        value: google/gemma-4-26b-it:free
+      - key: OPENROUTER_BASE_URL
+        value: https://openrouter.ai/api/v1
+      - key: OPENROUTER_TIMEOUT
+        value: "30"
+      - key: OPENROUTER_REFERER
+        value: https://facemax.app
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        fromSecret: MERCADOPAGO_ACCESS_TOKEN
+      - key: MERCADOPAGO_WEBHOOK_SECRET
+        fromSecret: MERCADOPAGO_WEBHOOK_SECRET
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USE_TLS
+        value: "true"
+      - key: MAIL_USERNAME
+        fromSecret: MAIL_USERNAME
+      - key: MAIL_PASSWORD
+        fromSecret: MAIL_PASSWORD
+      - key: MAIL_FROM_EMAIL
+        value: FaceMax <noreply@facemax.app>
+      - key: BASE_URL
+        value: https://facemax-api.onrender.com
+      - key: FRONTEND_URL
+        value: https://facemax.pro
+      - key: DEBUG
+        value: "false"
+      - key: BACKEND_CORS_ORIGINS
+        value: '["https://facemax.pro","https://www.facemax.pro","https://facemax-frontend-h1me.onrender.com"]'
+      - key: RATE_LIMIT_AUTH
+        value: "5/minute"
+      - key: RATE_LIMIT_ANALYSIS
+        value: "10/hour"
+      - key: RATE_LIMIT_GENERAL
+        value: "60/minute"
+    healthCheck:
+      path: /api/v1/health
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   - type: static
     name: facemax-frontend
     rootDir: frontend
