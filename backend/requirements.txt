@@ -34,6 +34,8 @@ Pillow>=10.0.0
 
 # PostgreSQL async driver (production)
 asyncpg>=0.29.0
+# PostgreSQL sync driver (for Alembic migrations on Render)
+psycopg2-binary>=2.9.0
 
 # HTTP client / AI (OpenRouter)
 httpx>=0.28.0

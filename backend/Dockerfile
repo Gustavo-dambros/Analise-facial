@@ -50,5 +50,9 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')" || exit 1
 
+# Ensure start.sh is executable
+RUN chmod +x /app/start.sh
+
 # Iniciar Uvicorn (producao: workers=2, sem reload)
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--loop", "uvloop", "--http", "httptools"]
+# start.sh roda db_init.py (migracoes + sync de schema) antes do uvicorn
+CMD ["/app/start.sh"]
