@@ -52,6 +52,7 @@ class TokenData(BaseModel):
 class RegisterResponse(BaseModel):
     message: str
     requires_verification: bool = True
+    redirect_url: Optional[str] = None
 
 
 class VerifyEmailResponse(BaseModel):

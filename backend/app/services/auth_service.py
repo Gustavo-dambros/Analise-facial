@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import UserCreate, Token, RegisterResponse
 from app.core.security import create_access_token, decode_token
+from app.core.config import settings
 from app.models.user import User
 from app.services import supabase_service
 from app.services.supabase_service import SupabaseAuthError
@@ -58,6 +59,7 @@ class AuthService:
         return RegisterResponse(
             message="Conta criada. Verifique seu e-mail para ativa-la.",
             requires_verification=True,
+            redirect_url=f"{settings.FRONTEND_URL}/verificar-email",
         )
 
     async def login(self, email: str, password: str) -> Token:
