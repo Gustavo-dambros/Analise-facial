@@ -126,28 +126,24 @@ class AuthService:
         logger.info("Verification email re-sent — id=%s email=%s", user.id, user.email)
         return "Se o cadastro existir e nao estiver verificado, um novo link sera enviado."
 
-    async def esqueci_senha(self, email: str) -> str:
-        """Gera um JWT de recuperação (30 min) e envia o link por e-mail.
+    async def esqueci_senha(self, email: str) -> tuple[str, str]:
+        """Solicita reset de senha via Supabase Auth.
 
+        O Supabase envia o e-mail com link para /reset-password contendo o token no hash.
         Resposta genérica para evitar enumeração de e-mails.
         """
-        from app.services.email_service import send_password_reset_email
-
         user = await self.user_repo.get_by_email(email)
         if not user or not user.is_verified:
             logger.info("Forgot password for non-existent/unverified email: %s", email)
-            return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado."
+            redirect_url = f"{settings.FRONTEND_URL}/password-changed"
+            return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado.", redirect_url
 
-        token = create_access_token(
-            data={"sub": str(user.id), "type": RESET_TOKEN_TYPE},
-            expires_delta=timedelta(minutes=RESET_TOKEN_MINUTES),
-        )
+        try:
+            await supabase_service.reset_password_for_email(email)
+        except SupabaseAuthError as exc:
+            logger.warning("Supabase password reset failed for %s: %s", email, exc.message)
 
-        asyncio.create_task(
-            _send_reset_email_safe(send_password_reset_email, user.email, token)
-        )
-
-        logger.info("Password reset requested — id=%s email=%s", user.id, user.email)
+        logger.info("Password reset requested via Supabase — id=%s email=%s", user.id, user.email)
         redirect_url = f"{settings.FRONTEND_URL}/password-changed"
         return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado.", redirect_url
 

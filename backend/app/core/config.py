@@ -52,7 +52,10 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_ROLE_KEY: str = ""
 
     # Redirect after e-mail confirmation (Supabase email_redirect_to)
-    SUPABASE_EMAIL_REDIRECT_TO: str = "https://facemax.pro/email-confirmado"
+    SUPABASE_EMAIL_REDIRECT_TO: str = "https://facemax.pro/confirm-email"
+
+    # Redirect after password reset request (Supabase redirectTo)
+    SUPABASE_PASSWORD_REDIRECT_TO: str = "https://facemax.pro/reset-password"
 
     # Rate Limiting
     RATE_LIMIT_AUTH: str = "5/minute"

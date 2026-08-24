@@ -48,6 +48,7 @@ export default function App() {
         <Route path="/password-changed" element={<PasswordChangedPage />} />
         <Route path="/verificar-email" element={<VerificarEmailPage />} />
         <Route path="/email-confirmado" element={<EmailConfirmadoPage />} />
+        <Route path="/confirm-email" element={<ConfirmEmailPage />} />
 
         {/* DASHBOARD routes — wrapped in DashboardLayout + auth guards */}
         <Route element={<Layout />}>

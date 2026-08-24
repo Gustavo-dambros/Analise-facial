@@ -182,6 +182,28 @@ async def resend_confirmation(email: str) -> None:
         raise SupabaseAuthError(message, status_code=status_code) from exc
 
 
+async def reset_password_for_email(email: str) -> None:
+    """Send password reset email via Supabase Auth.
+
+    The email contains a link to the reset password page with a token in the hash fragment.
+    """
+    def _call():
+        return _get_client().auth.reset_password_for_email(
+            email,
+            {
+                "redirect_to": settings.SUPABASE_PASSWORD_REDIRECT_TO,
+            }
+        )
+
+    try:
+        await asyncio.to_thread(_call)
+        logger.info("Supabase password reset email sent — email=%s", email)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Supabase password reset email failed — email=%s: %s", email, exc)
+        message, status_code = _extract_error_info(exc)
+        raise SupabaseAuthError(message, status_code=status_code) from exc
+
+
 async def get_user_by_email(email: str) -> Optional[dict]:
     """Fetch a Supabase Auth user by e-mail (requires service role key).
 
