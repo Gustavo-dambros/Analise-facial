@@ -57,9 +57,9 @@ class AuthService:
             user.email,
         )
         return RegisterResponse(
-            message="Conta criada. Verifique seu e-mail para ativa-la.",
+            message="Conta criada. Enviamos um e-mail de confirmação.",
             requires_verification=True,
-            redirect_url=f"{settings.FRONTEND_URL}/verificar-email",
+            redirect_url=f"{settings.FRONTEND_URL}/waiting",
         )
 
     async def login(self, email: str, password: str) -> Token:

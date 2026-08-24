@@ -49,6 +49,7 @@ export default function App() {
         <Route path="/verificar-email" element={<VerificarEmailPage />} />
         <Route path="/email-confirmado" element={<EmailConfirmadoPage />} />
         <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+        <Route path="/waiting" element={<WaitingPage />} />
 
         {/* DASHBOARD routes — wrapped in DashboardLayout + auth guards */}
         <Route element={<Layout />}>

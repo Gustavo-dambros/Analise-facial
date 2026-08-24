@@ -69,24 +69,20 @@ export default function SignupPage() {
       if (result.success) {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await supabase.from('profiles').upsert({
-            id: session.user.id,
-            full_name: fullName,
-            gender: gender || '',
-            age: age ? Number(age) : null,
-            style_objective: styleObjective || '',
-          });
+if (session?.user) {
+            await supabase.from('profiles').upsert({
+              id: session.user.id,
+              full_name: fullName,
+              gender: gender || '',
+              age: age ? Number(age) : null,
+              style_objective: styleObjective || '',
+            });
 
-          const selectedPlan = localStorage.getItem('selected_plan');
-          if (selectedPlan) {
-            navigate('/checkout-simulation');
+            // Always go to waiting page to check email confirmation
+            navigate('/waiting');
           } else {
-            navigate('/dashboard');
+            setSuccessMessage(result.message || 'Conta criada! Verifique seu email para ativar.');
           }
-        } else {
-          setSuccessMessage(result.message || 'Conta criada! Verifique seu email para ativar.');
-        }
       } else {
         setError(result.error);
       }
