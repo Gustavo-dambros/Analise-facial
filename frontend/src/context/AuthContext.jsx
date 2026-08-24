@@ -97,8 +97,8 @@ export function AuthProvider({ children }) {
 
   const resetPassword = useCallback(async (email) => {
     try {
-      await forgotPassword(email);
-      return { success: true };
+      const result = await forgotPassword(email);
+      return { success: true, redirect_url: result.redirect_url };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -106,8 +106,8 @@ export function AuthProvider({ children }) {
 
   const resetPasswordWithToken = useCallback(async (token, newPassword) => {
     try {
-      await apiResetPassword(token, newPassword);
-      return { success: true };
+      const result = await apiResetPassword(token, newPassword);
+      return { success: true, redirect_url: result.redirect_url };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -115,8 +115,8 @@ export function AuthProvider({ children }) {
 
   const updatePassword = useCallback(async (newPassword) => {
     try {
-      await apiChangePassword(newPassword);
-      return { success: true };
+      const result = await apiChangePassword(newPassword);
+      return { success: true, redirect_url: result.redirect_url };
     } catch (error) {
       return { success: false, error: error.message };
     }

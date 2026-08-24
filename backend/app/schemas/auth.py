@@ -73,6 +73,7 @@ class EsqueciSenhaRequest(BaseModel):
 
 class EsqueciSenhaResponse(BaseModel):
     message: str = "Se o e-mail estiver cadastrado, um link de recuperação foi enviado."
+    redirect_url: Optional[str] = None
 
 
 class RedefinirSenhaRequest(BaseModel):
@@ -93,6 +94,7 @@ class RedefinirSenhaRequest(BaseModel):
 
 class RedefinirSenhaResponse(BaseModel):
     message: str
+    redirect_url: Optional[str] = None
 
 
 class AlterarSenhaRequest(BaseModel):
@@ -112,5 +114,6 @@ class AlterarSenhaRequest(BaseModel):
 
 class AlterarSenhaResponse(BaseModel):
     message: str
+    redirect_url: Optional[str] = None
 
 

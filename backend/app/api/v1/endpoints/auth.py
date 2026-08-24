@@ -77,8 +77,8 @@ async def esqueci_senha(
 ):
     """Request a password reset link. Generic response to prevent email enumeration."""
     auth_service = AuthService(db)
-    message = await auth_service.esqueci_senha(body.email)
-    return EsqueciSenhaResponse(message=message)
+    message, redirect_url = await auth_service.esqueci_senha(body.email)
+    return EsqueciSenhaResponse(message=message, redirect_url=redirect_url)
 
 
 @router.post(
@@ -92,8 +92,8 @@ async def redefinir_senha(
 ):
     """Reset password using the JWT reset token received by email."""
     auth_service = AuthService(db)
-    message = await auth_service.redefinir_senha(body.token, body.nova_senha)
-    return RedefinirSenhaResponse(message=message)
+    message, redirect_url = await auth_service.redefinir_senha(body.token, body.nova_senha)
+    return RedefinirSenhaResponse(message=message, redirect_url=redirect_url)
 
 
 @router.post(
@@ -106,5 +106,5 @@ async def alterar_senha(
 ):
     """Change the password of the authenticated user (logged-in flow)."""
     auth_service = AuthService(db)
-    message = await auth_service.alterar_senha(current_user, body.nova_senha)
-    return AlterarSenhaResponse(message=message)
+    message, redirect_url = await auth_service.alterar_senha(current_user, body.nova_senha)
+    return AlterarSenhaResponse(message=message, redirect_url=redirect_url)

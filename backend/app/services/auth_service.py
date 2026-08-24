@@ -148,7 +148,8 @@ class AuthService:
         )
 
         logger.info("Password reset requested — id=%s email=%s", user.id, user.email)
-        return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado."
+        redirect_url = f"{settings.FRONTEND_URL}/password-changed"
+        return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado.", redirect_url
 
     async def redefinir_senha(self, token: str, nova_senha: str) -> str:
         """Valida o JWT de recuperação e atualiza a senha do usuário."""
@@ -169,14 +170,16 @@ class AuthService:
         await self.user_repo.update_password(user, nova_senha)
         await supabase_service.update_password_by_email(user.email, nova_senha)
         logger.info("Password reset — user %s email=%s", user.id, user.email)
-        return "Senha redefinida com sucesso."
+        redirect_url = f"{settings.FRONTEND_URL}/password-changed"
+        return "Senha redefinida com sucesso.", redirect_url
 
     async def alterar_senha(self, user: User, nova_senha: str) -> str:
         """Altera a senha do usuário autenticado (sem e-mail/logado)."""
         await self.user_repo.update_password(user, nova_senha)
         await supabase_service.update_password_by_email(user.email, nova_senha)
         logger.info("Password changed — user %s email=%s", user.id, user.email)
-        return "Senha alterada com sucesso."
+        redirect_url = f"{settings.FRONTEND_URL}/password-changed"
+        return "Senha alterada com sucesso.", redirect_url
 
 
 async def _send_reset_email_safe(send_func, to_email: str, token: str):

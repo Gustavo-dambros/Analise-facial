@@ -26,6 +26,7 @@ import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import VerificarEmailPage from '@/pages/VerificarEmailPage';
 import EmailConfirmadoPage from '@/pages/EmailConfirmadoPage';
 import ChangePasswordPage from '@/pages/ChangePasswordPage';
+import PasswordChangedPage from '@/pages/PasswordChangedPage';
 
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import ProfessionalRoute from '@/routes/ProfessionalRoute';
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/checkout-pending" element={<CheckoutPendingPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/password-changed" element={<PasswordChangedPage />} />
         <Route path="/verificar-email" element={<VerificarEmailPage />} />
         <Route path="/email-confirmado" element={<EmailConfirmadoPage />} />
 
