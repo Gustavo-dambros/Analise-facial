@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ export default function WaitingPage() {
   const [status, setStatus] = useState('loading'); // loading, checked, error
   const [email, setEmail] = useState('');
 
+  const attempted = useRef(false);
+
   useEffect(() => {
     // Get email from search params if provided
     const emailFromParams = searchParams.get('email');
@@ -19,48 +21,54 @@ export default function WaitingPage() {
     }
 
     const supabase = createClient();
+    let cancelled = false;
 
-    // Check if the user's email is confirmed
-    const checkVerification = async () => {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser();
+    const afterCheck = (user) => {
+      if (cancelled) return;
+      if (user?.email_confirmed_at) {
+        setStatus('checked');
+        navigate('/login');
+      } else {
+        setStatus('loading');
+      }
+    };
+
+    const init = async () => {
+      // If the confirmation e-mail pointed to our domain with token_hash + type
+      // (recommended setup to avoid e-mail scanners consuming the one-time
+      // token), verify it here. Otherwise the session may already be present
+      // via the URL hash (redirect_to flow).
+      const tokenHash = searchParams.get('token_hash');
+      const type = searchParams.get('type');
+      if (tokenHash && type && !attempted.current) {
+        attempted.current = true;
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
         if (error) {
           setStatus('error');
           return;
         }
-        if (user?.email_confirmed_at) {
-          setStatus('checked');
-          navigate('/login');
-          return;
-        }
-        // User not confirmed yet, keep loading
-        setStatus('loading');
-      } catch (err) {
-        setStatus('error');
       }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      afterCheck(user);
     };
 
-    checkVerification();
+    init();
 
-    // Set up listener for auth state changes
+    // Set up listener for auth state changes (covers redirect_to hash flow)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (event === 'USER_CREATED' || event === 'SIGNED_IN') {
-          // Check user metadata for email confirmation
-          if (session?.user?.email_confirmed_at) {
-            setStatus('checked');
-            navigate('/login');
-          } else {
-            setStatus('loading');
-          }
+          afterCheck(session?.user);
         }
       }
     );
 
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   if (status === 'checked') {
     return null; // Already redirected
@@ -83,7 +91,7 @@ export default function WaitingPage() {
                   </p>
                 </div>
                 <Link
-                  to="/forgot-password"
+                  to="/signup"
                   className="underline underline-offset-4 text-brand-accent hover:text-brand-accent/80 text-sm"
                 >
                   Solicitar novo link
@@ -114,11 +122,11 @@ export default function WaitingPage() {
                 </p>
               </div>
               {email && (
-                <p className="text-xs text-text-secondary">
-                  Não recebeu o e-mail? <Link to="/forgot-password" className="text-brand-accent">
-                    Solicitar novo link
-                  </Link>
-                </p>
+                 <p className="text-xs text-text-secondary">
+                   Não recebeu o e-mail? <Link to="/signup" className="text-brand-accent">
+                     Solicitar novo link
+                   </Link>
+                 </p>
               )}
               <Button
                 disabled={true}
