@@ -12,46 +12,45 @@ export default function EmailConfirmadoPage() {
 
   useEffect(() => {
     const supabase = createClient();
+    let cancelled = false;
 
-    // Supabase puts the tokens in the URL hash fragment after redirect
-    // We need to exchange the code for a session
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    const type = params.get('type');
+    // The Supabase browser client auto-detects the session from the URL hash
+    // (redirect_to flow) and fires SIGNED_IN. We just need to confirm the
+    // e-mail was verified and then send the user to login.
+    const afterCheck = (user) => {
+      if (cancelled) return;
+      if (user?.email_confirmed_at) {
+        setStatus('success');
+        setTimeout(() => navigate('/login'), 1500);
+      } else {
+        setStatus('error');
+        setErrorMessage('Nao foi possivel confirmar o e-mail. Tente novamente.');
+      }
+    };
 
-    if (accessToken && refreshToken) {
-      // Exchange the auth code for a session
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      }).then(({ error }) => {
-        if (error) {
-          setErrorMessage(error.message);
+    supabase.auth.getUser().then(({ data: { user }, error }) => {
+      if (error) {
+        if (!cancelled) {
           setStatus('error');
-        } else {
-          setStatus('success');
-          // Redirect to login after brief success display
-          setTimeout(() => navigate('/login'), 1500);
+          setErrorMessage('Link de confirmacao invalido ou expirado.');
         }
-      });
-    } else if (type === 'signup') {
-      // If we only have type=signup without tokens, the session might already be set
-      // Try to get the user
-      supabase.auth.getUser().then(({ data: { user }, error }) => {
-        if (user && !error) {
-          setStatus('success');
-          setTimeout(() => navigate('/login'), 1500);
-        } else {
-          setStatus('error');
-          setErrorMessage('Não foi possível confirmar o e-mail. Tente novamente.');
+        return;
+      }
+      afterCheck(user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'USER_CREATED') {
+          afterCheck(session?.user);
         }
-      });
-    } else {
-      setStatus('error');
-      setErrorMessage('Link de confirmação inválido ou expirado.');
-    }
+      }
+    );
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   if (status === 'loading') {
@@ -112,7 +111,7 @@ export default function EmailConfirmadoPage() {
               <XCircle className="w-14 h-14 text-red-400" />
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-text-primary">
-                  Link inválido ou expirado
+                  Link invalido ou expirado
                 </h1>
                 <p className="text-sm text-text-secondary mt-2">
                   {errorMessage || 'Não foi possível confirmar seu e-mail. Solicite um novo link de verificação.'}
