@@ -33,6 +33,8 @@ export default function ConfirmEmailPage() {
           setStatus('error');
         } else {
           setStatus('success');
+          // Redirect to login after brief success display
+          setTimeout(() => navigate('/login'), 1500);
         }
       });
     } else if (type === 'signup') {
@@ -41,6 +43,7 @@ export default function ConfirmEmailPage() {
       supabase.auth.getUser().then(({ data: { user }, error }) => {
         if (user && !error) {
           setStatus('success');
+          setTimeout(() => navigate('/login'), 1500);
         } else {
           setStatus('error');
           setErrorMessage('Não foi possível confirmar o e-mail. Tente novamente.');
@@ -50,7 +53,7 @@ export default function ConfirmEmailPage() {
       setStatus('error');
       setErrorMessage('Link de confirmação inválido ou expirado.');
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">

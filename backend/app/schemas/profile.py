@@ -51,5 +51,9 @@ class UserProfileResponse(BaseModel):
     gender: Optional[str] = None
     age: Optional[int] = None
     style_objective: Optional[str] = None
+    role: Optional[str] = None
+    plan: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_verified: Optional[bool] = None
 
     model_config = {"from_attributes": True}

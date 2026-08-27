@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Camera, Save, CheckCircle2, User, Mail, Sparkles, Lock, Pencil, X, LogOut, Shield } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Camera, Save, CheckCircle2, User, Mail, Sparkles, LogOut } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
+import { getProfile, updateProfile } from '@/lib/api';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,38 +20,12 @@ const STYLE_OPTIONS = [
   'Pre-Procedure',
   'Autoconhecimento',
 ];
-const EDIT_COOLDOWN_DAYS = 30;
-
-function daysUntilEdit(lastEditAt) {
-  if (!lastEditAt) return 0;
-  const last = new Date(lastEditAt);
-  const next = new Date(last.getTime() + EDIT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
-  const now = new Date();
-  if (now >= next) return 0;
-  const diffMs = next.getTime() - now.getTime();
-  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-}
-
-function formatNextEditDate(lastEditAt) {
-  const last = new Date(lastEditAt);
-  const next = new Date(last.getTime() + EDIT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
-  return next.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-}
-
-function ProfileField({ label, value, emptyText }) {
-  return (
-    <div className="space-y-1">
-      <p className="text-xs text-text-muted">{label}</p>
-      <p className="text-sm text-text-primary">{value || emptyText || '--'}</p>
-    </div>
-  );
-}
 
 export default function ProfilePage() {
-  const { user, profile, refreshProfile, signOut } = useAuth();
+  const { user, profile, token, signOut, refreshProfile } = useAuth();
   const fileInputRef = useRef(null);
 
-  const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
@@ -62,27 +37,21 @@ export default function ProfilePage() {
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePictureFile, setProfilePictureFile] = useState(null);
 
-  const cooldownDays = useMemo(() => daysUntilEdit(profile?.last_profile_edit_at), [profile]);
-  const canEdit = cooldownDays === 0;
-
   useEffect(() => {
     if (!profile) return;
     setFullName(profile.full_name || '');
     setGender(profile.gender || '');
     setAge(profile.age?.toString() || '');
     setStyleObjective(profile.style_objective || '');
-    setProfilePicture(profile.avatar_url || null);
+    setProfilePicture(profile.profile_picture || null);
   }, [profile]);
 
-  function handleStartEdit() {
-    if (!canEdit) return;
-    setEditing(true);
+  const handleEdit = () => {
     setError(null);
     setSaved(false);
-  }
+  };
 
-  function handleCancelEdit() {
-    setEditing(false);
+  const handleCancelEdit = () => {
     setError(null);
     setProfilePictureFile(null);
     if (profile) {
@@ -90,9 +59,9 @@ export default function ProfilePage() {
       setGender(profile.gender || '');
       setAge(profile.age?.toString() || '');
       setStyleObjective(profile.style_objective || '');
-      setProfilePicture(profile.avatar_url || null);
+      setProfilePicture(profile.profile_picture || null);
     }
-  }
+  };
 
   function handlePhotoUpload(file) {
     if (!file) return;
@@ -125,14 +94,12 @@ export default function ProfilePage() {
 
   async function handleSave(e) {
     e.preventDefault();
-    if (!user?.id || !canEdit) return;
+    if (!user?.id) return;
     setSaving(true);
     setError(null);
     setSaved(false);
 
     try {
-      const supabase = createClient();
-
       let pictureUrl = profilePicture;
 
       // Upload new file to Storage if one was selected
@@ -140,24 +107,19 @@ export default function ProfilePage() {
         pictureUrl = await uploadAvatar(profilePictureFile);
       }
 
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: fullName || null,
-          gender: gender || null,
-          age: age ? Number(age) : null,
-          style_objective: styleObjective || null,
-          avatar_url: pictureUrl || null,
-          last_profile_edit_at: new Date().toISOString(),
-        });
+      // Update profile via FastAPI
+      await updateProfile({
+        full_name: fullName || null,
+        profile_picture: pictureUrl || null,
+        gender: gender || null,
+        age: age ? Number(age) : null,
+        style_objective: styleObjective || null,
+      });
 
-      if (updateError) throw new Error(updateError.message);
       setProfilePicture(pictureUrl);
       setProfilePictureFile(null);
       setSaved(true);
-      setEditing(false);
-      refreshProfile(user.id);
+      await refreshProfile(token);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
       setError(e.message);
@@ -183,43 +145,17 @@ export default function ProfilePage() {
         <FadeIn>
           <div className="flex items-center justify-between mb-6 sm:mb-8">
             <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Meu Perfil</h1>
-            {!editing && (
-              canEdit ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleStartEdit}
-                  className="gap-2"
-                >
-                  <Pencil className="w-4 h-4" />
-                  Alterar Informacoes
-                </Button>
-              ) : (
-                <div className="flex items-center gap-2 text-xs text-yellow-400">
-                  <Lock className="w-3.5 h-3.5" />
-                  Bloqueado por 30 dias
-                </div>
-              )
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleEdit}
+              className="gap-2"
+            >
+              <User className="w-4 h-4" />
+              Editar Informações
+            </Button>
           </div>
         </FadeIn>
-
-        {/* Edit restriction banner */}
-        {!canEdit && !editing && (
-          <FadeIn>
-            <div className="mb-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-start gap-3">
-              <Lock className="w-5 h-5 text-yellow-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-yellow-400">Perfil bloqueado para edicao</p>
-                <p className="text-xs text-yellow-400/70 mt-1">
-                  Voce so pode editar seu perfil a cada 30 dias. Proxima edicao disponivel em:{' '}
-                  <span className="font-semibold text-yellow-400">{formatNextEditDate(profile.last_profile_edit_at)}</span>
-                  {' '}({cooldownDays} {cooldownDays === 1 ? 'dia' : 'dias'}).
-                </p>
-              </div>
-            </div>
-          </FadeIn>
-        )}
 
         {/* Feedback messages */}
         {error && (
@@ -247,20 +183,18 @@ export default function ProfilePage() {
                     <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
                       <div className="relative group">
                         <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-card-bg ring-2 ring-brand-accent/30">
-                          <AvatarImage src={editing ? profilePicture : (profile.avatar_url || profilePicture)} alt={fullName || 'Perfil'} />
+                          <AvatarImage src={profilePicture} alt={fullName || 'Perfil'} />
                           <AvatarFallback className="bg-brand-secondary text-brand-accent">
                             <User className="w-8 h-8 sm:w-10 sm:h-10" />
                           </AvatarFallback>
                         </Avatar>
-                        {editing && (
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-brand-accent text-background flex items-center justify-center hover:bg-brand-accent/90 transition-all shadow-lg opacity-0 group-hover:opacity-100 focus:opacity-100"
-                          >
-                            <Camera className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-brand-accent text-background flex items-center justify-center hover:bg-brand-accent/90 transition-all shadow-lg"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                        </button>
                         <input
                           type="file"
                           accept="image/*"
@@ -297,64 +231,54 @@ export default function ProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-alpino">Dados Pessoais</CardTitle>
-                  <CardDescription>Informacoes basicas do seu perfil</CardDescription>
+                  <CardDescription>Informações básicas do seu perfil</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  {editing ? (
-                    <FieldGroup>
+                  <FieldGroup>
+                    <Field orientation="vertical">
+                      <FieldContent>
+                        <FieldLabel>Nome Completo</FieldLabel>
+                        <Input
+                          placeholder="Seu nome completo"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                        />
+                      </FieldContent>
+                    </Field>
+
+                    <div className="grid grid-cols-2 gap-4">
                       <Field orientation="vertical">
                         <FieldContent>
-                          <FieldLabel>Nome Completo</FieldLabel>
+                          <FieldLabel>Idade</FieldLabel>
                           <Input
-                            placeholder="Seu nome completo"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
+                            type="number"
+                            min="1"
+                            max="120"
+                            placeholder="Ex: 28"
+                            value={age}
+                            onChange={(e) => setAge(e.target.value)}
                           />
+                          <FieldDescription>Anos</FieldDescription>
                         </FieldContent>
                       </Field>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <Field orientation="vertical">
-                          <FieldContent>
-                            <FieldLabel>Idade</FieldLabel>
-                            <Input
-                              type="number"
-                              min="1"
-                              max="120"
-                              placeholder="Ex: 28"
-                              value={age}
-                              onChange={(e) => setAge(e.target.value)}
-                            />
-                            <FieldDescription>Anos</FieldDescription>
-                          </FieldContent>
-                        </Field>
-
-                        <Field orientation="vertical">
-                          <FieldContent>
-                            <FieldLabel>Genero</FieldLabel>
-                            <select
-                              value={gender}
-                              onChange={(e) => setGender(e.target.value)}
-                              className="flex h-10 w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] px-4 py-2.5 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/40 focus-visible:border-brand-accent/30 transition-colors appearance-none"
-                            >
-                              <option value="" className="bg-[#0a0a0a] text-neutral-400">Selecione</option>
-                              {GENDER_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt} className="bg-[#0a0a0a] text-white">{opt}</option>
-                              ))}
-                            </select>
-                          </FieldContent>
-                        </Field>
-                      </div>
-                    </FieldGroup>
-                  ) : (
-                    <div className="space-y-4">
-                      <ProfileField label="Nome Completo" value={profile.full_name} emptyText="Sem nome" />
-                      <div className="grid grid-cols-2 gap-4">
-                        <ProfileField label="Idade" value={profile.age ? `${profile.age} anos` : null} />
-                        <ProfileField label="Genero" value={profile.gender} />
-                      </div>
+                      <Field orientation="vertical">
+                        <FieldContent>
+                          <FieldLabel>Gênero</FieldLabel>
+                          <select
+                            value={gender}
+                            onChange={(e) => setGender(e.target.value)}
+                            className="flex h-10 w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] px-4 py-2.5 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/40 focus-visible:border-brand-accent/30 transition-colors appearance-none"
+                          >
+                            <option value="" className="bg-[#0a0a0a] text-neutral-400">Selecione</option>
+                            {GENDER_OPTIONS.map((opt) => (
+                              <option key={opt} value={opt} className="bg-[#0a0a0a] text-white">{opt}</option>
+                            ))}
+                          </select>
+                        </FieldContent>
+                      </Field>
                     </div>
-                  )}
+                  </FieldGroup>
                 </CardContent>
               </Card>
             </FadeIn>
@@ -370,102 +294,61 @@ export default function ProfilePage() {
                   <CardDescription>Selecione o seu principal objetivo</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {editing ? (
-                    <div className="flex flex-wrap gap-2">
-                      {STYLE_OPTIONS.map((opt) => (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => setStyleObjective(styleObjective === opt ? '' : opt)}
-                          className={`px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                            styleObjective === opt
-                              ? 'bg-brand-accent text-background shadow-[0_0_12px_rgba(212,175,55,0.3)]'
-                              : 'bg-white/5 text-text-secondary border border-border hover:border-brand-accent/40 hover:text-text-primary'
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <ProfileField label="Objetivo" value={profile.style_objective} emptyText="Nao definido" />
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {STYLE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setStyleObjective(styleObjective === opt ? '' : opt)}
+                        className={`px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                          styleObjective === opt
+                            ? 'bg-brand-accent text-background shadow-[0_0_12px_rgba(212,175,55,0.3)]'
+                            : 'bg-white/5 text-text-secondary border border-border hover:border-brand-accent/40 hover:text-text-primary'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </FadeIn>
           </div>
 
-          {/* Action buttons */}
-          {editing && (
-            <FadeIn delay={0.4}>
-              <div className="mt-6 sm:mt-8 flex justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancelEdit}
-                  disabled={saving}
-                  className="gap-2"
-                >
-                  <X className="w-4 h-4" />
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  size="lg"
-                  className="gap-2 px-6 sm:px-8"
-                >
-                  <Save className="w-4 h-4" />
-                  {saving ? 'Salvando...' : 'Salvar Perfil'}
-                </Button>
-              </div>
-            </FadeIn>
-          )}
+          {/* Save button */}
+          <FadeIn delay={0.4}>
+            <div className="mt-6 sm:mt-8 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancelEdit}
+                disabled={saving}
+                className="gap-2"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving}
+                size="lg"
+                className="gap-2 px-6 sm:px-8"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Salvando...' : 'Salvar Perfil'}
+              </Button>
+            </div>
+          </FadeIn>
         </form>
 
-        {/* Security Section */}
-        <FadeIn delay={0.5}>
-          <div className="mt-8 sm:mt-10 pt-6 border-t border-border">
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-brand-accent" />
-                  <CardTitle className="text-base font-alpino">Seguranca</CardTitle>
-                </div>
-                <CardDescription>Gerencie sua senha e a seguranca da conta</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-text-primary">Alterar senha</h3>
-                    <p className="text-xs text-text-muted mt-0.5">Recomendamos alterar sua senha periodicamente.</p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    asChild
-                    className="gap-2 shrink-0"
-                  >
-                    <Link to="/dashboard/change-password">
-                      <Lock className="w-4 h-4" />
-                      Mudar senha
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </FadeIn>
-
         {/* Logout Section */}
-        <FadeIn delay={0.6}>
+        <FadeIn delay={0.5}>
           <div className="mt-8 sm:mt-10 pt-6 border-t border-border">
             <Card className="border-red-500/20">
               <CardContent className="p-5">
-                <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div>
                     <h3 className="text-sm font-semibold text-text-primary">Sair da Conta</h3>
-                    <p className="text-xs text-text-muted mt-0.5">Voce precisara fazer login novamente para acessar sua conta.</p>
+                    <p className="text-xs text-text-muted mt-0.5">Você precisará fazer login novamente para acessar sua conta.</p>
                   </div>
                   <Button
                     type="button"

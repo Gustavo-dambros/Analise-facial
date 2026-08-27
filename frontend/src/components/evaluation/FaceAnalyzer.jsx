@@ -11,8 +11,7 @@ import {
   Image,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { uploadAnalysisPhotos, validateMagicBytes } from '@/lib/supabase/storage';
-import { createClient } from '@/lib/supabase/client';
+import { validateMagicBytes } from '@/lib/supabase/storage';
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -31,7 +30,7 @@ const PHOTO_SLOTS = [
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default function FaceAnalyzer() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [photos, setPhotos] = useState({ front: null, left: null, right: null, body: null });
   const [activeSlot, setActiveSlot] = useState('front');
   const [cameraActive, setCameraActive] = useState(false);
@@ -125,10 +124,9 @@ export default function FaceAnalyzer() {
     setSending(true);
     setSendError(null);
 
-    const uploadedPaths = [];
     try {
       if (!photos.front) {
-        throw new Error("A foto frontal e obrigatoria.");
+        throw new Error('A foto frontal é obrigatória.');
       }
 
       // Validate magic bytes for all non-null photos
@@ -136,46 +134,22 @@ export default function FaceAnalyzer() {
         if (photo) {
           const isValid = await validateMagicBytes(photo);
           if (!isValid) {
-            const slotLabel = slot === 'front' ? 'frontal' : slot === 'left' ? 'esquerda' : slot === 'right' ? 'direita' : 'do fisico';
-            throw new Error(`A foto ${slotLabel} nao e uma imagem valida. Use JPG, PNG ou WebP.`);
+            const slotLabel = slot === 'front' ? 'frontal' : slot === 'left' ? 'esquerda' : slot === 'right' ? 'direita' : 'do físico';
+            throw new Error(`A foto ${slotLabel} não é uma imagem válida. Use JPG, PNG ou WebP.`);
           }
         }
       }
 
-      const analysisId = crypto.randomUUID();
-
-      const photoUrls = await uploadAnalysisPhotos(user.id, analysisId, photos);
-      uploadedPaths.push(...Object.values(photoUrls).filter(Boolean).map(url => {
-        const match = url.match(/analysis-photos\/(.+?)(?:\?|$)/);
-        return match ? match[1] : null;
-      }).filter(Boolean));
-
-      const supabase = createClient();
-      const { error: dbError } = await supabase.from('analyses').insert({
-        id: analysisId,
-        user_id: user.id,
-        status: 'pending',
-        ...photoUrls,
-      });
-
-      if (dbError) {
-        throw new Error(`Erro ao salvar análise: ${dbError.message}`);
-      }
+      // Envia apenas a foto frontal para análise via API FastAPI
+      const { analyzeWithAI } = await import('@/lib/api');
+      const result = await analyzeWithAI(photos.front);
 
       setSubmitted(true);
       setPhotos({ front: null, left: null, right: null, body: null });
       setActiveSlot('front');
       stopCamera();
     } catch (err) {
-      if (uploadedPaths.length > 0) {
-        const supabase = createClient();
-        await Promise.allSettled(
-          uploadedPaths.map(path =>
-            supabase.storage.from('analysis-photos').remove([path])
-          )
-        );
-      }
-      setSendError(err.message || 'Erro ao enviar imagem');
+      setSendError(err.message || 'Erro ao enviar imagem para análise');
     } finally {
       setSending(false);
     }
@@ -194,7 +168,7 @@ export default function FaceAnalyzer() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Nova Análise</h1>
-          <p className="text-xs sm:text-sm text-text-muted mt-1">Capture ou envie 3 fotos do rosto e opcionalmente 1 do fisico</p>
+          <p className="text-xs sm:text-sm text-text-muted mt-1">Capture ou envie a foto frontal do rosto para análise IA</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_410px] gap-6">
@@ -301,28 +275,28 @@ export default function FaceAnalyzer() {
                 <CheckCircle2 className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-green-400">
-                    Fotos enviadas para avaliacao
+                    Foto enviada para análise
                   </p>
                   <p className="text-xs text-green-400/70 mt-1">
-                    Um de nossos profissionais ira analisa-las em breve.
+                    A IA está processando sua análise facial.
                   </p>
                 </div>
                 <button
                   onClick={handleNewScan}
                   className="text-xs text-green-400/60 hover:text-green-400 transition-colors underline underline-offset-2 shrink-0"
                 >
-                  Enviar outra
+                  Nova análise
                 </button>
               </div>
             )}
           </div>
 
-          {/* Coluna Direita: Slots de Fotos */}
+          {/* Coluna Direta: Slot Frontal */}
           <div className="flex flex-col gap-4">
             <div className="rounded-2xl border border-border bg-card-bg p-4">
-              <h2 className="text-sm font-semibold text-text-primary mb-3">Fotos do Rosto</h2>
-              <div className="grid grid-cols-3 gap-3">
-                {PHOTO_SLOTS.filter(s => !s.optional).map(({ key, label, hint }) => (
+              <h2 className="text-sm font-semibold text-text-primary mb-3">Foto Frontal (Obrigatória)</h2>
+              <div className="grid grid-cols-1 gap-3">
+                {PHOTO_SLOTS.filter(s => s.key === 'front').map(({ key, label, hint }) => (
                   <ContextMenu key={key}>
                     <ContextMenuTrigger asChild>
                       <div
@@ -398,81 +372,6 @@ export default function FaceAnalyzer() {
               </div>
             </div>
 
-            {/* Foto do fisico (opcional) */}
-            {PHOTO_SLOTS.filter(s => s.optional).map(({ key, label, hint }) => (
-              <div key={key} className="rounded-2xl border border-border bg-card-bg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold text-text-primary">{label}</h2>
-                  <span className="text-[10px] text-text-muted bg-white/5 px-2 py-0.5 rounded-full">Opcional</span>
-                </div>
-                <ContextMenu>
-                  <ContextMenuTrigger asChild>
-                    <div
-                      onClick={() => setActiveSlot(key)}
-                      className={`relative flex flex-col rounded-xl border overflow-hidden cursor-pointer transition-all duration-300 ${
-                        activeSlot === key
-                          ? 'border-brand-accent shadow-[0_0_20px_rgba(255,255,255,0.15)]'
-                          : photos[key]
-                            ? 'border-border hover:border-brand-accent/40'
-                            : 'border-dashed border-border/60 hover:border-brand-accent/50 hover:bg-white/[0.02]'
-                      } bg-background`}
-                    >
-                      {photos[key] ? (
-                        <>
-                          <img src={photos[key]} alt={label} className="w-full aspect-[4/3] object-cover" />
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRemovePhoto(key); }}
-                            className="absolute top-1.5 right-1.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-background/80 border border-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-background transition-colors text-[10px] sm:text-xs"
-                          >x</button>
-                        </>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center gap-2 aspect-[4/3] px-3 bg-white/[0.01]">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-dashed border-border/50 flex items-center justify-center bg-white/[0.02]">
-                            <User className="w-5 h-5 sm:w-6 sm:h-6 text-text-muted" />
-                          </div>
-                          <p className="text-[11px] sm:text-xs font-medium text-text-primary text-center">{hint}</p>
-                        </div>
-                      )}
-                    </div>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent className="bg-background border-border">
-                    <ContextMenuItem
-                      onClick={() => {
-                        setActiveSlot(key);
-                        if (!cameraActive) startCamera();
-                      }}
-                      className="gap-2 text-text-primary focus:bg-white/5 focus:text-text-primary"
-                    >
-                      <Camera className="w-4 h-4" />
-                      Capturar
-                    </ContextMenuItem>
-                    <ContextMenuItem
-                      onClick={() => {
-                        setActiveSlot(key);
-                        setTimeout(() => fileInputRefs.current[key]?.click(), 100);
-                      }}
-                      className="gap-2 text-text-primary focus:bg-white/5 focus:text-text-primary"
-                    >
-                      <Image className="w-4 h-4" />
-                      Upload
-                    </ContextMenuItem>
-                    {photos[key] && (
-                      <>
-                        <ContextMenuSeparator className="bg-border" />
-                        <ContextMenuItem
-                          onClick={() => handleRemovePhoto(key)}
-                          className="gap-2 text-red-400 focus:bg-red-500/10 focus:text-red-400"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Remover
-                        </ContextMenuItem>
-                      </>
-                    )}
-                  </ContextMenuContent>
-                </ContextMenu>
-              </div>
-            ))}
-
             {/* Botao Enviar */}
             <button
               onClick={handleSend}
@@ -486,12 +385,12 @@ export default function FaceAnalyzer() {
               {sending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Enviando...
+                  Analisando...
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  Enviar para Avaliacao
+                  Enviar para Análise IA
                 </>
               )}
             </button>

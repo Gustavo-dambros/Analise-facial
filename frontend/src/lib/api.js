@@ -6,6 +6,7 @@
  * - Tratamento de erros padronizado
  * - Headers de autorização (Bearer token) do localStorage
  */
+import { getFriendlyErrorMessage } from './errorMessages';
 
 /**
  * Base da API FastAPI.
@@ -104,7 +105,9 @@ async function handleApiError(response) {
     throw new Error('Sessão expirada. Faça login novamente.');
   }
 
-  throw new Error(body.detail || 'Erro na requisição');
+  // Usa mensagem amigável mapeada
+  const friendlyMsg = getFriendlyErrorMessage(body.detail || 'Erro na requisição');
+  throw new Error(friendlyMsg);
 }
 
 /**
@@ -112,24 +115,33 @@ async function handleApiError(response) {
  */
 async function apiFetch(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...authHeaders(options.body instanceof FormData ? false : true),
-      ...options.headers,
-    },
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...authHeaders(options.body instanceof FormData ? false : true),
+        ...options.headers,
+      },
+    });
 
-  if (!response.ok) {
-    await handleApiError(response);
+    if (!response.ok) {
+      await handleApiError(response);
+    }
+
+    // Para 204 No Content, retorna null
+    if (response.status === 204) {
+      return null;
+    }
+
+    return parseJsonSafe(response);
+  } catch (err) {
+    // Se já é um Error com mensagem amigável, relança
+    if (err instanceof Error && err.message !== 'Failed to fetch' && !err.message.startsWith('NetworkError')) {
+      throw err;
+    }
+    // Erro de rede (CORS, offline, DNS, etc.) - converte para mensagem amigável
+    throw new Error(getFriendlyErrorMessage(err));
   }
-
-  // Para 204 No Content, retorna null
-  if (response.status === 204) {
-    return null;
-  }
-
-  return parseJsonSafe(response);
 }
 
 /**
