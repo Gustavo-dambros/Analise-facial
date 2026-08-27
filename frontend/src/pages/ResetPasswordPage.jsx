@@ -18,26 +18,19 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      const hash = window.location.hash.substring(1);
-      if (hash) {
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-        if (accessToken && refreshToken) {
-          const supabase = createClient();
-          supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          }).then(({ error }) => {
-            if (error) {
-              setError(error.message);
-            }
-          });
-        }
-      }
+    const supabase = createClient();
+
+    // If the e-mail link pointed to our domain with token_hash + type (recommended
+    // setup to avoid broken redirect_to / e-mail scanners), verify it here and
+    // establish the recovery session.
+    const tokenHash = searchParams.get('token_hash');
+    const type = searchParams.get('type');
+    if (tokenHash && type) {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type }).catch(() => {});
     }
-  }, [token]);
+    // For the redirect_to flow, the Supabase client auto-detects the session
+    // from the URL hash (detectSessionInUrl), so nothing else is needed here.
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,7 +77,12 @@ export default function ResetPasswordPage() {
         setError(result.error || 'Link invalido ou expirado. Solicite um novo link.');
       }
     } catch (err) {
-      setError(err.message || 'Ocorreu um erro inesperado. Tente novamente.');
+      const msg = err?.message || '';
+      if (/session/i.test(msg)) {
+        setError('Link invalido ou expirado. Solicite um novo link de recuperacao.');
+      } else {
+        setError(msg || 'Ocorreu um erro inesperado. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
