@@ -1,9 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Mail, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function WaitingPage() {
   const navigate = useNavigate();
@@ -111,29 +110,23 @@ export default function WaitingPage() {
         <Card className="overflow-hidden bg-card-bg border-border">
           <CardContent className="p-5 sm:p-8">
             <div className="flex flex-col items-center text-center gap-4">
-              <Loader2 className="w-12 h-12 text-brand-accent animate-spin" />
+              <Mail className="w-12 h-12 text-brand-accent" />
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-text-primary">
                   Aguardando confirmação
                 </h1>
                 <p className="text-sm text-text-secondary mt-2">
                   Enviamos um e-mail de confirmação para {email || 'seu e-mail'}. 
-                  Por favor, verifique sua caixa de entrada.
+                  Por favor, verifique sua caixa de entrada e a pasta de spam.
                 </p>
               </div>
               {email && (
-                 <p className="text-xs text-text-secondary">
-                   Não recebeu o e-mail? <Link to="/signup" className="text-brand-accent">
-                     Solicitar novo link
-                   </Link>
-                 </p>
+                <p className="text-xs text-text-secondary">
+                  Não recebeu o e-mail? <Link to="/signup" className="text-brand-accent">
+                    Solicitar novo link
+                  </Link>
+                </p>
               )}
-              <Button
-                disabled={true}
-                className="w-full h-11 bg-brand-accent/20 text-brand-accent/50 font-semibold rounded-xl mt-4"
-              >
-                Enviando...
-              </Button>
             </div>
           </CardContent>
         </Card>
