@@ -54,7 +54,7 @@ services:
       - key: MAIL_FROM_EMAIL
         value: FaceMax <noreply@facemax.app>
       - key: BASE_URL
-        value: https://facemax-api.onrender.com
+        value: https://facemax.pro
       - key: FRONTEND_URL
         value: https://facemax.pro
       - key: DEBUG
