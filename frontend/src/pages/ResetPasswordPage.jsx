@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function ResetPasswordPage() {
   const { resetPasswordWithToken } = useAuth();
@@ -15,9 +15,9 @@ export default function ResetPasswordPage() {
   const token = searchParams.get('token');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    // Se não houver token nos searchParams, tentar ler do hash fragment (Supabase flow)
     if (!token) {
       const hash = window.location.hash.substring(1);
       if (hash) {
@@ -32,14 +32,6 @@ export default function ResetPasswordPage() {
           }).then(({ error }) => {
             if (error) {
               setError(error.message);
-              setLoading(false);
-            } else {
-              // Now the session is set, get the user to check if we have the recovery type
-              supabase.auth.getUser().then(({ data: { user }, error }) => {
-                if (!error && user) {
-                  navigate('/password-changed');
-                }
-              });
             }
           });
         }
@@ -69,27 +61,142 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      // Try resetPasswordWithToken first (backward compatibility), 
-      // then fall back to Supabase client method
       let result;
       try {
-        result = await resetPasswordWithToken(token, password);
+        if (token) {
+          result = await resetPasswordWithToken(token, password);
+        } else {
+          throw new Error('no-token');
+        }
       } catch {
-        // Fallback: use Supabase client directly if resetPasswordWithToken fails
         const supabase = createClient();
-        result = await supabase.auth.updateUser({
+        const { error: supaError } = await supabase.auth.updateUser({
           password: password,
         });
+        if (supaError) throw supaError;
+        result = { success: true, redirect_url: '/password-changed' };
       }
 
       if (result.success || (!result.error && !result.message)) {
-        navigate(result.redirect_url || '/password-changed');
+        setSuccess(true);
+        setTimeout(() => navigate(result.redirect_url || '/password-changed'), 1000);
       } else {
         setError(result.error || 'Link invalido ou expirado. Solicite um novo link.');
       }
-    } catch {
-      setError('Ocorreu um erro inesperado. Tente novamente.');
+    } catch (err) {
+      setError(err.message || 'Ocorreu um erro inesperado. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
+
+  const hasTokenOrHash = Boolean(token || window.location.hash);
+
+  if (!hasTokenOrHash) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
+        <div className="w-full max-w-sm">
+          <Card className="overflow-hidden bg-card-bg border-border">
+            <CardContent className="p-5 sm:p-8">
+              <div className="flex flex-col items-center text-center gap-4">
+                <AlertTriangle className="w-12 h-12 text-red-400" />
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-text-primary">Link invalido</h1>
+                  <p className="text-sm text-text-secondary mt-2">
+                    Este link de redefinicao e invalido ou expirou. Solicite um novo link para continuar.
+                  </p>
+                </div>
+                <Link
+                  to="/forgot-password"
+                  className="underline underline-offset-4 text-brand-accent hover:text-brand-accent/80 text-sm"
+                >
+                  Solicitar novo link
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
+      <div className="w-full max-w-sm">
+        <Card className="overflow-hidden bg-card-bg border-border">
+          <CardContent className="p-5 sm:p-8">
+            {success ? (
+              <div className="flex flex-col items-center text-center gap-4">
+                <CheckCircle2 className="w-12 h-12 text-green-400" />
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-text-primary">Senha alterada!</h1>
+                  <p className="text-sm text-text-secondary mt-2">
+                    Sua senha foi redefinida com sucesso. Redirecionando...
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/login')}
+                  className="w-full h-11 bg-brand-accent text-background font-semibold hover:opacity-90 rounded-xl"
+                >
+                  Ir para o login
+                </Button>
+              </div>
+            ) : (
+              <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+                <div className="flex flex-col items-center text-center">
+                  <h1 className="text-xl sm:text-2xl font-bold text-text-primary">Redefinir senha</h1>
+                  <p className="text-sm text-text-secondary mt-1">
+                    Escolha uma nova senha para sua conta
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+                    {error}
+                  </div>
+                )}
+
+                <div className="grid gap-2">
+                  <Label htmlFor="password" className="text-text-secondary text-sm">Nova senha</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="Minimo 6 caracteres"
+                    required
+                    minLength={6}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="confirm-password" className="text-text-secondary text-sm">Confirmar senha</Label>
+                  <Input
+                    id="confirm-password"
+                    name="confirm-password"
+                    type="password"
+                    placeholder="Repita a senha"
+                    required
+                    minLength={6}
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-11 bg-brand-accent text-background font-semibold hover:opacity-90 rounded-xl"
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Alterando senha...
+                    </span>
+                  ) : 'Alterar senha'}
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

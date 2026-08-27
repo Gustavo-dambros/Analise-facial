@@ -28,7 +28,7 @@ export default function WaitingPage() {
           setStatus('error');
           return;
         }
-        if (user && user.userMetadata && user.userMetadata?.email_confirmed_at) {
+        if (user?.email_confirmed_at) {
           setStatus('checked');
           navigate('/login');
           return;
@@ -47,7 +47,7 @@ export default function WaitingPage() {
       async (event, session) => {
         if (event === 'USER_CREATED' || event === 'SIGNED_IN') {
           // Check user metadata for email confirmation
-          if (session?.user?.userMetadata?.email_confirmed_at) {
+          if (session?.user?.email_confirmed_at) {
             setStatus('checked');
             navigate('/login');
           } else {
@@ -127,7 +127,7 @@ export default function WaitingPage() {
                 Enviando...
               </Button>
             </div>
-          </Card>
+          </CardContent>
         </Card>
       </div>
     </div>

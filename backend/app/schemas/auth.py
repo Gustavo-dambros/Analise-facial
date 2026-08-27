@@ -23,7 +23,7 @@ class UserCreate(UserBase):
     @classmethod
     def validate_password_strength(cls, v):
         if not any(c.isupper() for c in v):
-            raise ValueError("A senha deve conter pelo menos uma letra maiuscula")
+            raise ValueError("A senha deve conter pelo menos uma letra maiúscula")
         if not any(c.islower() for c in v):
             raise ValueError("A senha deve conter pelo menos uma letra minuscula")
         if not any(c.isdigit() for c in v):
@@ -84,7 +84,7 @@ class RedefinirSenhaRequest(BaseModel):
     @classmethod
     def validate_password_strength(cls, v):
         if not any(c.isupper() for c in v):
-            raise ValueError("A senha deve conter pelo menos uma letra maiuscula")
+            raise ValueError("A senha deve conter pelo menos uma letra maiúscula")
         if not any(c.islower() for c in v):
             raise ValueError("A senha deve conter pelo menos uma letra minuscula")
         if not any(c.isdigit() for c in v):
@@ -104,7 +104,7 @@ class AlterarSenhaRequest(BaseModel):
     @classmethod
     def validate_password_strength(cls, v):
         if not any(c.isupper() for c in v):
-            raise ValueError("A senha deve conter pelo menos uma letra maiuscula")
+            raise ValueError("A senha deve conter pelo menos uma letra maiúscula")
         if not any(c.islower() for c in v):
             raise ValueError("A senha deve conter pelo menos uma letra minuscula")
         if not any(c.isdigit() for c in v):

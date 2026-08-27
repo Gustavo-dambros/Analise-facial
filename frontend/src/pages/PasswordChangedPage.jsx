@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
-import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
@@ -112,7 +111,7 @@ export default function PasswordChangedPage() {
                 Ir para Login
               </Button>
             </div>
-          </Card>
+          </CardContent>
         </Card>
       </div>
     </div>

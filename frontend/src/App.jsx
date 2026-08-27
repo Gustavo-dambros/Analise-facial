@@ -27,6 +27,8 @@ import VerificarEmailPage from '@/pages/VerificarEmailPage';
 import EmailConfirmadoPage from '@/pages/EmailConfirmadoPage';
 import ChangePasswordPage from '@/pages/ChangePasswordPage';
 import PasswordChangedPage from '@/pages/PasswordChangedPage';
+import ConfirmEmailPage from '@/pages/ConfirmEmailPage';
+import WaitingPage from '@/pages/WaitingPage';
 
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import ProfessionalRoute from '@/routes/ProfessionalRoute';

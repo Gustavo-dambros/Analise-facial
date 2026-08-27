@@ -69,20 +69,19 @@ export default function SignupPage() {
       if (result.success) {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
-if (session?.user) {
-            await supabase.from('profiles').upsert({
-              id: session.user.id,
-              full_name: fullName,
-              gender: gender || '',
-              age: age ? Number(age) : null,
-              style_objective: styleObjective || '',
-            });
+        if (session?.user) {
+          await supabase.from('profiles').upsert({
+            id: session.user.id,
+            full_name: fullName,
+            gender: gender || '',
+            age: age ? Number(age) : null,
+            style_objective: styleObjective || '',
+          });
+        }
 
-            // Always go to waiting page to check email confirmation
-            navigate('/waiting');
-          } else {
-            setSuccessMessage(result.message || 'Conta criada! Verifique seu email para ativar.');
-          }
+        // Conta criada e e-mail de verificação enviado: redireciona para a
+        // página que avisa que a confirmação chegará em breve.
+        navigate(`/waiting?email=${encodeURIComponent(email)}`);
       } else {
         setError(result.error);
       }
