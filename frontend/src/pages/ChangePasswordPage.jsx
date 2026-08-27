@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Shield, ArrowLeft } from 'lucide-react';
 
@@ -71,10 +71,9 @@ export default function ChangePasswordPage() {
 
               <div className="grid gap-2">
                 <Label htmlFor="password" className="text-text-secondary text-sm">Nova senha</Label>
-                <Input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   placeholder="Minimo 6 caracteres"
                   required
                   minLength={6}
@@ -83,10 +82,9 @@ export default function ChangePasswordPage() {
 
               <div className="grid gap-2">
                 <Label htmlFor="confirm-password" className="text-text-secondary text-sm">Confirmar nova senha</Label>
-                <Input
+                <PasswordInput
                   id="confirm-password"
                   name="confirm-password"
-                  type="password"
                   placeholder="Repita a senha"
                   required
                   minLength={6}

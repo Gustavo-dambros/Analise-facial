@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Check, X, ShieldCheck, Mail, ArrowLeft } from 'lucide-react';
@@ -160,10 +161,9 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password" className="text-text-secondary text-sm">Senha</Label>
-                <Input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   placeholder="Mínimo 8 caracteres, com maiúscula, minúscula e número"
                   required
                   minLength={8}
@@ -183,10 +183,9 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="confirm-password" className="text-text-secondary text-sm">Confirmar senha</Label>
-                <Input
+                <PasswordInput
                   id="confirm-password"
                   name="confirm-password"
-                  type="password"
                   placeholder="Repita a senha"
                   required
                   minLength={8}

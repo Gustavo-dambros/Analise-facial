@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { ShieldCheck, Lock, Mail, Loader2, AlertTriangle } from 'lucide-react';
+import { PasswordInput } from '@/components/ui/password-input';
 
 const ALLOWED_ROLES = ['professional', 'admin'];
 
@@ -83,12 +84,10 @@ export default function ProfessionalLoginPage() {
                 <Lock className="w-3.5 h-3.5" />
                 Senha
               </label>
-              <input
+              <PasswordInput
                 id="password"
                 name="password"
-                type="password"
                 required
-                className="flex h-10 w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] px-4 py-2.5 text-sm text-white placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/40 focus-visible:border-brand-accent/30 transition-colors"
               />
             </div>
 
