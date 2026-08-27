@@ -150,3 +150,46 @@ export function useErrorHandler() {
   };
   return { handleError };
 }
+
+/**
+ * Mapa de campos do backend para labels amigáveis em português.
+ * Usado para informar qual dado faltou na criação/atualização de conta.
+ */
+export const FIELD_LABELS = {
+  email: 'E-mail',
+  full_name: 'Nome completo',
+  password: 'Senha',
+  confirm_password: 'Confirmar senha',
+  age: 'Idade',
+  gender: 'Gênero',
+  style_objective: 'Objetivo de estilo',
+};
+
+/**
+ * Formata os erros de validação do FastAPI (422) informando qual campo falhou.
+ * @param {Array} detail - body.detail do FastAPI (lista de {loc, msg, type})
+ * @returns {string|null} Mensagem amigável ou null se não for lista de validação
+ */
+export function formatValidationErrors(detail) {
+  if (!Array.isArray(detail) || detail.length === 0) return null;
+
+  const msgs = detail.map((e) => {
+    const loc = Array.isArray(e?.loc) ? e.loc : [];
+    const field = loc[loc.length - 1] || null;
+    const label = (field && FIELD_LABELS[field]) || field || 'Campo';
+    const msg = typeof e === 'object' ? e?.msg || '' : String(e);
+
+    if (/field required|none is not allowed|missing/i.test(msg)) {
+      return `${label}: campo obrigatório.`;
+    }
+    if (/not a valid email|e-?mail/i.test(msg)) {
+      return `${label}: formato inválido.`;
+    }
+    if (/string should have at least|min_length|too short/i.test(msg)) {
+      return `${label}: ${msg}`;
+    }
+    return `${label}: ${msg}`;
+  });
+
+  return msgs.join(' ');
+}

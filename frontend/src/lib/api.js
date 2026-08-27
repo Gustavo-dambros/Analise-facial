@@ -6,7 +6,7 @@
  * - Tratamento de erros padronizado
  * - Headers de autorização (Bearer token) do localStorage
  */
-import { getFriendlyErrorMessage } from './errorMessages';
+import { getFriendlyErrorMessage, formatValidationErrors } from './errorMessages';
 
 /**
  * Base da API FastAPI.
@@ -103,6 +103,14 @@ async function handleApiError(response) {
     // Token expirado ou inválido — limpa e força logout
     clearToken();
     throw new Error('Sessão expirada. Faça login novamente.');
+  }
+
+  // Trata erros de validação do FastAPI (422): detail é uma lista de erros
+  if (Array.isArray(body.detail)) {
+    const validationMsg = formatValidationErrors(body.detail);
+    if (validationMsg) {
+      throw new Error(validationMsg);
+    }
   }
 
   // Usa mensagem amigável mapeada

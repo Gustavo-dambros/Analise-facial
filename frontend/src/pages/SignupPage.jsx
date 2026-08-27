@@ -29,6 +29,8 @@ export default function SignupPage() {
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
   const [styleObjective, setStyleObjective] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsModalTab, setTermsModalTab] = useState('terms');
@@ -39,6 +41,15 @@ export default function SignupPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [error, successMessage]);
+
+  const validatePassword = (pw) => {
+    const errors = [];
+    if (pw.length < 8) errors.push('ao menos 8 caracteres');
+    if (!/[A-Z]/.test(pw)) errors.push('uma letra maiuscula');
+    if (!/[a-z]/.test(pw)) errors.push('uma letra minuscula');
+    if (!/[0-9]/.test(pw)) errors.push('um numero');
+    return errors;
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -51,12 +62,19 @@ export default function SignupPage() {
     }
 
     setLoading(true);
+    setPasswordError('');
 
     try {
       const formData = new FormData(e.target);
       const email = formData.get('email');
-      const password = formData.get('password');
       const confirmPassword = formData.get('confirm-password');
+
+      const pwErrors = validatePassword(password);
+      if (pwErrors.length) {
+        setPasswordError(`A senha deve conter ${pwErrors.join(', ')}.`);
+        setLoading(false);
+        return;
+      }
 
       if (password !== confirmPassword) {
         setError('As senhas nao coincidem');
@@ -146,10 +164,22 @@ export default function SignupPage() {
                   id="password"
                   name="password"
                   type="password"
-                  placeholder="Minimo 8 caracteres"
+                  placeholder="Mínimo 8 caracteres, com maiúscula, minúscula e número"
                   required
                   minLength={8}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    const errs = validatePassword(e.target.value);
+                    setPasswordError(errs.length ? `A senha deve conter ${errs.join(', ')}.` : '');
+                  }}
                 />
+                {passwordError && (
+                  <p className="text-xs text-red-400 flex items-center gap-1.5">
+                    <span className="w-1 h-1 rounded-full bg-red-400" />
+                    {passwordError}
+                  </p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="confirm-password" className="text-text-secondary text-sm">Confirmar senha</Label>

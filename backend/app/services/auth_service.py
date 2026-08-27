@@ -30,12 +30,8 @@ class AuthService:
         self.user_repo = UserRepository(db)
 
     async def register(self, user_data: UserCreate) -> RegisterResponse:
-        existing_user = await self.user_repo.get_by_email(user_data.email)
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email ja cadastrado.",
-            )
+        # A fonte de verdade para duplicidade de e-mail é o Supabase Auth.
+        # O espelho local so é criado/atualizado APOS o Supabase aceitar.
 
         # Cria o usuario no Supabase Auth (dispara o e-mail de confirmacao)
         try:
@@ -43,13 +39,16 @@ class AuthService:
                 user_data.email, user_data.password, full_name=user_data.full_name
             )
         except SupabaseAuthError as exc:
+            # ex.: "User already registered" -> e-mail ja existe no Supabase
             raise HTTPException(
                 status_code=exc.status_code,
                 detail=exc.message,
             )
 
-        # Mantem o registro local (login/perfil usam o banco proprio)
-        user = await self.user_repo.create(user_data)
+        # Mantem o registro local (login/perfil usam o banco proprio),
+        # de forma idempotente para nao quebrar se o espelho ja existir.
+        existing = await self.user_repo.get_by_email(user_data.email)
+        user = existing if existing else await self.user_repo.create(user_data)
 
         logger.info(
             "User registered via Supabase — id=%s email=%s — confirmation email sent by Supabase",
