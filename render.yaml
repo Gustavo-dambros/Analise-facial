@@ -17,6 +17,8 @@ services:
         fromSecret: SUPABASE_SERVICE_ROLE_KEY
       - key: SUPABASE_EMAIL_REDIRECT_TO
         value: https://facemax.pro/waiting
+      - key: SUPABASE_PASSWORD_REDIRECT_TO
+        value: https://facemax.pro/reset-password
       - key: SUPABASE_JWT_SECRET
         fromSecret: SUPABASE_JWT_SECRET
       - key: SECRET_KEY
