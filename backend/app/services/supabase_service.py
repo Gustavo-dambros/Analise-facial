@@ -208,17 +208,46 @@ async def get_user_by_email(email: str) -> Optional[dict]:
     """Fetch a Supabase Auth user by e-mail (requires service role key).
 
     Returns the raw user dict or None when not found / admin API unavailable.
+
+    Note: some gotrue versions lack ``auth.admin.get_user_by_email``; we fall
+    back to paging through ``list_users`` to locate the matching e-mail.
     """
     if not settings.SUPABASE_SERVICE_ROLE_KEY:
         logger.warning("SUPABASE_SERVICE_ROLE_KEY not set — cannot query users by email")
         return None
 
     def _call():
-        return _get_client().auth.admin.get_user_by_email(email)
+        client = _get_client()
+        admin = client.auth.admin
+
+        # Preferred: direct lookup (newer gotrue versions)
+        if hasattr(admin, "get_user_by_email"):
+            try:
+                user = admin.get_user_by_email(email)
+                if user is not None:
+                    return getattr(user, "model_dump", lambda: user)()
+            except Exception:  # noqa: BLE001 — fall through to list_users
+                pass
+
+        # Fallback: page through list_users until we find the e-mail
+        page = 1
+        per_page = 200
+        while True:
+            listing = admin.list_users(page=page, per_page=per_page)
+            users = getattr(listing, "users", None) or []
+            for u in users:
+                u_email = getattr(u, "email", None)
+                if u_email is None and isinstance(u, dict):
+                    u_email = u.get("email")
+                if u_email and u_email.lower() == email.lower():
+                    return getattr(u, "model_dump", lambda: u)()
+            if len(users) < per_page:
+                break
+            page += 1
+        return None
 
     try:
-        user = await asyncio.to_thread(_call)
-        return getattr(user, "model_dump", lambda: user)()
+        return await asyncio.to_thread(_call)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Supabase get_user_by_email failed — email=%s: %s", email, exc)
         return None
