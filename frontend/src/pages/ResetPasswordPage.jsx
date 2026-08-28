@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
+import { API_BASE } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -13,24 +14,15 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const tokenHash = searchParams.get('token_hash');
+  const type = searchParams.get('type');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    const supabase = createClient();
-
-    // If the e-mail link pointed to our domain with token_hash + type (recommended
-    // setup to avoid broken redirect_to / e-mail scanners), verify it here and
-    // establish the recovery session.
-    const tokenHash = searchParams.get('token_hash');
-    const type = searchParams.get('type');
-    if (tokenHash && type) {
-      supabase.auth.verifyOtp({ token_hash: tokenHash, type }).catch(() => {});
-    }
-    // For the redirect_to flow, the Supabase client auto-detects the session
-    // from the URL hash (detectSessionInUrl), so nothing else is needed here.
-  }, [searchParams]);
+  // For the implicit (hash) flow the Supabase client auto-detects the session
+  // from the URL fragment. The PKCE flow (token_hash + type) is exchanged
+  // explicitly in handleSubmit to avoid reusing the one-time token twice.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,37 +40,57 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      if (password.length < 6) {
-        setError('A senha deve ter pelo menos 6 caracteres');
+      if (!password || password.length < 8) {
+        setError('A senha deve ter pelo menos 8 caracteres');
         setLoading(false);
         return;
       }
 
       let result;
-      try {
-        if (token) {
-          result = await resetPasswordWithToken(token, password);
-        } else {
-          throw new Error('no-token');
-        }
-      } catch {
+      if (tokenHash && type) {
+        // PKCE recovery flow: troca o token_hash por sessão de recovery e,
+        // depois, sincroniza a senha no banco local chamando o backend
+        // autenticado pelo JWT do Supabase (get_current_user aceita o segredo
+        // do Supabase). Assim o login local e o Supabase ficam consistentes.
         const supabase = createClient();
-        const { error: supaError } = await supabase.auth.updateUser({
-          password: password,
+        const { error: verifyErr } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type,
         });
-        if (supaError) throw supaError;
+        if (verifyErr) throw verifyErr;
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error('Sessao nao estabelecida.');
+
+        const resp = await fetch(`${API_BASE}/api/v1/auth/alterar-senha`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ nova_senha: password }),
+        });
+        if (!resp.ok) {
+          const body = await resp.json().catch(() => ({}));
+          throw new Error(body.detail || 'Falha ao atualizar a senha.');
+        }
         result = { success: true, redirect_url: '/password-changed' };
+      } else if (token) {
+        // Fluxo legado com token JWT do backend.
+        result = await resetPasswordWithToken(token, password);
+      } else {
+        throw new Error('Link invalido ou expirado.');
       }
 
-      if (result.success || (!result.error && !result.message)) {
+      if (result && result.success) {
         setSuccess(true);
         setTimeout(() => navigate(result.redirect_url || '/password-changed'), 1000);
       } else {
-        setError(result.error || 'Link invalido ou expirado. Solicite um novo link.');
+        setError((result && result.error) || 'Link invalido ou expirado. Solicite um novo link.');
       }
     } catch (err) {
       const msg = err?.message || '';
-      if (/session/i.test(msg)) {
+      if (/session|expired|invalid|token/i.test(msg)) {
         setError('Link invalido ou expirado. Solicite um novo link de recuperacao.');
       } else {
         setError(msg || 'Ocorreu um erro inesperado. Tente novamente.');
@@ -88,7 +100,7 @@ export default function ResetPasswordPage() {
     }
   };
 
-  const hasTokenOrHash = Boolean(token || window.location.hash);
+  const hasTokenOrHash = Boolean(token || tokenHash || window.location.hash);
 
   if (!hasTokenOrHash) {
     return (
