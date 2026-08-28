@@ -299,6 +299,11 @@ export default function SignupPage() {
                   </span>
                 ) : 'Criar conta'}
               </Button>
+              {loading && (
+                <p className="text-center text-xs text-text-secondary mt-2">
+                  Isso pode levar alguns instantes — o servidor pode estar inicializando.
+                </p>
+              )}
               <div className="text-center text-sm text-text-secondary">
                 Ja tem uma conta?{' '}
                 <Link to="/login" className="underline underline-offset-4 text-brand-accent hover:text-brand-accent/80">
