@@ -24,8 +24,8 @@ export default function ChangePasswordPage() {
       const password = formData.get('password');
       const confirmPassword = formData.get('confirm-password');
 
-      if (!password || password.length < 6) {
-        setError('A senha deve ter pelo menos 6 caracteres');
+      if (!password || password.length < 8) {
+        setError('A senha deve ter pelo menos 8 caracteres');
         setLoading(false);
         return;
       }
@@ -74,9 +74,9 @@ export default function ChangePasswordPage() {
                 <PasswordInput
                   id="password"
                   name="password"
-                  placeholder="Minimo 6 caracteres"
+                  placeholder="Minimo 8 caracteres"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
 
@@ -87,7 +87,7 @@ export default function ChangePasswordPage() {
                   name="confirm-password"
                   placeholder="Repita a senha"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
 
