@@ -14,9 +14,10 @@ export default function EmailConfirmadoPage() {
     const supabase = createClient();
     let cancelled = false;
 
-    // The Supabase browser client auto-detects the session from the URL hash
-    // (redirect_to flow) and fires SIGNED_IN. We just need to confirm the
-    // e-mail was verified and then send the user to login.
+    // Supabase can deliver the confirmation via the URL hash (implicit flow,
+    // auto-detected by the client) OR via ?token_hash&type (PKCE flow). We
+    // handle both: when token_hash is present we exchange it for a session;
+    // otherwise we rely on onAuthStateChange / getUser.
     const afterCheck = (user) => {
       if (cancelled) return;
       if (user?.email_confirmed_at) {
@@ -28,7 +29,21 @@ export default function EmailConfirmadoPage() {
       }
     };
 
-    supabase.auth.getUser().then(({ data: { user }, error }) => {
+    const init = async () => {
+      const tokenHash = searchParams.get('token_hash');
+      const type = searchParams.get('type');
+      if (tokenHash && type) {
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+        if (error) {
+          if (!cancelled) {
+            setStatus('error');
+            setErrorMessage('Link de confirmacao invalido ou expirado.');
+          }
+          return;
+        }
+      }
+
+      const { data: { user }, error } = await supabase.auth.getUser();
       if (error) {
         if (!cancelled) {
           setStatus('error');
@@ -37,7 +52,9 @@ export default function EmailConfirmadoPage() {
         return;
       }
       afterCheck(user);
-    });
+    };
+
+    init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -51,7 +68,7 @@ export default function EmailConfirmadoPage() {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   if (status === 'loading') {
     return (
