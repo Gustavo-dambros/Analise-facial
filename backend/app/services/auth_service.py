@@ -132,8 +132,22 @@ class AuthService:
         Resposta genérica para evitar enumeração de e-mails.
         """
         user = await self.user_repo.get_by_email(email)
-        if not user or not user.is_verified:
-            logger.info("Forgot password for non-existent/unverified email: %s", email)
+        if not user:
+            logger.info("Forgot password for non-existent email: %s", email)
+            redirect_url = f"{settings.FRONTEND_URL}/password-changed"
+            return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado.", redirect_url
+
+        # Sincroniza o status de verificacao com o Supabase (fonte de verdade),
+        # exatamente como feito no login. Assim, contas confirmadas no Supabase
+        # mas com is_verified desatualizado no banco local conseguem receber o
+        # e-mail de reset (caso contrario o envio era silenciosamente ignorado).
+        if not user.is_verified and await supabase_service.is_email_confirmed(email):
+            await self.user_repo.verify_user(user)
+            user.is_verified = True
+            logger.info("User verified via Supabase at password reset — email=%s", email)
+
+        if not user.is_verified:
+            logger.info("Forgot password for unverified email: %s", email)
             redirect_url = f"{settings.FRONTEND_URL}/password-changed"
             return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado.", redirect_url
 
