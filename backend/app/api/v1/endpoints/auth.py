@@ -30,7 +30,7 @@ limiter = Limiter(key_func=get_remote_address)
 async def register(
     request: Request, user_data: UserCreate, db: AsyncSession = Depends(get_db)
 ):
-    """Register a new user. Sends verification email via SMTP. Rate limited."""
+    """Register a new user. Triggers Supabase confirmation email. Rate limited."""
     auth_service = AuthService(db)
     return await auth_service.register(user_data)
 
@@ -60,7 +60,7 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
 async def resend_confirmation(
     request: Request, body: ResendConfirmationRequest, db: AsyncSession = Depends(get_db)
 ):
-    """Resend verification email. Generic response to prevent email enumeration."""
+    """Resend Supabase confirmation email. Generic response to prevent email enumeration."""
     auth_service = AuthService(db)
     message = await auth_service.resend_verification(body.email)
     return ResendConfirmationResponse(message=message)
