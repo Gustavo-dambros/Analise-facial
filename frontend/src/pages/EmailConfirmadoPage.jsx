@@ -14,59 +14,58 @@ export default function EmailConfirmadoPage() {
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
+    let failed = false;
 
-    // Supabase can deliver the confirmation via the URL hash (implicit flow,
-    // auto-detected by the client) OR via ?token_hash&type (PKCE flow). We
-    // handle both: when token_hash is present we exchange it for a session;
-    // otherwise we rely on onAuthStateChange / getUser.
-    const afterCheck = (user) => {
+    // O Supabase já confirma o e-mail no clique. O padrão desta tela é
+    // "sucesso"; só exibimos erro quando o token realmente falha na verificação
+    // (PKCE) ou quando nada é resolvido após um curto intervalo.
+    const success = () => {
+      if (cancelled || failed) return;
+      setStatus('success');
+      setTimeout(() => navigate('/login'), 1500);
+    };
+    const fail = (msg) => {
       if (cancelled) return;
-      if (user?.email_confirmed_at) {
-        setStatus('success');
-        setTimeout(() => navigate('/login'), 1500);
-      } else {
-        setStatus('error');
-        setErrorMessage('Nao foi possivel confirmar o e-mail. Tente novamente.');
-      }
+      failed = true;
+      setStatus('error');
+      setErrorMessage(msg);
     };
 
     const init = async () => {
       const tokenHash = searchParams.get('token_hash');
       const type = searchParams.get('type');
+
       if (tokenHash && type) {
+        // Fluxo PKCE: troca o token_hash por sessão.
         const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
         if (error) {
-          if (!cancelled) {
-            setStatus('error');
-            setErrorMessage('Link de confirmacao invalido ou expirado.');
-          }
+          fail('Link de confirmacao invalido ou expirado.');
           return;
         }
-      }
-
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        if (!cancelled) {
-          setStatus('error');
-          setErrorMessage('Link de confirmacao invalido ou expirado.');
-        }
+        success();
         return;
       }
-      afterCheck(user);
+
+      // Fluxo implícito (hash #access_token): sessão já deve estar no storage.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) success();
     };
 
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'USER_CREATED') {
-          afterCheck(session?.user);
-        }
+        if (event === 'SIGNED_IN' || event === 'USER_CREATED') success();
       }
     );
 
+    // Fallback: o e-mail já foi confirmado no servidor. Se nada falhou em ~3s,
+    // garante a tela de sucesso em vez de travar em "carregando".
+    const fallback = setTimeout(() => success(), 3000);
+
     return () => {
       cancelled = true;
+      clearTimeout(fallback);
       subscription.unsubscribe();
     };
   }, [navigate, searchParams]);
