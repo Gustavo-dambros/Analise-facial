@@ -62,6 +62,7 @@ async def get_current_user(
     )
 
     user_id: Optional[str] = None
+    email: Optional[str] = None
 
     # 1) Try FastAPI's own JWT first
     try:
@@ -78,19 +79,27 @@ async def get_current_user(
                 settings.SUPABASE_JWT_SECRET,
                 algorithms=[settings.SUPABASE_JWT_ALGORITHM],
             )
-            # Supabase uses "sub" for the user UUID
+            # Supabase uses "sub" for the user UUID, which differs from our
+            # local primary key. The "email" claim is the stable identifier
+            # shared across both systems, so we capture it for lookup below.
             user_id = payload.get("sub")
-            if user_id is None:
-                raise credentials_exception
+            email = payload.get("email")
         except JWTError:
             raise credentials_exception
 
-    # 3) If still no user_id, the token is invalid
-    if user_id is None:
+    # 3) If still no identifier, the token is invalid
+    if user_id is None and email is None:
         raise credentials_exception
 
     user_repo = UserRepository(db)
-    user = await user_repo.get_by_id(user_id)
+    user = None
+    if user_id is not None:
+        user = await user_repo.get_by_id(user_id)
+    # For Supabase-issued tokens the "sub" won't match our local PK, so we
+    # resolve the account by e-mail when the id lookup misses.
+    if user is None and email is not None:
+        user = await user_repo.get_by_email(email)
+
     if user is None or not user.is_active:
         raise credentials_exception
     return user
