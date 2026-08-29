@@ -18,9 +18,17 @@ from supabase_auth.errors import (
 )
 
 logger = logging.getLogger(__name__)
-# O root logger sobe em WARNING (uvicorn); forçamos INFO neste modulo para
-# que nossos logs de diagnostico (ex.: [SUPABASE DEBUG]) nao sejam filtrados.
+# O uvicorn aplica logging.config.dictConfig(disable_existing_loggers=True) na
+# subida, o que desabilita este logger criado no import. Para garantir que os
+# logs de diagnostico ([SUPABASE DEBUG] etc.) aparecam no Render, anexamoss um
+# handler direto de stdout e desligamos propagate/disabled.
 logger.setLevel(logging.INFO)
+logger.propagate = False
+if not logger.handlers:
+    _h = logging.StreamHandler()
+    _h.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    logger.addHandler(_h)
+logger.disabled = False
 
 _client = None
 
