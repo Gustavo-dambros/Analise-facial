@@ -308,41 +308,83 @@ class AnalysisService:
         if current_user is not None:
             await self.check_monthly_limit(current_user)
 
-        ai_result = await self._call_ai(data.photo_front)
-        result = self._map_to_response(ai_result)
+        ai_enabled = bool(settings.OPENROUTER_API_KEY)
 
+        # --- AI-driven analysis (optional) ---
+        if ai_enabled:
+            ai_result = await self._call_ai(data.photo_front)
+            result = self._map_to_response(ai_result)
+
+            db_analysis = await self.analysis_repo.create({
+                "user_id": user_id,
+                "overall_score": result["overall_score"],
+                "confidence": result["confidence"],
+                "harmony_score": result["harmony_score"],
+                "symmetry_score": result["symmetry_score"],
+                "thirds_data": result["thirds_data"],
+                "radar_data": result["radar_data"],
+                "highlights": result["highlights"],
+                "categories": result["categories"],
+                "attractiveness": result["attractiveness"],
+                "attributes_data": result["attributes_list"],
+                "photo_front_url": None,
+                "photo_right_url": None,
+                "photo_left_url": None,
+            })
+
+            return AnalysisResponse(
+                id=db_analysis.id,
+                overall_score=db_analysis.overall_score,
+                confidence=db_analysis.confidence,
+                harmony_score=db_analysis.harmony_score,
+                symmetry_score=db_analysis.symmetry_score,
+                thirds_data=db_analysis.thirds_data,
+                radar_data=db_analysis.radar_data,
+                highlights=db_analysis.highlights,
+                # `db_analysis.categories` is a lazy relationship; in an async session
+                # accessing it triggers a blocking load. We already have the data in
+                # `result`, so use that to build the response safely.
+                categories=result["categories"],
+                attractiveness=db_analysis.attractiveness,
+                attributes=_build_attribute_items(result["attributes_list"]),
+                created_at=db_analysis.created_at,
+            )
+
+        # --- No AI: store the submission as a pending analysis for admin review ---
+        logger.info("AI disabled (no OPENROUTER_API_KEY) — creating pending analysis for user %s", user_id)
         db_analysis = await self.analysis_repo.create({
             "user_id": user_id,
-            "overall_score": result["overall_score"],
-            "confidence": result["confidence"],
-            "harmony_score": result["harmony_score"],
-            "symmetry_score": result["symmetry_score"],
-            "thirds_data": result["thirds_data"],
-            "radar_data": result["radar_data"],
-            "highlights": result["highlights"],
-            "categories": result["categories"],
-            "attractiveness": result["attractiveness"],
-            "attributes_data": result["attributes_list"],
+            "overall_score": None,
+            "confidence": None,
+            "harmony_score": None,
+            "symmetry_score": None,
+            "thirds_data": None,
+            "radar_data": None,
+            "highlights": None,
+            "categories": [],
+            "attractiveness": None,
+            "attributes_data": None,
+            "photo_front_data": data.photo_front,
+            "photo_right_data": None,
+            "photo_left_data": None,
             "photo_front_url": None,
             "photo_right_url": None,
             "photo_left_url": None,
+            "status": "pending",
         })
 
         return AnalysisResponse(
             id=db_analysis.id,
-            overall_score=db_analysis.overall_score,
-            confidence=db_analysis.confidence,
-            harmony_score=db_analysis.harmony_score,
-            symmetry_score=db_analysis.symmetry_score,
-            thirds_data=db_analysis.thirds_data,
-            radar_data=db_analysis.radar_data,
-            highlights=db_analysis.highlights,
-            # `db_analysis.categories` is a lazy relationship; in an async session
-            # accessing it triggers a blocking load. We already have the data in
-            # `result`, so use that to build the response safely.
-            categories=result["categories"],
-            attractiveness=db_analysis.attractiveness,
-            attributes=_build_attribute_items(result["attributes_list"]),
+            overall_score=None,
+            confidence=None,
+            harmony_score=None,
+            symmetry_score=None,
+            thirds_data=None,
+            radar_data=None,
+            highlights=None,
+            categories=[],
+            attractiveness=None,
+            attributes=[],
             created_at=db_analysis.created_at,
         )
 

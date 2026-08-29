@@ -72,13 +72,13 @@ class AttributeItem(BaseModel):
 
 class AnalysisResponse(BaseModel):
     id: str
-    overall_score: float
-    confidence: float
-    harmony_score: float
-    symmetry_score: float
-    thirds_data: List[ThirdData]
-    radar_data: List[RadarData]
-    highlights: List[str]
+    overall_score: Optional[float] = None
+    confidence: Optional[float] = None
+    harmony_score: Optional[float] = None
+    symmetry_score: Optional[float] = None
+    thirds_data: Optional[List[ThirdData]] = None
+    radar_data: Optional[List[RadarData]] = None
+    highlights: Optional[List[str]] = None
     categories: List[CategoryResult]
     created_at: datetime
     attractiveness: Optional[int] = None
@@ -95,8 +95,9 @@ class AnalysisPendingResponse(BaseModel):
     id: str
     user_id: str
     user_name: str
-    overall_score: float
+    overall_score: Optional[float] = None
     created_at: datetime
+    photo_front: Optional[str] = None  # base64 image for admin review
 
 
 # ------------------------------------------------------------------ #

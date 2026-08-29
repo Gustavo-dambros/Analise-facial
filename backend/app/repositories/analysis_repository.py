@@ -69,6 +69,7 @@ class AnalysisRepository:
                 "user_name": full_name,
                 "overall_score": analysis.overall_score,
                 "created_at": analysis.created_at,
+                "photo_front": analysis.photo_front_data,
             }
             for analysis, full_name in result.all()
         ]
