@@ -18,17 +18,6 @@ from supabase_auth.errors import (
 )
 
 logger = logging.getLogger(__name__)
-# O uvicorn aplica logging.config.dictConfig(disable_existing_loggers=True) na
-# subida, o que desabilita este logger criado no import. Para garantir que os
-# logs de diagnostico ([SUPABASE DEBUG] etc.) aparecam no Render, anexamoss um
-# handler direto de stdout e desligamos propagate/disabled.
-logger.setLevel(logging.INFO)
-logger.propagate = False
-if not logger.handlers:
-    _h = logging.StreamHandler()
-    _h.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
-    logger.addHandler(_h)
-logger.disabled = False
 
 _client = None
 
@@ -153,8 +142,6 @@ async def sign_up(email: str, password: str, full_name: Optional[str] = None) ->
         }
         if full_name:
             options["data"] = {"full_name": full_name}
-        logger.info("[SUPABASE DEBUG] sign_up options RAW: %r", options)
-        logger.info("[SUPABASE DEBUG] SUPABASE_EMAIL_REDIRECT_TO RAW: %r", settings.SUPABASE_EMAIL_REDIRECT_TO)
         return _get_client().auth.sign_up(
             {
                 "email": email,
@@ -169,11 +156,6 @@ async def sign_up(email: str, password: str, full_name: Optional[str] = None) ->
         return getattr(response, "model_dump", lambda: response)()
     except Exception as exc:  # noqa: BLE001 — gotrue raises generic ApiException
         logger.error("Supabase sign_up failed — email=%s: %s", email, exc)
-        logger.error(
-            "[SUPABASE AUTH API ERROR] Message: %s | Full Details: %r",
-            getattr(exc, "message", str(exc)),
-            exc,
-        )
         message, status_code = _extract_error_info(exc)
         raise SupabaseAuthError(message, status_code=status_code) from exc
 
@@ -181,8 +163,6 @@ async def sign_up(email: str, password: str, full_name: Optional[str] = None) ->
 async def resend_confirmation(email: str) -> None:
     """Resend the Supabase signup confirmation email."""
     def _call():
-        logger.info("[SUPABASE DEBUG] resend options RAW: %r", {"type": "signup", "email": email, "options": {"email_redirect_to": settings.SUPABASE_EMAIL_REDIRECT_TO}})
-        logger.info("[SUPABASE DEBUG] SUPABASE_EMAIL_REDIRECT_TO RAW: %r", settings.SUPABASE_EMAIL_REDIRECT_TO)
         return _get_client().auth.resend(
             {
                 "type": "signup",
@@ -198,11 +178,6 @@ async def resend_confirmation(email: str) -> None:
         logger.info("Supabase resend confirmation OK — email=%s", email)
     except Exception as exc:  # noqa: BLE001
         logger.error("Supabase resend failed — email=%s: %s", email, exc)
-        logger.error(
-            "[SUPABASE AUTH API ERROR] Message: %s | Full Details: %r",
-            getattr(exc, "message", str(exc)),
-            exc,
-        )
         message, status_code = _extract_error_info(exc)
         raise SupabaseAuthError(message, status_code=status_code) from exc
 
@@ -213,8 +188,6 @@ async def reset_password_for_email(email: str) -> None:
     The email contains a link to the reset password page with a token in the hash fragment.
     """
     def _call():
-        logger.info("[SUPABASE DEBUG] reset options RAW: %r", {"redirect_to": settings.SUPABASE_PASSWORD_REDIRECT_TO})
-        logger.info("[SUPABASE DEBUG] SUPABASE_PASSWORD_REDIRECT_TO RAW: %r", settings.SUPABASE_PASSWORD_REDIRECT_TO)
         return _get_client().auth.reset_password_for_email(
             email,
             {
@@ -227,11 +200,6 @@ async def reset_password_for_email(email: str) -> None:
         logger.info("Supabase password reset email sent — email=%s", email)
     except Exception as exc:  # noqa: BLE001
         logger.error("Supabase password reset email failed — email=%s: %s", email, exc)
-        logger.error(
-            "[SUPABASE AUTH API ERROR] Message: %s | Full Details: %r",
-            getattr(exc, "message", str(exc)),
-            exc,
-        )
         message, status_code = _extract_error_info(exc)
         raise SupabaseAuthError(message, status_code=status_code) from exc
 
@@ -290,15 +258,23 @@ async def update_password_by_email(email: str, new_password: str) -> None:
     if not settings.SUPABASE_SERVICE_ROLE_KEY:
         return
 
+    try:
+        user = await get_user_by_email(email)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Supabase get_user_by_email failed — email=%s: %s", email, exc)
+        return None
+
+    if not user:
+        logger.warning("Usuario nao encontrado no Supabase — email=%s", email)
+        return None
+
+    user_id = user.get("id")
+    if not user_id:
+        return None
+
     def _call():
         client = _get_client()
-        user = client.auth.admin.get_user_by_email(email)
-        user_id = getattr(user, "id", None) or (user.get("id") if isinstance(user, dict) else None)
-        if not user_id:
-            raise SupabaseAuthError("Usuario nao encontrado no Supabase.", status_code=404)
-        return client.auth.admin.update_user_by_id(
-            user_id, {"password": new_password}
-        )
+        return client.auth.admin.update_user_by_id(user_id, {"password": new_password})
 
     try:
         await asyncio.to_thread(_call)
@@ -306,6 +282,30 @@ async def update_password_by_email(email: str, new_password: str) -> None:
     except Exception as exc:  # noqa: BLE001
         message, status_code = _extract_error_info(exc)
         logger.error("Supabase password sync failed — email=%s: %s", email, message)
+        return None
+
+
+async def get_user_by_token(token: str) -> Optional[dict]:
+    """Validate a Supabase-issued JWT via Supabase's user endpoint and return the user dict.
+
+    Unlike decoding locally (which depends on SUPABASE_JWT_SECRET), this calls
+    Supabase to validate the token, so it works for recovery/session tokens
+    regardless of the local JWT secret configuration.
+    """
+    if not settings.SUPABASE_URL or not (
+        settings.SUPABASE_ANON_KEY or settings.SUPABASE_SERVICE_ROLE_KEY
+    ):
+        return None
+
+    def _call():
+        client = _get_client()
+        user = client.auth.get_user(token)
+        return getattr(user, "model_dump", lambda: user)()
+
+    try:
+        return await asyncio.to_thread(_call)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Supabase get_user_by_token failed — %s", exc)
         return None
 
 

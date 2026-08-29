@@ -20,6 +20,12 @@ from app.schemas.auth import (
 from app.services.auth_service import AuthService
 from app.core.config import settings
 from app.core.security import get_current_user
+from jose import jwt, JWTError
+from typing import Optional
+
+from app.repositories.user_repository import UserRepository
+from app.services import supabase_service
+from app.models.user import User
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -96,15 +102,63 @@ async def redefinir_senha(
     return RedefinirSenhaResponse(message=message, redirect_url=redirect_url)
 
 
+async def _resolve_user_for_password_change(
+    request: Request, db: AsyncSession
+) -> Optional[User]:
+    """Resolve the user from either a local JWT or a Supabase-issued JWT.
+
+    Order:
+      1. Local FastAPI JWT (``sub`` = local user id) — fluxo logado.
+      2. Supabase JWT validated server-side via ``get_user_by_token`` (email) —
+         fluxo de recovery de senha (redefinicao via e-mail).
+    """
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header[7:] if auth_header.lower().startswith("bearer ") else None
+    if not token:
+        return None
+
+    # 1) Local JWT (fluxo logado)
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        uid = payload.get("sub")
+        if uid:
+            user = await UserRepository(db).get_by_id(uid)
+            if user:
+                return user
+    except JWTError:
+        pass
+
+    # 2) Supabase JWT (recovery) — validado pelo proprio Supabase
+    try:
+        supa = await supabase_service.get_user_by_token(token)
+        if supa and supa.get("email"):
+            return await UserRepository(db).get_by_email(supa["email"])
+    except Exception:
+        pass
+
+    return None
+
+
 @router.post(
     "/alterar-senha",
     response_model=AlterarSenhaResponse,
     status_code=status.HTTP_200_OK,
 )
 async def alterar_senha(
-    body: AlterarSenhaRequest, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    body: AlterarSenhaRequest, request: Request, db: AsyncSession = Depends(get_db)
 ):
-    """Change the password of the authenticated user (logged-in flow)."""
+    """Change the password.
+
+    Aceita tanto o JWT local (fluxo logado) quanto o JWT do Supabase vindo do
+    fluxo de recovery (redefinicao de senha via e-mail).
+    """
+    user = await _resolve_user_for_password_change(request, db)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciais invalidas.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     auth_service = AuthService(db)
-    message, redirect_url = await auth_service.alterar_senha(current_user, body.nova_senha)
+    message, redirect_url = await auth_service.alterar_senha(user, body.nova_senha)
     return AlterarSenhaResponse(message=message, redirect_url=redirect_url)
