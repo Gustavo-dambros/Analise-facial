@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, Integer, Text, Enum as SQLEnum
+from sqlalchemy import Column, String, Boolean, DateTime, Integer, Text, Enum as SQLEnum, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database.connection import Base
@@ -22,13 +22,13 @@ class Profile(Base):
 
     __tablename__ = "profiles"
 
-    id = Column(String(36), primary_key=True)  # = auth.users.id
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    full_name = Column(String(255), nullable=True)
+    id = Column(UUID(as_uuid=False), primary_key=True)  # = auth.users.id (uuid)
+    email = Column(String(255), unique=True, nullable=True, index=True)
+    full_name = Column(String(255), nullable=True, default="")
     role = Column(String(20), default="client", nullable=False)
     plan = Column(SQLEnum(PlanType), default=PlanType.free, nullable=False, server_default="free")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Profile fields
     profile_picture = Column(Text, nullable=True)

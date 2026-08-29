@@ -45,7 +45,7 @@ class UserProfileUpdate(BaseModel):
 
 class UserProfileResponse(BaseModel):
     id: str
-    email: str
+    email: Optional[str] = None
     full_name: Optional[str] = None
     profile_picture: Optional[str] = None
     gender: Optional[str] = None
