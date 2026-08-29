@@ -26,6 +26,7 @@ export default function AdminEvaluatePage() {
   const navigate = useNavigate();
   const [entry, setEntry] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Form state
   const [attractiveness, setAttractiveness] = useState(5);
@@ -58,6 +59,22 @@ export default function AdminEvaluatePage() {
   function handleSubmit(e) {
     e.preventDefault();
     if (tercoError) return;
+    if (submitError) setSubmitError('');
+
+    // Validate that all 13 attributes have values between 1 and 10
+    const attrValues = Object.values(attributes);
+    const hasInvalidAttr = attrValues.some((v) => v == null || v < 1 || v > 10);
+    if (hasInvalidAttr) {
+      setSubmitError('Todos os atributos devem ter valores de 1 a 10.');
+      return;
+    }
+
+    // Validate highlights not empty
+    const highlightsArray = highlights.split(',').map((h) => h.trim()).filter(Boolean);
+    if (highlightsArray.length === 0) {
+      setSubmitError('Pelo menos um ponto forte deve ser informado.');
+      return;
+    }
 
     const evalAttrs = {};
     ATTRIBUTE_DEFS.forEach((name) => {
@@ -338,16 +355,26 @@ export default function AdminEvaluatePage() {
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={tercoError}
+                disabled={tercoError || submitError}
                 className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
-                  !tercoError
+                  !tercoError && !submitError
                     ? 'bg-brand-accent text-background hover:opacity-90'
                     : 'bg-white/5 text-text-muted border border-border cursor-not-allowed'
                 }`}
               >
                 <Save className="w-4 h-4" />
-                Enviar Avaliação
+                {submitError ? (
+                  <>
+                    Enviar Avaliação
+                    <AlertCircle className="w-4 h-4 text-red-400 mt-1" />
+                  </>
+                ) : (
+                  'Enviar Avaliação'
+                )}
               </button>
+              {submitError && (
+                <p className="text-xs text-red-500 mt-2"> {submitError}</p>
+              )}
             </div>
           </FadeIn>
         </form>
