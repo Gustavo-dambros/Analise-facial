@@ -142,6 +142,8 @@ async def sign_up(email: str, password: str, full_name: Optional[str] = None) ->
         }
         if full_name:
             options["data"] = {"full_name": full_name}
+        logger.info("[SUPABASE DEBUG] sign_up options RAW: %r", options)
+        logger.info("[SUPABASE DEBUG] SUPABASE_EMAIL_REDIRECT_TO RAW: %r", settings.SUPABASE_EMAIL_REDIRECT_TO)
         return _get_client().auth.sign_up(
             {
                 "email": email,
@@ -156,6 +158,11 @@ async def sign_up(email: str, password: str, full_name: Optional[str] = None) ->
         return getattr(response, "model_dump", lambda: response)()
     except Exception as exc:  # noqa: BLE001 — gotrue raises generic ApiException
         logger.error("Supabase sign_up failed — email=%s: %s", email, exc)
+        logger.error(
+            "[SUPABASE AUTH API ERROR] Message: %s | Full Details: %r",
+            getattr(exc, "message", str(exc)),
+            exc,
+        )
         message, status_code = _extract_error_info(exc)
         raise SupabaseAuthError(message, status_code=status_code) from exc
 
@@ -163,6 +170,8 @@ async def sign_up(email: str, password: str, full_name: Optional[str] = None) ->
 async def resend_confirmation(email: str) -> None:
     """Resend the Supabase signup confirmation email."""
     def _call():
+        logger.info("[SUPABASE DEBUG] resend options RAW: %r", {"type": "signup", "email": email, "options": {"email_redirect_to": settings.SUPABASE_EMAIL_REDIRECT_TO}})
+        logger.info("[SUPABASE DEBUG] SUPABASE_EMAIL_REDIRECT_TO RAW: %r", settings.SUPABASE_EMAIL_REDIRECT_TO)
         return _get_client().auth.resend(
             {
                 "type": "signup",
@@ -178,6 +187,11 @@ async def resend_confirmation(email: str) -> None:
         logger.info("Supabase resend confirmation OK — email=%s", email)
     except Exception as exc:  # noqa: BLE001
         logger.error("Supabase resend failed — email=%s: %s", email, exc)
+        logger.error(
+            "[SUPABASE AUTH API ERROR] Message: %s | Full Details: %r",
+            getattr(exc, "message", str(exc)),
+            exc,
+        )
         message, status_code = _extract_error_info(exc)
         raise SupabaseAuthError(message, status_code=status_code) from exc
 
@@ -188,6 +202,8 @@ async def reset_password_for_email(email: str) -> None:
     The email contains a link to the reset password page with a token in the hash fragment.
     """
     def _call():
+        logger.info("[SUPABASE DEBUG] reset options RAW: %r", {"redirect_to": settings.SUPABASE_PASSWORD_REDIRECT_TO})
+        logger.info("[SUPABASE DEBUG] SUPABASE_PASSWORD_REDIRECT_TO RAW: %r", settings.SUPABASE_PASSWORD_REDIRECT_TO)
         return _get_client().auth.reset_password_for_email(
             email,
             {
@@ -200,6 +216,11 @@ async def reset_password_for_email(email: str) -> None:
         logger.info("Supabase password reset email sent — email=%s", email)
     except Exception as exc:  # noqa: BLE001
         logger.error("Supabase password reset email failed — email=%s: %s", email, exc)
+        logger.error(
+            "[SUPABASE AUTH API ERROR] Message: %s | Full Details: %r",
+            getattr(exc, "message", str(exc)),
+            exc,
+        )
         message, status_code = _extract_error_info(exc)
         raise SupabaseAuthError(message, status_code=status_code) from exc
 
