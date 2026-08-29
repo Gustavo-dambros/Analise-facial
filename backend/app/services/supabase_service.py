@@ -18,6 +18,9 @@ from supabase_auth.errors import (
 )
 
 logger = logging.getLogger(__name__)
+# O root logger sobe em WARNING (uvicorn); forçamos INFO neste modulo para
+# que nossos logs de diagnostico (ex.: [SUPABASE DEBUG]) nao sejam filtrados.
+logger.setLevel(logging.INFO)
 
 _client = None
 
