@@ -40,6 +40,7 @@ export default function FaceAnalyzer() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [analysesCount, setAnalysesCount] = useState(0);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -68,6 +69,21 @@ export default function FaceAnalyzer() {
     if (videoRef.current) videoRef.current.srcObject = null;
     setCameraActive(false);
   }, []);
+
+  useEffect(() => {
+    const loadAnalysesCount = async () => {
+      if (!user?.id) return;
+      try {
+        const { getUserAnalyses } = await import('@/lib/api');
+        const history = await getUserAnalyses(user.id);
+        setAnalysesCount(history.length);
+      } catch (err) {
+        console.error('Falha ao carregar contagem de análises:', err);
+        setAnalysesCount(0);
+      }
+    };
+    loadAnalysesCount();
+  }, [user?.id]);
 
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -179,6 +195,18 @@ export default function FaceAnalyzer() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
+          {/* Personalized greeting */}
+          <p className="text-xs sm:text-sm text-text-secondary mb-2">
+            {user?.full_name ? `Olá, ${user.full_name}!" : "Olá!"}
+          </p>
+          
+          {/* Evaluation count */}
+          {analysesCount > 0 && (
+            <p className="text-xs sm:text-sm text-text-secondary mb-2">
+              {analysesCount > 0 ? `${analysesCount} ${analysesCount === 1 ? 'análise' : 'análises'}` : null}
+            </p>
+          )}
+
           <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Nova Análise</h1>
           <p className="text-xs sm:text-sm text-text-muted mt-1">Capture ou envie as fotos do rosto (frontal, perfil esquerdo e perfil direito) para avaliação de um profissional</p>
         </div>
@@ -392,10 +420,44 @@ export default function FaceAnalyzer() {
               </div>
             </div>
 
+            {/* Preview of all captured photos */}
+            {Object.values(photos).some(p => p) && (
+              <div className="rounded-2xl border border-border bg-card-bg p-4">
+                <h2 className="text-sm font-semibold text-text-primary mb-2">Fotos capturadas</h2>
+                <div className="grid grid-cols-2 gap-2">
+                  {PHOTO_SLOTS.map(({ key, label, hint, optional }) => {
+                    const photo = photos[key];
+                    if (!photo) return null;
+                    const isOptional = key === 'body' && optional;
+                    const slotLabel = isOptional && !photo ? '' : label;
+                    return (
+                      <div
+                        key={key}
+                        className="flex flex-col items-center gap-1.5 px-2 py-2 rounded-xl border border-border transition-colors hover:border-brand-accent/40 cursor-pointer"
+                      >
+                        <img
+                          src={photo}
+                          alt={label}
+                          className="w-16 h-16 object-cover rounded-md"
+                        />
+                        <p className="text-[10px] sm:text-xs font-medium text-text-primary text-center">{slotLabel}</p>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRemovePhoto(key); }}
+                          className="w-5 h-5 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 hover:text-red-300 text-[10px] sm:text-xs transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Botao Enviar */}
             <button
               onClick={handleSend}
-              disabled={!photos.front || !photos.left || !photos.right || sending}
+              disabled={!photos.front || sending}
               className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm transition-all ${
                 photos.front && photos.left && photos.right && !sending
                   ? 'bg-brand-accent text-background hover:opacity-90'
