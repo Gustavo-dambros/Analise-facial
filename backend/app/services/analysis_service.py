@@ -308,7 +308,7 @@ class AnalysisService:
         if current_user is not None:
             await self.check_monthly_limit(current_user)
 
-        ai_enabled = bool(settings.OPENROUTER_API_KEY)
+        ai_enabled = settings.ENABLE_AI_ANALYSIS and bool(settings.OPENROUTER_API_KEY)
 
         # --- AI-driven analysis (optional) ---
         if ai_enabled:

@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     MIN_TRACKING_CONFIDENCE: float = 0.5
 
     # OpenRouter API
+    # When False (default), the analyze flow stores the submission as a pending
+    # analysis for admin review instead of calling the AI. Set to True (and
+    # provide OPENROUTER_API_KEY) only if AI scoring is wanted.
+    ENABLE_AI_ANALYSIS: bool = False
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_MODEL: str = "google/gemma-4-26b-a4b-it:free"
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"

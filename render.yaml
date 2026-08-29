@@ -27,6 +27,8 @@ services:
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "30"
+      - key: ENABLE_AI_ANALYSIS
+        value: "false"
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
