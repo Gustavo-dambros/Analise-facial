@@ -109,7 +109,9 @@ class AnalysisService:
         Raises HTTPException(403) when the limit is reached.
         Admin/superuser users are exempt from limits.
         """
-        if user.is_superuser or user.role == "admin":
+        # `is_superuser` may be set on detached test instances but is not a column
+        # on the production Profile model, so guard with getattr.
+        if getattr(user, "is_superuser", False) or user.role == "admin":
             logger.info("User %s is superuser — skipping monthly limit check", user.id)
             return
 
