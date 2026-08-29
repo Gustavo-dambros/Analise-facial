@@ -50,16 +50,19 @@ export function AuthProvider({ children }) {
         if (!isMounted.current) return;
         setSession(newSession);
         if (newSession?.access_token) {
-          setAccessToken(newSession.access_token);
-        } else {
-          setAccessToken(null);
-        }
-        if (newSession && event !== 'SIGNED_OUT') {
           try {
-            if (isMounted.current) await fetchProfile();
+            await fetchProfile();
+            setAccessToken(newSession.access_token);
           } catch {
+            // Profile failed — clear stale token
+            setAccessToken(null);
             if (isMounted.current) setUser(null);
           }
+        } else {
+          if (isMounted.current) setUser(null);
+        }
+        if (newSession && event !== 'SIGNED_OUT') {
+          // Profile already fetched inside the try block above
         } else {
           if (isMounted.current) setUser(null);
         }
@@ -83,8 +86,14 @@ export function AuthProvider({ children }) {
 
       if (data.session) {
         if (isMounted.current) {
-          setAccessToken(data.session.access_token);
-          await fetchProfile();
+          // Wait for profile to load successfully before setting the token
+          try {
+            await fetchProfile();
+            setAccessToken(data.session.access_token);
+          } catch {
+            // Profile failed — clear stale token
+            setAccessToken(null);
+          }
         }
         return { success: true };
       }
@@ -99,7 +108,7 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw new Error(error.message);
       if (isMounted.current) {
-        setAccessToken(data.session?.access_token ?? null);
+        // Não seta o token ainda — espera o profile carregar com sucesso
         await fetchProfile();
       }
       return { success: true };
