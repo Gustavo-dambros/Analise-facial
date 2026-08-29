@@ -197,15 +197,8 @@ export default function FaceAnalyzer() {
         <div className="mb-6">
           {/* Personalized greeting */}
           <p className="text-xs sm:text-sm text-text-secondary mb-2">
-            {user?.full_name ? `Olá, ${user.full_name}!" : "Olá!"}
+            {user?.full_name ? `Olá, ${user.full_name}!` : "Olá!"}
           </p>
-          
-          {/* Evaluation count */}
-          {analysesCount > 0 && (
-            <p className="text-xs sm:text-sm text-text-secondary mb-2">
-              {analysesCount > 0 ? `${analysesCount} ${analysesCount === 1 ? 'análise' : 'análises'}` : null}
-            </p>
-          )}
 
           <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Nova Análise</h1>
           <p className="text-xs sm:text-sm text-text-muted mt-1">Capture ou envie as fotos do rosto (frontal, perfil esquerdo e perfil direito) para avaliação de um profissional</p>

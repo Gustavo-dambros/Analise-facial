@@ -30,11 +30,41 @@ function normalizeAnalysis(row) {
       front: getPhotoUrl(row.photo_front_url),
       left: getPhotoUrl(row.photo_left_url),
       right: getPhotoUrl(row.photo_right_url),
+      body: getPhotoUrl(row.photo_body_url),
     },
     evaluation: row.result && Object.keys(row.result).length > 0 ? row.result : null,
     verdict_text: row.verdict_text,
     reviewed_at: row.reviewed_at,
   };
+}
+
+function PhotoThumbs({ a, onOpen }) {
+  const photos = [
+    { key: 'front', label: 'Frontal', src: a.photos?.front },
+    { key: 'left', label: 'Perfil Esquerdo', src: a.photos?.left },
+    { key: 'right', label: 'Perfil Direito', src: a.photos?.right },
+    { key: 'body', label: 'Físico', src: a.photos?.body },
+  ].filter((p) => p.src);
+
+  if (photos.length === 0) return null;
+
+  return (
+    <div className="flex gap-1.5 shrink-0">
+      {photos.map((p) => (
+        <button
+          key={p.key}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen(p);
+          }}
+          className="block overflow-hidden rounded-lg border border-border hover:border-brand-accent/50 transition-colors"
+        >
+          <img src={p.src} alt={p.label} className="w-12 h-16 object-cover" />
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export default function ProgressPage() {
@@ -44,6 +74,7 @@ export default function ProgressPage() {
   const [evaluated, setEvaluated] = useState([]);
   const [routine, setRoutine] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lightbox, setLightbox] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -270,17 +301,7 @@ export default function ProgressPage() {
                   {pending.map((a) => (
                     <Card key={a.id} className="bg-card-bg border-border">
                       <CardContent className="p-5 flex items-center gap-4">
-                        <div className="flex gap-1 shrink-0">
-                          {a.photos?.front && (
-                            <img src={a.photos.front} alt="Frontal" className="w-10 h-13 rounded-lg object-cover border border-border" />
-                          )}
-                          {a.photos?.left && (
-                            <img src={a.photos.left} alt="Esq" className="w-10 h-13 rounded-lg object-cover border border-border" />
-                          )}
-                          {a.photos?.right && (
-                            <img src={a.photos.right} alt="Dir" className="w-10 h-13 rounded-lg object-cover border border-border" />
-                          )}
-                        </div>
+                        <PhotoThumbs a={a} onOpen={setLightbox} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-text-primary truncate">
                             Analise Facial
@@ -316,17 +337,7 @@ export default function ProgressPage() {
                       onClick={() => navigate(`/dashboard/evaluation/${a.id}`)}
                     >
                       <CardContent className="p-5 flex items-center gap-4">
-                        <div className="flex gap-1 shrink-0">
-                          {a.photos?.front && (
-                            <img src={a.photos.front} alt="Frontal" className="w-10 h-13 rounded-lg object-cover border border-border" />
-                          )}
-                          {a.photos?.left && (
-                            <img src={a.photos.left} alt="Esq" className="w-10 h-13 rounded-lg object-cover border border-border" />
-                          )}
-                          {a.photos?.right && (
-                            <img src={a.photos.right} alt="Dir" className="w-10 h-13 rounded-lg object-cover border border-border" />
-                          )}
-                        </div>
+                        <PhotoThumbs a={a} onOpen={setLightbox} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-text-primary truncate">
                             Analise Facial
@@ -361,6 +372,29 @@ export default function ProgressPage() {
               </div>
             </ScaleIn>
           )}
+
+        {lightbox && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => setLightbox(null)}
+          >
+            <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => setLightbox(null)}
+                className="absolute -top-10 right-0 text-white/70 hover:text-white text-sm underline"
+              >
+                Fechar
+              </button>
+              <img
+                src={lightbox.src}
+                alt={lightbox.label}
+                className="w-full max-h-[80vh] object-contain rounded-2xl border border-border bg-black"
+              />
+              <p className="text-center text-white/80 mt-3 text-sm">{lightbox.label}</p>
+            </div>
+          </div>
+        )}
         </div>
       </div>
   );
