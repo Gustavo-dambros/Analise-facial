@@ -26,7 +26,7 @@ from app.schemas.analysis import (
     compute_symmetry,
     compute_overall,
 )
-from app.models.user import User, PlanType
+from app.models.profile import Profile, PlanType
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +155,7 @@ class TestMonthlyLimitPermission:
     @pytest.mark.asyncio
     async def test_admin_role_bypasses_limit(self):
         """A user with role='admin' should bypass the monthly limit."""
-        user = MagicMock(spec=User)
+        user = MagicMock(spec=Profile)
         user.id = "admin-user-id"
         user.email = "admin@example.com"
         user.plan = PlanType.free
@@ -176,7 +176,7 @@ class TestMonthlyLimitPermission:
     @pytest.mark.asyncio
     async def test_superuser_bypasses_limit(self):
         """A superuser should bypass the monthly limit."""
-        user = MagicMock(spec=User)
+        user = MagicMock(spec=Profile)
         user.id = "superuser-id"
         user.email = "super@example.com"
         user.plan = PlanType.free

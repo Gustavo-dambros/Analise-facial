@@ -24,7 +24,7 @@ class Payment(Base):
     __tablename__ = "payments"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("profiles.id"), nullable=False, index=True)
     mercado_pago_payment_id = Column(String(100), nullable=True, index=True)
     mercado_pago_preference_id = Column(String(200), nullable=True)
     amount = Column(Numeric(10, 2), nullable=False)

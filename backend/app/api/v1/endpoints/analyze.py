@@ -8,7 +8,7 @@ from app.services.analysis_service import AnalysisService
 from app.repositories.analysis_repository import AnalysisRepository
 from app.core.security import get_current_user, require_role
 from app.core.config import settings
-from app.models.user import User
+from app.models.profile import Profile
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -19,7 +19,7 @@ limiter = Limiter(key_func=get_remote_address)
 async def analyze_face(
     request: Request,
     data: AnalysisCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: Profile = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Analyze facial features from photo. Requires authentication."""
@@ -31,7 +31,7 @@ async def analyze_face(
 @limiter.limit(settings.RATE_LIMIT_GENERAL)
 async def get_analysis_history(
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: Profile = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get user's own analysis history."""
@@ -43,7 +43,7 @@ async def get_analysis_history(
 @limiter.limit(settings.RATE_LIMIT_GENERAL)
 async def get_pending_analyses(
     request: Request,
-    current_user: User = Depends(require_role(["professional", "admin"])),
+    current_user: Profile = Depends(require_role(["professional", "admin"])),
     db: AsyncSession = Depends(get_db),
 ):
     """Get all analyses pending manual review. Professional/Admin only."""

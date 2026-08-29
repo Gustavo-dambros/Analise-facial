@@ -17,7 +17,7 @@ from app.services.face_detection_service import FaceDetectionService
 from app.core.security import get_current_user
 from app.core.config import settings
 from app.core.exceptions import SanitizedHTTPException
-from app.models.user import User
+from app.models.profile import Profile
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ def get_geometry_service() -> GeometryService:
 async def calculate_metrics(
     request: Request,
     data: GeometryAnalysisInputSchema,
-    current_user: User = Depends(get_current_user),
+    current_user: Profile = Depends(get_current_user),
     geometry_service: GeometryService = Depends(get_geometry_service),
 ) -> GeometryAnalysisResponseSchema:
     """Calculate facial metrics from landmark coordinates. Requires authentication."""
@@ -97,7 +97,7 @@ async def calculate_metrics(
 async def detect_face(
     request: Request,
     data: FaceDetectSchema,
-    current_user: User = Depends(get_current_user),
+    current_user: Profile = Depends(get_current_user),
 ) -> FaceDetectResponse:
     """Detect face and crop image. Requires authentication."""
     try:

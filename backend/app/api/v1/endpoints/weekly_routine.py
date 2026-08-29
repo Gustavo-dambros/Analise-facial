@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database.connection import get_db
 from app.models.analysis import WeeklyRoutine
-from app.models.user import User
+from app.models.profile import Profile
 from app.schemas.analysis import WeeklyRoutineCreate, WeeklyRoutineResponse
 from app.core.security import get_current_user, require_role
 from app.core.config import settings
@@ -22,7 +22,7 @@ limiter = Limiter(key_func=get_remote_address)
 async def create_or_update_routine(
     request: Request,
     data: WeeklyRoutineCreate,
-    current_user: User = Depends(require_role(["professional", "admin"])),
+    current_user: Profile = Depends(require_role(["professional", "admin"])),
     db: AsyncSession = Depends(get_db),
 ):
     exercises = {}
@@ -64,7 +64,7 @@ async def create_or_update_routine(
 async def get_routine(
     request: Request,
     user_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: Profile = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     if current_user.role not in ("professional", "admin") and current_user.id != user_id:
@@ -95,7 +95,7 @@ async def get_routine(
 @limiter.limit(settings.RATE_LIMIT_GENERAL)
 async def list_all_routines(
     request: Request,
-    current_user: User = Depends(require_role(["professional", "admin"])),
+    current_user: Profile = Depends(require_role(["professional", "admin"])),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(WeeklyRoutine))

@@ -1,59 +1,34 @@
-from datetime import datetime, timedelta, timezone
 from typing import Optional
-import secrets
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.database.connection import get_db
-from app.repositories.user_repository import UserRepository
-from app.models.user import User
+from app.repositories.profile_repository import ProfileRepository
+from app.models.profile import Profile
 
 
 security = HTTPBearer()
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (
-        expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-
-
-def decode_token(token: str) -> Optional[dict]:
-    """Decode a JWT issued by this service (FastAPI SECRET_KEY)."""
-    try:
-        return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-    except JWTError:
-        return None
-
-
-def decode_supabase_token(token: str) -> Optional[dict]:
-    """Decode a JWT issued by Supabase Auth.
-
-    Uses ``SUPABASE_JWT_SECRET`` if configured. Falls back to the
-    FastAPI ``SECRET_KEY`` when the Supabase secret is not set (useful
-    for local development where both use the same key).
-    """
-    secret = settings.SUPABASE_JWT_SECRET or settings.SECRET_KEY
-    algorithms = [settings.SUPABASE_JWT_ALGORITHM] if settings.SUPABASE_JWT_SECRET else [settings.ALGORITHM]
-    try:
-        return jwt.decode(token, secret, algorithms=algorithms)
-    except JWTError:
-        return None
-
-
-def generate_secure_token(length: int = 64) -> str:
-    return secrets.token_urlsafe(length)
+def _jwt_secret_and_algorithms():
+    """Use the Supabase JWT secret when configured; fall back to SECRET_KEY (dev)."""
+    if settings.SUPABASE_JWT_SECRET:
+        return settings.SUPABASE_JWT_SECRET, [settings.SUPABASE_JWT_ALGORITHM]
+    return settings.SECRET_KEY, [settings.ALGORITHM]
 
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
-) -> User:
+) -> Profile:
+    """Validate the Supabase-issued JWT and load the matching Profile.
+
+    The token is issued by Supabase Auth; we verify it with ``SUPABASE_JWT_SECRET``
+    and resolve the user via its ``sub`` (the Supabase user UUID, equal to
+    ``profiles.id``) or, as a fallback, the ``email`` claim.
+    """
     token = credentials.credentials
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -61,47 +36,29 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    user_id: Optional[str] = None
-    email: Optional[str] = None
-
-    # 1) Try FastAPI's own JWT first
+    secret, algorithms = _jwt_secret_and_algorithms()
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id = payload.get("sub")
+        payload = jwt.decode(token, secret, algorithms=algorithms)
     except JWTError:
-        user_id = None
-
-    # 2) Fall back to Supabase JWT if configured
-    if user_id is None and settings.SUPABASE_JWT_SECRET:
-        try:
-            payload = jwt.decode(
-                token,
-                settings.SUPABASE_JWT_SECRET,
-                algorithms=[settings.SUPABASE_JWT_ALGORITHM],
-            )
-            # Supabase uses "sub" for the user UUID, which differs from our
-            # local primary key. The "email" claim is the stable identifier
-            # shared across both systems, so we capture it for lookup below.
-            user_id = payload.get("sub")
-            email = payload.get("email")
-        except JWTError:
-            raise credentials_exception
-
-    # 3) If still no identifier, the token is invalid
-    if user_id is None and email is None:
         raise credentials_exception
 
-    user_repo = UserRepository(db)
-    user = None
-    if user_id is not None:
-        user = await user_repo.get_by_id(user_id)
-    # For Supabase-issued tokens the "sub" won't match our local PK, so we
-    # resolve the account by e-mail when the id lookup misses.
-    if user is None and email is not None:
-        user = await user_repo.get_by_email(email)
-
-    if user is None or not user.is_active:
+    user_id: Optional[str] = payload.get("sub")
+    email: Optional[str] = payload.get("email")
+    if not user_id and not email:
         raise credentials_exception
+
+    repo = ProfileRepository(db)
+    user: Optional[Profile] = None
+    if user_id:
+        user = await repo.get_by_id(user_id)
+    if user is None and email:
+        user = await repo.get_by_email(email)
+
+    if user is None:
+        # Perfil ainda nao existe (ex.: usuario ja existia no Supabase antes do
+        # trigger de criacao). Criamos sob demanda para nao quebrar o app.
+        user = Profile(id=user_id, email=email)
+        await repo.create(user)
     return user
 
 
@@ -109,8 +66,8 @@ def require_role(allowed_roles: list[str]):
     """Dependency factory that checks the current user has one of the allowed roles."""
 
     async def _check_role(
-        current_user: User = Depends(get_current_user),
-    ) -> User:
+        current_user: Profile = Depends(get_current_user),
+    ) -> Profile:
         if current_user.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

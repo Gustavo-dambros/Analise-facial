@@ -7,6 +7,9 @@
  * - Headers de autorização (Bearer token) do localStorage
  */
 import { getFriendlyErrorMessage, formatValidationErrors } from './errorMessages';
+import { createClient } from '@/lib/supabase/client';
+
+const supabase = createClient();
 
 /**
  * Base da API FastAPI.
@@ -28,41 +31,27 @@ function resolveApiBase() {
 
 export const API_BASE = resolveApiBase();
 
-const TOKEN_KEY = 'facemax_access_token';
-
 /**
- * Obtém o token de acesso salvo no localStorage
+ * Resolve o access token da sessao Supabase (fonte de verdade da autenticacao).
  */
-export function getToken() {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-/**
- * Salva o token de acesso no localStorage
- */
-export function setToken(token) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(TOKEN_KEY, token);
-}
-
-/**
- * Remove o token de acesso do localStorage
- */
-export function clearToken() {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(TOKEN_KEY);
+async function getSupabaseToken() {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Cria headers padrão com Content-Type e Authorization (se token existir)
  */
-function authHeaders(includeContentType = true) {
+async function authHeaders(includeContentType = true) {
   const headers = {};
   if (includeContentType) {
     headers['Content-Type'] = 'application/json';
   }
-  const token = getToken();
+  const token = await getSupabaseToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -100,8 +89,12 @@ async function handleApiError(response) {
   }
 
   if (response.status === 401) {
-    // Token expirado ou inválido — limpa e força logout
-    clearToken();
+    // Token invalido/expirado no backend — encerra a sessao Supabase.
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* noop */
+    }
     throw new Error('Sessão expirada. Faça login novamente.');
   }
 
@@ -127,7 +120,7 @@ async function apiFetch(endpoint, options = {}) {
     const response = await fetch(url, {
       ...options,
       headers: {
-        ...authHeaders(options.body instanceof FormData ? false : true),
+        ...(await authHeaders(options.body instanceof FormData ? false : true)),
         ...options.headers,
       },
     });
@@ -153,133 +146,10 @@ async function apiFetch(endpoint, options = {}) {
 }
 
 /**
- * Registra um novo usuário
- * POST /api/v1/auth/register
+ * Funções de autenticação (cadastro, login, reset e confirmação de e-mail)
+ * passaram a ser feitas diretamente no Supabase Auth — veja src/context/AuthContext.
+ * Aqui restam apenas as chamadas de perfil e de negócio.
  */
-export async function register(email, password, fullName) {
-  const response = await fetch(`${API_BASE}/api/v1/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, full_name: fullName }),
-  });
-
-  if (!response.ok) {
-    await handleApiError(response);
-  }
-
-  return parseJsonSafe(response);
-}
-
-/**
- * Login do usuário
- * POST /api/v1/auth/login
- * Retorna { access_token, token_type }
- */
-export async function login(email, password) {
-  const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!response.ok) {
-    await handleApiError(response);
-  }
-
-  const data = await parseJsonSafe(response);
-  if (data.access_token) {
-    setToken(data.access_token);
-  }
-  return data;
-}
-
-/**
- * Confirma o e-mail do usuário com o token recebido por e-mail
- * GET /api/v1/auth/verificar-email/{token}
- * Retorna { message }
- */
-export async function verifyEmail(token) {
-  const response = await fetch(
-    `${API_BASE}/api/v1/auth/verificar-email/${encodeURIComponent(token)}`,
-  );
-
-  if (!response.ok) {
-    await handleApiError(response);
-  }
-
-  return parseJsonSafe(response);
-}
-
-/**
- * Reenvia o e-mail de verificação
- * POST /api/v1/auth/reenviar-confirmacao
- * Retorna { message } — resposta genérica para evitar enumeração de e-mails
- */
-export async function resendConfirmation(email) {
-  const response = await fetch(`${API_BASE}/api/v1/auth/reenviar-confirmacao`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-
-  if (!response.ok) {
-    await handleApiError(response);
-  }
-
-  return parseJsonSafe(response);
-}
-
-/**
- * Solicita link de recuperação de senha
- * POST /api/v1/auth/esqueci-senha
- */
-export async function forgotPassword(email) {
-  const response = await fetch(`${API_BASE}/api/v1/auth/esqueci-senha`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-
-  // O backend responde 200 para qualquer e-mail (mensagem genérica p/ evitar
-  // enumeração de contas). Consideramos sucesso qualquer resposta < 500; só
-  // erros 5xx são tratados como falha real do servidor.
-  if (response.status >= 500) {
-    await handleApiError(response);
-  }
-
-  return parseJsonSafe(response);
-}
-
-/**
- * Redefine a senha usando o token JWT recebido por e-mail
- * POST /api/v1/auth/redefinir-senha
- * Retorna { message }
- */
-export async function resetPassword(token, novaSenha) {
-  const response = await fetch(`${API_BASE}/api/v1/auth/redefinir-senha`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, nova_senha: novaSenha }),
-  });
-
-  if (!response.ok) {
-    await handleApiError(response);
-  }
-
-  return parseJsonSafe(response);
-}
-
-/**
- * Altera a senha do usuário autenticado (fluxo logado)
- * POST /api/v1/auth/alterar-senha
- * Retorna { message }
- */
-export async function changePassword(novaSenha) {
-  return apiFetch('/api/v1/auth/alterar-senha', {
-    method: 'POST',
-    body: JSON.stringify({ nova_senha: novaSenha }),
-  });
-}
 
 /**
  * Obtém o perfil do usuário autenticado
@@ -355,16 +225,4 @@ export async function getAnalysisHistory() {
   return apiFetch('/api/v1/analyze/history');
 }
 
-/**
- * Logout — limpa token local
- */
-export function logout() {
-  clearToken();
-}
-
-/**
- * Verifica se o usuário está autenticado (tem token salvo)
- */
-export function isAuthenticated() {
-  return !!getToken();
-}
+// (fim do arquivo)

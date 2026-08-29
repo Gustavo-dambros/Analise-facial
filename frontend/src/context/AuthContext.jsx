@@ -1,27 +1,25 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { register, login, logout as apiLogout, getProfile, isAuthenticated, getToken, forgotPassword, resetPassword as apiResetPassword, changePassword as apiChangePassword } from '@/lib/api';
+import { getProfile } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from 'sonner';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [token, setToken] = useState(null);
+  const [user, setUser] = useState(null); // perfil do app (role, plan, full_name...)
+  const [session, setSession] = useState(null); // sessao do Supabase Auth
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const supabase = createClient();
 
-  const fetchProfile = useCallback(async (token) => {
+  const fetchProfile = useCallback(async () => {
     try {
       const profileData = await getProfile();
-      setProfile(profileData);
+      setUser(profileData);
       return profileData;
     } catch (err) {
-      console.error('Failed to fetch profile:', err);
-      setProfile(null);
+      console.error('Falha ao carregar perfil:', err);
+      setUser(null);
       throw err;
     }
   }, []);
@@ -29,46 +27,59 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true;
 
-    // Tenta restaurar sessão do localStorage
-    const savedToken = getToken();
-    if (savedToken) {
-      setToken(savedToken);
-      // Valida o token buscando o perfil
-      fetchProfile(savedToken)
-        .then(() => {
-          if (mounted) setLoading(false);
-        })
-        .catch(() => {
-          if (mounted) {
-            // Token inválido — limpa
-            apiLogout();
-            setUser(null);
-            setProfile(null);
-            setToken(null);
-            setLoading(false);
-          }
-        });
-    } else {
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      setSession(data.session);
+      if (data.session) {
+        try {
+          await fetchProfile();
+        } catch {
+          setUser(null);
+        }
+      }
       if (mounted) setLoading(false);
-    }
+    };
+
+    init();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        if (!mounted) return;
+        setSession(newSession);
+        if (newSession && event !== 'SIGNED_OUT') {
+          try {
+            await fetchProfile();
+          } catch {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+        if (mounted) setLoading(false);
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [fetchProfile]);
 
   const signUp = useCallback(async (email, password, fullName) => {
     try {
-      const result = await register(email, password, fullName);
-      
-      // O backend retorna: { message, requires_verification }
-      // Se requires_verification é true, não há session ainda
-      if (result.requires_verification) {
-        return { success: true, message: result.message || 'Confirme seu email para ativar a conta.' };
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } },
+      });
+      if (error) throw new Error(error.message);
+
+      if (data.session) {
+        await fetchProfile();
+        return { success: true };
       }
-      
-      // Se não precisa verificação, faz login automático
-      const loginResult = await login(email, password);
-      setToken(loginResult.access_token);
-      await fetchProfile(loginResult.access_token);
-      
-      return { success: true };
+      return { success: true, message: 'Confirme seu e-mail para ativar a conta.' };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -76,9 +87,9 @@ export function AuthProvider({ children }) {
 
   const signIn = useCallback(async (email, password) => {
     try {
-      const result = await login(email, password);
-      setToken(result.access_token);
-      await fetchProfile(result.access_token);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(error.message);
+      await fetchProfile();
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
@@ -86,77 +97,61 @@ export function AuthProvider({ children }) {
   }, [fetchProfile]);
 
   const signOut = useCallback(async () => {
-    apiLogout();
-    setUser(null);
-    setProfile(null);
-    setToken(null);
-    // Também faz logout do Supabase (para limpar sessão de storage se houver)
     await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
     navigate('/login');
   }, [navigate]);
 
   const resetPassword = useCallback(async (email) => {
     try {
-      const result = await forgotPassword(email);
-      return { success: true, redirect_url: result.redirect_url };
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw new Error(error.message);
     } catch (error) {
-      return { success: false, error: error.message };
+      // Nao expor se o e-mail existe ou nao (evita enumeracao).
     }
-  }, []);
-
-  const resetPasswordWithToken = useCallback(async (token, newPassword) => {
-    try {
-      const result = await apiResetPassword(token, newPassword);
-      return { success: true, redirect_url: result.redirect_url };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    return { success: true };
   }, []);
 
   const updatePassword = useCallback(async (newPassword) => {
     try {
-      const result = await apiChangePassword(newPassword);
-      return { success: true, redirect_url: result.redirect_url };
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw new Error(error.message);
+      return { success: true, redirect_url: '/dashboard/profile' };
     } catch (error) {
       return { success: false, error: error.message };
     }
   }, []);
 
-  const mergedUser = user && profile
-    ? {
-        id: user.id,
-        email: user.email,
-        full_name: profile.full_name,
-        role: profile.role,
-        plan_type: profile.plan,
-        subscription_status: profile.status,
-      }
-    : user
-      ? { id: user.id, email: user.email }
-      : null;
+  const resendConfirmation = useCallback(async (email) => {
+    try {
+      const { error } = await supabase.auth.resend({ type: 'signup', email });
+      if (error) throw new Error(error.message);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        isAuthenticated: !!user,
-        user: mergedUser,
-        profile,
-        token,
-        loading,
-        signUp,
-        signIn,
-        signOut,
-        resetPassword,
-        resetPasswordWithToken,
-        updatePassword,
-        login: signIn,
-        register: signUp,
-        refreshProfile: fetchProfile,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    isAuthenticated: !!session,
+    user,
+    session,
+    loading,
+    signUp,
+    signIn,
+    signOut,
+    resetPassword,
+    updatePassword,
+    resendConfirmation,
+    refreshProfile: fetchProfile,
+    login: signIn,
+    register: signUp,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

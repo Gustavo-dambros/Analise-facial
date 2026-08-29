@@ -15,16 +15,16 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from fastapi import HTTPException
 
-from app.models.user import User, PlanType
+from app.models.profile import Profile, PlanType
 from app.services.analysis_service import (
     AnalysisService,
     PLAN_MONTHLY_LIMITS,
 )
 
 
-def _make_user(plan: PlanType = PlanType.free, is_superuser: bool = False) -> User:
-    """Create a lightweight mock User that satisfies the service checks."""
-    user = MagicMock(spec=User)
+def _make_user(plan: PlanType = PlanType.free, is_superuser: bool = False) -> Profile:
+    """Create a lightweight mock Profile that satisfies the service checks."""
+    user = MagicMock(spec=Profile)
     user.id = "test-user-id"
     user.email = "test@example.com"
     user.plan = plan
@@ -137,7 +137,7 @@ async def test_superuser_bypasses_limit():
 @pytest.mark.asyncio
 async def test_unknown_plan_defaults_to_free():
     """An unknown plan value should default to free limits (3)."""
-    user = MagicMock(spec=User)
+    user = MagicMock(spec=Profile)
     user.id = "test-user-id"
     user.plan = "unknown_plan"  # not in PLAN_MONTHLY_LIMITS
     user.is_superuser = False

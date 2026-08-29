@@ -16,7 +16,7 @@ from app.schemas.analysis import (
 )
 from app.core.config import settings
 from app.core.exceptions import SanitizedHTTPException
-from app.models.user import PlanType
+from app.models.profile import PlanType
 
 logger = logging.getLogger(__name__)
 

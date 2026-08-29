@@ -297,17 +297,19 @@ class PaymentService:
     # Internal helpers
     # ------------------------------------------------------------------
     async def _unlock_user_service(self, db: AsyncSession, user_id: str, plan_id: str):
-        """Update user profile / permissions after a successful payment."""
-        from app.repositories.user_repository import UserRepository
+        """Update the user's plan in the profile after a successful payment."""
+        from app.repositories.profile_repository import ProfileRepository
+        from app.models.profile import PlanType
 
-        user_repo = UserRepository(db)
-        user = await user_repo.get_by_id(user_id)
-        if user:
-            # Update the user's role to 'client_active' or set a plan
-            # The exact field depends on your schema; here we use a generic approach.
-            # You may want to add a `plan_type` or `subscription_status` column.
-            # For now, we ensure is_active remains True and could update role.
-            logger.info("User %s plan updated to %s", user_id, plan_id)
+        repo = ProfileRepository(db)
+        profile = await repo.get_by_id(user_id)
+        if profile:
+            try:
+                plan = PlanType(plan_id)
+            except ValueError:
+                plan = PlanType.free
+            await repo.update_plan(profile, plan)
+            logger.info("User %s plan updated to %s", user_id, plan.value)
 
     # ------------------------------------------------------------------
     # Status polling (used by frontend polling fallback)

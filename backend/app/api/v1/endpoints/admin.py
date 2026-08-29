@@ -20,7 +20,7 @@ from app.schemas.admin import (
     ChartDataPoint,
     FinancialLogResponse,
 )
-from app.models.user import User
+from app.models.profile import Profile
 from app.models.analysis import FacialAnalysis, Order, FinancialLog, Shipping, OrderStatus, ShippingStatus
 from app.core.security import get_current_user, require_role
 from app.core.config import settings
@@ -79,17 +79,17 @@ async def get_admin_kpis(
     period: PeriodType = Query(PeriodType.this_month),
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
-    current_user: User = Depends(require_role(["admin"])),
+    current_user: Profile = Depends(require_role(["admin"])),
     db: AsyncSession = Depends(get_db),
 ):
     start, end = get_period_dates(period, start_date, end_date)
 
     # Total users
-    total_users_result = await db.execute(select(func.count(User.id)))
+    total_users_result = await db.execute(select(func.count(Profile.id)))
     total_users = total_users_result.scalar() or 0
 
-    # Active users
-    active_users_result = await db.execute(select(func.count(User.id)).where(User.is_active == True))
+    # Active users (todos os perfis sao considerados ativos; o gate de auth e o Supabase)
+    active_users_result = await db.execute(select(func.count(Profile.id)))
     active_users = active_users_result.scalar() or 0
 
     # Revenue queries
@@ -181,7 +181,7 @@ async def get_revenue_chart(
     period: PeriodType = Query(PeriodType.this_month),
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
-    current_user: User = Depends(require_role(["admin"])),
+    current_user: Profile = Depends(require_role(["admin"])),
     db: AsyncSession = Depends(get_db),
 ):
     start, end = get_period_dates(period, start_date, end_date)
@@ -229,7 +229,7 @@ async def get_user_growth_chart(
     period: PeriodType = Query(PeriodType.this_month),
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
-    current_user: User = Depends(require_role(["admin"])),
+    current_user: Profile = Depends(require_role(["admin"])),
     db: AsyncSession = Depends(get_db),
 ):
     start, end = get_period_dates(period, start_date, end_date)
@@ -244,17 +244,17 @@ async def get_user_growth_chart(
 
     query = (
         select(
-            _format_date_column(db, User.created_at, group_format).label("period"),
-            func.count(User.id).label("count"),
+            _format_date_column(db, Profile.created_at, group_format).label("period"),
+            func.count(Profile.id).label("count"),
         )
         .where(
             and_(
-                User.created_at >= start,
-                User.created_at <= end,
+                Profile.created_at >= start,
+                Profile.created_at <= end,
             )
         )
-        .group_by(_format_date_column(db, User.created_at, group_format))
-        .order_by(_format_date_column(db, User.created_at, group_format))
+        .group_by(_format_date_column(db, Profile.created_at, group_format))
+        .order_by(_format_date_column(db, Profile.created_at, group_format))
     )
 
     result = await db.execute(query)
@@ -272,7 +272,7 @@ async def get_user_growth_chart(
 @limiter.limit(settings.RATE_LIMIT_GENERAL)
 async def get_shipping_chart(
     request: Request,
-    current_user: User = Depends(require_role(["admin"])),
+    current_user: Profile = Depends(require_role(["admin"])),
     db: AsyncSession = Depends(get_db),
 ):
     pending_result = await db.execute(
@@ -303,7 +303,7 @@ async def get_admin_orders(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     status_filter: Optional[str] = Query(None),
-    current_user: User = Depends(require_role(["admin"])),
+    current_user: Profile = Depends(require_role(["admin"])),
     db: AsyncSession = Depends(get_db),
 ):
     query = (
@@ -370,17 +370,17 @@ async def get_admin_users(
     request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    current_user: User = Depends(require_role(["admin"])),
+    current_user: Profile = Depends(require_role(["admin"])),
     db: AsyncSession = Depends(get_db),
 ):
     # Count total
-    total_result = await db.execute(select(func.count(User.id)))
+    total_result = await db.execute(select(func.count(Profile.id)))
     total = total_result.scalar() or 0
 
     # Paginate
     query = (
-        select(User)
-        .order_by(User.created_at.desc())
+        select(Profile)
+        .order_by(Profile.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
@@ -403,7 +403,7 @@ async def get_admin_users(
                 email=user.email,
                 full_name=user.full_name,
                 role=user.role,
-                is_active=user.is_active,
+                is_active=True,
                 created_at=user.created_at,
                 total_orders=order_count,
                 total_spent=total_spent or Decimal("0"),
@@ -424,7 +424,7 @@ async def get_financial_logs(
     request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    current_user: User = Depends(require_role(["admin"])),
+    current_user: Profile = Depends(require_role(["admin"])),
     db: AsyncSession = Depends(get_db),
 ):
     # Count total

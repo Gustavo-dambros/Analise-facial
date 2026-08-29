@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from app.core.security import require_role
-from app.models.user import User
+from app.models.profile import Profile
 
 router = APIRouter()
 
 
 @router.post("/save-frame")
 async def save_file(
-    current_user: User = Depends(require_role(["admin"])),
+    current_user: Profile = Depends(require_role(["admin"])),
 ):
     """Disabled in production. Admin-only endpoint for testing."""
     return JSONResponse(
@@ -19,7 +19,7 @@ async def save_file(
 
 @router.delete("/clear-frames")
 async def clear_frames(
-    current_user: User = Depends(require_role(["admin"])),
+    current_user: Profile = Depends(require_role(["admin"])),
 ):
     """Disabled in production. Admin-only endpoint for testing."""
     return JSONResponse(

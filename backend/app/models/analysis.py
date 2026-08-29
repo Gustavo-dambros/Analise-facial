@@ -24,7 +24,7 @@ class FacialAnalysis(Base):
     __tablename__ = "facial_analyses"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("profiles.id"), nullable=False)
     overall_score = Column(Float, nullable=False)
     confidence = Column(Float, nullable=False)
     harmony_score = Column(Float, nullable=False)
@@ -41,7 +41,7 @@ class FacialAnalysis(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="analyses")
+    user = relationship("Profile", back_populates="analyses")
     categories = relationship("AnalysisCategory", back_populates="analysis")
 
 
@@ -62,7 +62,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("profiles.id"), nullable=False, index=True)
     analysis_id = Column(String(36), ForeignKey("facial_analyses.id"), nullable=True)
     amount = Column(Numeric(10, 2), nullable=False)
     currency = Column(String(3), default="BRL")
@@ -74,7 +74,7 @@ class Order(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     paid_at = Column(DateTime(timezone=True), nullable=True)
 
-    user = relationship("User")
+    user = relationship("Profile")
     analysis = relationship("FacialAnalysis")
 
 
@@ -113,9 +113,9 @@ class WeeklyRoutine(Base):
     __tablename__ = "weekly_routines"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, unique=True)
+    user_id = Column(String(36), ForeignKey("profiles.id"), nullable=False, unique=True)
     exercises = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    user = relationship("User")
+    user = relationship("Profile")

@@ -1,4 +1,4 @@
-from app.models.user import User, PlanType
+from app.models.profile import Profile, PlanType
 from app.models.analysis import (
     FacialAnalysis,
     AnalysisCategory,
@@ -12,7 +12,7 @@ from app.models.analysis import (
 from app.models.payment import Payment, PaymentStatus, PaymentMethod
 
 __all__ = [
-    "User",
+    "Profile",
     "PlanType",
     "FacialAnalysis",
     "AnalysisCategory",

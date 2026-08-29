@@ -2,7 +2,7 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.models.analysis import FacialAnalysis, AnalysisCategory
-from app.models.user import User
+from app.models.profile import Profile
 from datetime import datetime, timezone
 
 
@@ -57,8 +57,8 @@ class AnalysisRepository:
 
     async def get_pending(self) -> list[dict]:
         result = await self.db.execute(
-            select(FacialAnalysis, User.full_name)
-            .join(User, FacialAnalysis.user_id == User.id)
+            select(FacialAnalysis, Profile.full_name)
+            .join(Profile, FacialAnalysis.user_id == Profile.id)
             .where(FacialAnalysis.status == "pending")
             .order_by(FacialAnalysis.created_at.desc())
         )

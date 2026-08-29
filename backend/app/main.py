@@ -47,11 +47,11 @@ async def lifespan(app: FastAPI):
         async with engine.connect() as conn:
             from sqlalchemy import inspect
 
-            has_users = await conn.run_sync(
-                lambda sync_conn: inspect(sync_conn).has_table("users")
+            has_profiles = await conn.run_sync(
+                lambda sync_conn: inspect(sync_conn).has_table("profiles")
             )
-            if not has_users:
-                raise RuntimeError("users table was not created — DATABASE_URL may be read-only or misconfigured")
+            if not has_profiles:
+                raise RuntimeError("profiles table was not created — DATABASE_URL may be read-only or misconfigured")
         logger.info("Database tables verified at startup")
     except RuntimeError:
         raise
