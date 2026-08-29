@@ -142,6 +142,7 @@ export function AuthProvider({ children }) {
   const value = {
     isAuthenticated: !!session,
     user,
+    profile: user,
     session,
     loading,
     signUp,
