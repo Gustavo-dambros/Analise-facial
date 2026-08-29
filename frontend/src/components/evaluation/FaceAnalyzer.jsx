@@ -74,8 +74,8 @@ export default function FaceAnalyzer() {
     const loadAnalysesCount = async () => {
       if (!user?.id) return;
       try {
-        const { getUserAnalyses } = await import('@/lib/api');
-        const history = await getUserAnalyses(user.id);
+        const { getAnalysisHistory } = await import('@/lib/api');
+        const history = await getAnalysisHistory();
         setAnalysesCount(history.length);
       } catch (err) {
         console.error('Falha ao carregar contagem de análises:', err);
@@ -199,6 +199,13 @@ export default function FaceAnalyzer() {
           <p className="text-xs sm:text-sm text-text-secondary mb-2">
             {user?.full_name ? `Olá, ${user.full_name}!` : "Olá!"}
           </p>
+
+          {/* Evaluation count */}
+          {analysesCount > 0 && (
+            <p className="text-xs sm:text-sm text-text-secondary mb-2">
+              {analysesCount === 1 ? '1 análise realizada' : `${analysesCount} análises realizadas`}
+            </p>
+          )}
 
           <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Nova Análise</h1>
           <p className="text-xs sm:text-sm text-text-muted mt-1">Capture ou envie as fotos do rosto (frontal, perfil esquerdo e perfil direito) para avaliação de um profissional</p>
