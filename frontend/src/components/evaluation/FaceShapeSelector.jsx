@@ -1,13 +1,20 @@
 import { Label } from '@/components/ui/label';
+import oval from '@/assets/faces/oval.png';
+import square from '@/assets/faces/square.png';
+import rectangular from '@/assets/faces/rectangular.png';
+import round from '@/assets/faces/round.png';
+import heart from '@/assets/faces/heart.png';
+import diamond from '@/assets/faces/diamond.png';
+import pear from '@/assets/faces/pear.png';
 
 export const FACE_SHAPE_OPTIONS = [
-  { value: 'Oval', label: 'Oval', img: 'oval.png' },
-  { value: 'Quadrado', label: 'Quadrado', img: 'square.png' },
-  { value: 'Retangular', label: 'Retangular (Oblongo)', img: 'rectangular.png' },
-  { value: 'Redondo', label: 'Redondo', img: 'round.png' },
-  { value: 'Coração', label: 'Coração (Triângulo invertido)', img: 'heart.png' },
-  { value: 'Diamante', label: 'Diamante', img: 'diamond.png' },
-  { value: 'Pera', label: 'Pera (Triângulo)', img: 'pear.png' },
+  { value: 'Oval', label: 'Oval', img: oval },
+  { value: 'Quadrado', label: 'Quadrado', img: square },
+  { value: 'Retangular', label: 'Retangular (Oblongo)', img: rectangular },
+  { value: 'Redondo', label: 'Redondo', img: round },
+  { value: 'Coração', label: 'Coração (Triângulo invertido)', img: heart },
+  { value: 'Diamante', label: 'Diamante', img: diamond },
+  { value: 'Pera', label: 'Pera (Triângulo)', img: pear },
 ];
 
 export function faceShapeLabel(value) {
@@ -33,7 +40,7 @@ export function FaceShapeSelector({ value, onChange, label = 'Formato do Rosto' 
               }`}
             >
               <img
-                src={`/src/assets/faces/${opt.img}`}
+                src={opt.img}
                 alt={opt.label}
                 className="h-16 w-auto object-contain"
               />
