@@ -25,13 +25,19 @@ export default function ChangePasswordPage() {
       const confirmPassword = formData.get('confirm-password');
 
       if (!password || password.length < 8) {
-        setError('A senha deve ter pelo menos 8 caracteres');
+        setError('A senha deve ter pelo menos 8 caracteres.');
+        setLoading(false);
+        return;
+      }
+
+      if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(password)) {
+        setError('A senha deve conter pelo menos uma letra e um número.');
         setLoading(false);
         return;
       }
 
       if (password !== confirmPassword) {
-        setError('As senhas nao coincidem');
+        setError('As senhas não coincidem.');
         setLoading(false);
         return;
       }
@@ -40,6 +46,8 @@ export default function ChangePasswordPage() {
 
       if (result.success) {
         navigate(result.redirect_url || '/password-changed');
+      } else if (result.code === 'SESSION_EXPIRED') {
+        navigate('/login');
       } else {
         setError(result.error);
       }
@@ -74,7 +82,7 @@ export default function ChangePasswordPage() {
                 <PasswordInput
                   id="password"
                   name="password"
-                  placeholder="Minimo 8 caracteres"
+                  placeholder="Minimo 8 caracteres, com letras e numeros"
                   required
                   minLength={8}
                 />

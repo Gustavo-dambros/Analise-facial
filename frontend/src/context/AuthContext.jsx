@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { useNavigate } from 'react-router-dom';
 import { getProfile, setAccessToken } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
+import { translateAuthError } from '@/lib/authErrors';
 
 const AuthContext = createContext(null);
 
@@ -121,11 +122,27 @@ export function AuthProvider({ children }) {
 
   const updatePassword = useCallback(async (newPassword) => {
     try {
+      // Verifica a sessao antes de alterar (updateUser exige sessao ativa).
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData?.session) {
+        const err = new Error('Auth session missing!');
+        err.code = 'SESSION_EXPIRED';
+        throw err;
+      }
+
       const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw new Error(error.message);
-      return { success: true, redirect_url: '/dashboard/profile' };
+      if (error) throw error;
+      return { success: true, redirect_url: '/password-changed' };
     } catch (error) {
-      return { success: false, error: error.message };
+      const isSessionError =
+        error?.code === 'SESSION_EXPIRED' ||
+        /session|token|expired|unauthenticated/i.test(error?.message || '');
+      return {
+        success: false,
+        error: translateAuthError(error?.message || ''),
+        code: isSessionError ? 'SESSION_EXPIRED' : undefined,
+      };
     }
   }, []);
 
