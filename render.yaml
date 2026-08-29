@@ -8,27 +8,27 @@ services:
     autoDeploy: true
     envVars:
       - key: DATABASE_URL
-        fromSecret: DATABASE_URL
+        sync: false
       - key: SUPABASE_URL
         value: https://lchmfruaaukeqorfmwvg.supabase.co
       - key: SUPABASE_ANON_KEY
-        fromSecret: SUPABASE_ANON_KEY
+        sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
-        fromSecret: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
       - key: SUPABASE_EMAIL_REDIRECT_TO
         value: https://facemax.pro/email-confirmado
       - key: SUPABASE_PASSWORD_REDIRECT_TO
         value: https://facemax.pro/reset-password
       - key: SUPABASE_JWT_SECRET
-        fromSecret: SUPABASE_JWT_SECRET
+        sync: false
       - key: SECRET_KEY
-        fromSecret: SECRET_KEY
+        sync: false
       - key: ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "30"
       - key: OPENROUTER_API_KEY
-        fromSecret: OPENROUTER_API_KEY
+        sync: false
       - key: OPENROUTER_MODEL
         value: google/gemma-4-26b-it:free
       - key: OPENROUTER_BASE_URL
@@ -38,9 +38,9 @@ services:
       - key: OPENROUTER_REFERER
         value: https://facemax.app
       - key: MERCADOPAGO_ACCESS_TOKEN
-        fromSecret: MERCADOPAGO_ACCESS_TOKEN
+        sync: false
       - key: MERCADOPAGO_WEBHOOK_SECRET
-        fromSecret: MERCADOPAGO_WEBHOOK_SECRET
+        sync: false
       - key: MAIL_SERVER
         value: smtp.gmail.com
       - key: MAIL_PORT
@@ -48,9 +48,9 @@ services:
       - key: MAIL_USE_TLS
         value: "true"
       - key: MAIL_USERNAME
-        fromSecret: MAIL_USERNAME
+        sync: false
       - key: MAIL_PASSWORD
-        fromSecret: MAIL_PASSWORD
+        sync: false
       - key: MAIL_FROM_EMAIL
         value: FaceMax <noreply@facemax.app>
       - key: BASE_URL
