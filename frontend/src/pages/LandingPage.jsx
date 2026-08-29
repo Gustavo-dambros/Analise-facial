@@ -15,6 +15,7 @@ import {
   ScrollStaggerContainer,
   ScrollStaggerItem,
 } from '@/components/ui/page-transition';
+import { PLANS } from '@/lib/plans';
 
 const navItems = [
   {
@@ -420,7 +421,7 @@ export default function LandingPage() {
                   Assinar Mensal
                 </SelectPlanButton>
                 <ul className="flex flex-col gap-3.5 flex-1">
-                  {['1 Avaliação completa de Visagismo por mês', 'Relatório básico de Terços Faciais e Simetria', 'Fila padrão (5 dias úteis)'].map((benefit, i) => (
+                  {PLANS.plan_monthly.benefits.map((benefit, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <Check className="w-4 h-4 text-brand-accent flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                       <span className="text-text-secondary text-sm leading-relaxed">{benefit}</span>
@@ -451,7 +452,7 @@ export default function LandingPage() {
                   Assinar Anual
                 </SelectPlanButton>
                 <ul className="flex flex-col gap-3.5 flex-1">
-                  {['2 Avaliações completas por mês para rastreio de progresso', 'Painel de Evolução Temporal (comparativo de fotos)', 'Fila Prioritária (48 horas)', 'Economia de R$ 120 ao ano'].map((benefit, i) => (
+                  {PLANS.plan_annual.benefits.map((benefit, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <Check className="w-4 h-4 text-brand-accent flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                       <span className="text-text-secondary text-sm leading-relaxed">{benefit}</span>
@@ -479,7 +480,7 @@ export default function LandingPage() {
                   Assinar Black
                 </SelectPlanButton>
                 <ul className="flex flex-col gap-3.5 flex-1">
-                  {['4 Avaliações de Visagismo por mês (acompanhamento semanal)', 'Diagnóstico de Contraste Pessoal e Cores (armocromia facial)', 'Relatório Estendido de Traços (análise cirúrgica de nariz, mandíbula e orelhas)', 'Fila Expressa Ultra-VIP (entrega em 12 horas)'].map((benefit, i) => (
+                  {PLANS.plan_black.benefits.map((benefit, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <Check className="w-4 h-4 text-brand-accent flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                       <span className="text-text-secondary text-sm leading-relaxed">{benefit}</span>

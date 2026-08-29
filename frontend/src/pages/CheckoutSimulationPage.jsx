@@ -9,51 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { createPayment, getPaymentStatus } from '@/lib/api';
-
-const PLANS = {
-  plan_monthly: {
-    name: 'Acesso Regular',
-    price: '24,90',
-    priceRaw: 24.90,
-    pixPrice: '29,90',
-    pixPriceRaw: 29.90,
-    period: 'mês',
-    benefits: [
-      '1 Avaliação completa de Visagismo por mês',
-      'Relatório de Terços Faciais e Simetria',
-      'Fila padrão (5 dias úteis)',
-    ],
-  },
-  plan_annual: {
-    name: 'Evolução Contínua',
-    price: '179,00',
-    priceRaw: 179.00,
-    pixPrice: '184,00',
-    pixPriceRaw: 184.00,
-    period: 'ano',
-    tag: 'Mais Vendido — Economize R$ 120',
-    benefits: [
-      '2 Avaliações completas por mês',
-      'Painel de Evolução Temporal',
-      'Fila Prioritária (48 horas)',
-      'Economia de R$ 120',
-    ],
-  },
-  plan_black: {
-    name: 'Elite Estética',
-    price: '49,90',
-    priceRaw: 49.90,
-    pixPrice: '54,90',
-    pixPriceRaw: 54.90,
-    period: 'mês',
-    benefits: [
-      '4 Avaliações por mês (acompanhamento semanal)',
-      'Diagnóstico de Contraste Pessoal e Cores',
-      'Relatório Estendido de Traços',
-      'Fila Expressa Ultra-VIP (12 horas)',
-    ],
-  },
-};
+import { PLANS } from '@/lib/plans';
 
 const easeOutExpo = [0.16, 1, 0.3, 1];
 

@@ -20,6 +20,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
+import PlanBanners from '@/components/PlanBanners';
 
 const PHOTO_SLOTS = [
   { key: 'front', label: 'Frontal', hint: 'Rosto de frente' },
@@ -479,6 +480,8 @@ export default function FaceAnalyzer() {
           </div>
         </div>
       </div>
+
+      <PlanBanners />
     </div>
   );
 }
