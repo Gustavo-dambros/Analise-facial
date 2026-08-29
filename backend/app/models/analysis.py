@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Float, ForeignKey, JSON, DateTime, Integer, Boolean, Enum as SQLEnum, Numeric, Text
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database.connection import Base
@@ -47,6 +48,32 @@ class FacialAnalysis(Base):
     # Relationships
     user = relationship("Profile", back_populates="analyses")
     categories = relationship("AnalysisCategory", back_populates="analysis")
+
+
+class Analysis(Base):
+    """Canonical analysis table consumed by the frontend/admin (Supabase `analyses`)."""
+
+    __tablename__ = "analyses"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False, index=True)
+    title = Column(Text, nullable=False, server_default="Analise sem titulo")
+    description = Column(Text, nullable=False, server_default="")
+    status = Column(String(20), nullable=False, default="pending", server_default="pending")
+    photo_front_url = Column(Text, nullable=True)
+    photo_right_url = Column(Text, nullable=True)
+    photo_left_url = Column(Text, nullable=True)
+    photo_body_url = Column(Text, nullable=True)
+    result = Column(JSONB, nullable=True)
+    verdict_text = Column(Text, nullable=True)
+    body_result = Column(JSONB, nullable=True)
+    exercise_recommendations = Column(JSONB, nullable=True)
+    reviewed_by = Column(UUID(as_uuid=True), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("Profile")
 
 
 class AnalysisCategory(Base):

@@ -1,13 +1,16 @@
 import json
 import logging
+import uuid
 import httpx
 from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.analysis_repository import AnalysisRepository
+from app.services.storage_service import upload_photo
 from app.schemas.analysis import (
     AnalysisCreate,
     AnalysisResponse,
+    AnalysisSubmissionResponse,
     AttributeItem,
     ATTRIBUTE_NAMES,
     attribute_score_to_label,
@@ -303,109 +306,47 @@ class AnalysisService:
             "attributes": attributes,
         }
 
-    async def analyze(self, data: AnalysisCreate, user_id: str, current_user=None) -> AnalysisResponse:
+    async def analyze(self, data: AnalysisCreate, user_id: str, current_user=None) -> AnalysisSubmissionResponse:
         # Enforce monthly usage limits (security: backend is the authority)
         if current_user is not None:
             await self.check_monthly_limit(current_user)
 
-        ai_enabled = settings.ENABLE_AI_ANALYSIS and bool(settings.OPENROUTER_API_KEY)
+        uid = uuid.UUID(str(user_id))
 
-        # --- AI-driven analysis (optional) ---
-        if ai_enabled:
-            ai_result = await self._call_ai(data.photo_front)
-            result = self._map_to_response(ai_result)
-
-            db_analysis = await self.analysis_repo.create({
-                "user_id": user_id,
-                "overall_score": result["overall_score"],
-                "confidence": result["confidence"],
-                "harmony_score": result["harmony_score"],
-                "symmetry_score": result["symmetry_score"],
-                "thirds_data": result["thirds_data"],
-                "radar_data": result["radar_data"],
-                "highlights": result["highlights"],
-                "categories": result["categories"],
-                "attractiveness": result["attractiveness"],
-                "attributes_data": result["attributes_list"],
-                "photo_front_url": None,
-                "photo_right_url": None,
-                "photo_left_url": None,
-            })
-
-            return AnalysisResponse(
-                id=db_analysis.id,
-                overall_score=db_analysis.overall_score,
-                confidence=db_analysis.confidence,
-                harmony_score=db_analysis.harmony_score,
-                symmetry_score=db_analysis.symmetry_score,
-                thirds_data=db_analysis.thirds_data,
-                radar_data=db_analysis.radar_data,
-                highlights=db_analysis.highlights,
-                # `db_analysis.categories` is a lazy relationship; in an async session
-                # accessing it triggers a blocking load. We already have the data in
-                # `result`, so use that to build the response safely.
-                categories=result["categories"],
-                attractiveness=db_analysis.attractiveness,
-                attributes=_build_attribute_items(result["attributes_list"]),
-                created_at=db_analysis.created_at,
+        # Upload the submitted photo to Supabase Storage and store the public URL.
+        try:
+            photo_url = upload_photo(str(uid), data.photo_front)
+        except Exception as exc:
+            logger.exception("Failed to upload analysis photo for user %s", uid)
+            raise SanitizedHTTPException(
+                status.HTTP_502_BAD_GATEWAY,
+                "Falha ao armazenar a imagem. Tente novamente.",
+                f"storage upload failed: {exc}",
             )
 
-        # --- No AI: store the submission as a pending analysis for admin review ---
-        logger.info("AI disabled (no OPENROUTER_API_KEY) — creating pending analysis for user %s", user_id)
         db_analysis = await self.analysis_repo.create({
-            "user_id": user_id,
-            "overall_score": None,
-            "confidence": None,
-            "harmony_score": None,
-            "symmetry_score": None,
-            "thirds_data": None,
-            "radar_data": None,
-            "highlights": None,
-            "categories": [],
-            "attractiveness": None,
-            "attributes_data": None,
-            "photo_front_data": data.photo_front,
-            "photo_right_data": None,
-            "photo_left_data": None,
-            "photo_front_url": None,
-            "photo_right_url": None,
-            "photo_left_url": None,
+            "user_id": uid,
             "status": "pending",
+            "title": "Análise Facial",
+            "description": "",
+            "photo_front_url": photo_url,
         })
 
-        return AnalysisResponse(
-            id=db_analysis.id,
-            overall_score=None,
-            confidence=None,
-            harmony_score=None,
-            symmetry_score=None,
-            thirds_data=None,
-            radar_data=None,
-            highlights=None,
-            categories=[],
-            attractiveness=None,
-            attributes=[],
+        logger.info("Created pending analysis %s for user %s", db_analysis.id, uid)
+        return AnalysisSubmissionResponse(
+            id=str(db_analysis.id),
+            status=db_analysis.status,
+            photo_front_url=db_analysis.photo_front_url,
             created_at=db_analysis.created_at,
         )
 
-    async def get_user_analyses(self, user_id: str) -> list[AnalysisResponse]:
+    async def get_user_analyses(self, user_id: str) -> list[AnalysisSubmissionResponse]:
         analyses = await self.analysis_repo.get_by_user(user_id)
         return [
-            AnalysisResponse(
-                id=a.id,
-                overall_score=a.overall_score,
-                confidence=a.confidence,
-                harmony_score=a.harmony_score,
-                symmetry_score=a.symmetry_score,
-                thirds_data=a.thirds_data,
-                radar_data=a.radar_data,
-                highlights=a.highlights,
-                categories=[
-                    {"name": cat.name, "score": cat.score, "badge": cat.badge}
-                    for cat in a.categories
-                ],
-                attractiveness=a.attractiveness,
-                attributes=_build_attribute_items(a.attributes_data),
+            AnalysisSubmissionResponse(
+                id=str(a.id),
+                status=a.status,
+                photo_front_url=a.photo_front_url,
                 created_at=a.created_at,
             )
             for a in analyses

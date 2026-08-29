@@ -100,6 +100,14 @@ class AnalysisPendingResponse(BaseModel):
     photo_front: Optional[str] = None  # base64 image for admin review
 
 
+class AnalysisSubmissionResponse(BaseModel):
+    """Returned right after a photo is submitted for analysis (pending review)."""
+    id: str
+    status: str
+    photo_front_url: Optional[str] = None
+    created_at: datetime
+
+
 # ------------------------------------------------------------------ #
 #  Weekly exercises schemas
 # ------------------------------------------------------------------ #

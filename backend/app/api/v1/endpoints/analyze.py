@@ -3,7 +3,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.connection import get_db
-from app.schemas.analysis import AnalysisCreate, AnalysisResponse, AnalysisPendingResponse
+from app.schemas.analysis import AnalysisCreate, AnalysisResponse, AnalysisPendingResponse, AnalysisSubmissionResponse
 from app.services.analysis_service import AnalysisService
 from app.repositories.analysis_repository import AnalysisRepository
 from app.core.security import get_current_user, require_role
@@ -14,7 +14,7 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
-@router.post("/", response_model=AnalysisResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=AnalysisSubmissionResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit(settings.RATE_LIMIT_ANALYSIS)
 async def analyze_face(
     request: Request,
@@ -27,7 +27,7 @@ async def analyze_face(
     return await analysis_service.analyze(data, current_user.id, current_user=current_user)
 
 
-@router.get("/history", response_model=list[AnalysisResponse])
+@router.get("/history", response_model=list[AnalysisSubmissionResponse])
 @limiter.limit(settings.RATE_LIMIT_GENERAL)
 async def get_analysis_history(
     request: Request,
