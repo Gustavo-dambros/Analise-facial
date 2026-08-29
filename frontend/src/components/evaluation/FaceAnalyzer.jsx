@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Camera,
   CameraOff,
@@ -31,6 +32,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default function FaceAnalyzer() {
   const { user, token } = useAuth();
+  const navigate = useNavigate();
   const [photos, setPhotos] = useState({ front: null, left: null, right: null, body: null });
   const [activeSlot, setActiveSlot] = useState('front');
   const [cameraActive, setCameraActive] = useState(false);
@@ -140,9 +142,19 @@ export default function FaceAnalyzer() {
         }
       }
 
-      // Envia apenas a foto frontal para análise via API FastAPI
-      const { analyzeWithAI } = await import('@/lib/api');
-      const result = await analyzeWithAI(photos.front);
+      // As fotos frontal, esquerda e direita são obrigatórias para a avaliação do profissional
+      if (!photos.left || !photos.right) {
+        throw new Error('As fotos de perfil esquerdo e direito também são obrigatórias.');
+      }
+
+      // Envia todas as fotos para avaliação de um profissional via API FastAPI
+      const { submitAnalysis } = await import('@/lib/api');
+      const result = await submitAnalysis({
+        front: photos.front,
+        left: photos.left,
+        right: photos.right,
+        body: photos.body,
+      });
 
       setSubmitted(true);
       setPhotos({ front: null, left: null, right: null, body: null });
@@ -168,7 +180,7 @@ export default function FaceAnalyzer() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Nova Análise</h1>
-          <p className="text-xs sm:text-sm text-text-muted mt-1">Capture ou envie a foto frontal do rosto para análise IA</p>
+          <p className="text-xs sm:text-sm text-text-muted mt-1">Capture ou envie as fotos do rosto (frontal, perfil esquerdo e perfil direito) para avaliação de um profissional</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_410px] gap-6">
@@ -275,18 +287,26 @@ export default function FaceAnalyzer() {
                 <CheckCircle2 className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-green-400">
-                    Foto enviada para análise
+                    Análise enviada para avaliação
                   </p>
                   <p className="text-xs text-green-400/70 mt-1">
-                    A IA está processando sua análise facial.
+                    Um profissional irá avaliar suas fotos em breve.
                   </p>
                 </div>
-                <button
-                  onClick={handleNewScan}
-                  className="text-xs text-green-400/60 hover:text-green-400 transition-colors underline underline-offset-2 shrink-0"
-                >
-                  Nova análise
-                </button>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <button
+                    onClick={() => navigate('/dashboard/progress')}
+                    className="text-xs text-green-400/80 hover:text-green-400 transition-colors underline underline-offset-2"
+                  >
+                    Ver meu progresso
+                  </button>
+                  <button
+                    onClick={handleNewScan}
+                    className="text-xs text-green-400/60 hover:text-green-400 transition-colors underline underline-offset-2"
+                  >
+                    Nova análise
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -375,9 +395,9 @@ export default function FaceAnalyzer() {
             {/* Botao Enviar */}
             <button
               onClick={handleSend}
-              disabled={!photos.front || sending}
+              disabled={!photos.front || !photos.left || !photos.right || sending}
               className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm transition-all ${
-                photos.front && !sending
+                photos.front && photos.left && photos.right && !sending
                   ? 'bg-brand-accent text-background hover:opacity-90'
                   : 'bg-white/5 text-text-muted border border-border cursor-not-allowed'
               }`}
@@ -385,12 +405,12 @@ export default function FaceAnalyzer() {
               {sending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Analisando...
+                  Enviando...
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  Enviar para Análise IA
+                  Enviar para Avaliação
                 </>
               )}
             </button>

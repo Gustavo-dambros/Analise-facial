@@ -183,13 +183,17 @@ export async function updateProfile(data) {
 }
 
 /**
- * Envia foto frontal para análise via IA
+ * Envia as fotos para avaliação de um profissional
  * POST /api/v1/analyze/
  */
-export async function analyzeWithAI(photoFront) {
+export async function submitAnalysis(photos) {
+  const body = { photo_front: photos.front };
+  if (photos.left) body.photo_left = photos.left;
+  if (photos.right) body.photo_right = photos.right;
+  if (photos.body) body.photo_body = photos.body;
   return apiFetch('/api/v1/analyze/', {
     method: 'POST',
-    body: JSON.stringify({ photo_front: photoFront }),
+    body: JSON.stringify(body),
   });
 }
 

@@ -313,11 +313,15 @@ class AnalysisService:
 
         uid = uuid.UUID(str(user_id))
 
-        # Upload the submitted photo to Supabase Storage and store the public URL.
+        # Upload all submitted photos to Supabase Storage and store the public URLs.
+        # Frontal is required; the other views are optional but forwarded when present.
         try:
-            photo_url = upload_photo(str(uid), data.photo_front)
+            photo_front_url = upload_photo(str(uid), data.photo_front, slot="front")
+            photo_left_url = upload_photo(str(uid), data.photo_left, slot="left") if data.photo_left else None
+            photo_right_url = upload_photo(str(uid), data.photo_right, slot="right") if data.photo_right else None
+            photo_body_url = upload_photo(str(uid), data.photo_body, slot="body") if data.photo_body else None
         except Exception as exc:
-            logger.exception("Failed to upload analysis photo for user %s", uid)
+            logger.exception("Failed to upload analysis photos for user %s", uid)
             raise SanitizedHTTPException(
                 status.HTTP_502_BAD_GATEWAY,
                 "Falha ao armazenar a imagem. Tente novamente.",
@@ -329,7 +333,10 @@ class AnalysisService:
             "status": "pending",
             "title": "Análise Facial",
             "description": "",
-            "photo_front_url": photo_url,
+            "photo_front_url": photo_front_url,
+            "photo_left_url": photo_left_url,
+            "photo_right_url": photo_right_url,
+            "photo_body_url": photo_body_url,
         })
 
         logger.info("Created pending analysis %s for user %s", db_analysis.id, uid)

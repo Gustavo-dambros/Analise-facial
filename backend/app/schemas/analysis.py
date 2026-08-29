@@ -88,7 +88,10 @@ class AnalysisResponse(BaseModel):
 
 
 class AnalysisCreate(BaseModel):
-    photo_front: str  # Base64 encoded
+    photo_front: str  # Base64 encoded (required)
+    photo_left: Optional[str] = None  # Base64 encoded
+    photo_right: Optional[str] = None  # Base64 encoded
+    photo_body: Optional[str] = None  # Base64 encoded
 
 
 class AnalysisPendingResponse(BaseModel):

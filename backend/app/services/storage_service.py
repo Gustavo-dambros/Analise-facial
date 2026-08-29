@@ -42,7 +42,7 @@ _EXTENSIONS = {
 }
 
 
-def upload_photo(user_id: str, data_url: str) -> str | None:
+def upload_photo(user_id: str, data_url: str, slot: str = "front") -> str | None:
     """Upload a base64 (or data-URL) image to Supabase Storage.
 
     Returns the public URL, or None if no image was provided.
@@ -59,7 +59,7 @@ def upload_photo(user_id: str, data_url: str) -> str | None:
         raw = base64.b64decode(data_url)
 
     ext = _EXTENSIONS.get(ctype, "jpg")
-    path = f"{user_id}/{uuid.uuid4()}.{ext}"
+    path = f"{user_id}/{slot}_{uuid.uuid4()}.{ext}"
 
     client = _get_client()
     client.storage.from_(BUCKET).upload(
