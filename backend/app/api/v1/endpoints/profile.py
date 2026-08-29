@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Request
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,9 @@ from app.schemas.profile import UserProfileUpdate, UserProfileResponse
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
+
+# Intervalo minimo (em dias) entre alteracoes de perfil.
+PROFILE_EDIT_COOLDOWN_DAYS = 90
 
 # Only these fields can be updated — prevents mass assignment
 ALLOWED_UPDATE_FIELDS = {"full_name", "profile_picture", "gender", "age", "style_objective"}
@@ -30,12 +34,33 @@ async def update_profile(
     current_user: Profile = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update current user's profile. Only own profile can be updated (IDOR safe)."""
+    """Update current user's profile. Only own profile can be updated (IDOR safe).
+
+    Restricao de negocio: o perfil so pode ser alterado 1 vez a cada 3 meses.
+    """
+    now = datetime.now(timezone.utc)
+    last = current_user.last_profile_change_at
+    if last is not None:
+        # Garante tz-aware (o Postgres retorna timestamptz com tzinfo)
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        if (now - last) < timedelta(days=PROFILE_EDIT_COOLDOWN_DAYS):
+            next_allowed = last + timedelta(days=PROFILE_EDIT_COOLDOWN_DAYS)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    f"Você só pode alterar seu perfil a cada {PROFILE_EDIT_COOLDOWN_DAYS} dias. "
+                    f"Próxima alteração disponível em {next_allowed.strftime('%d/%m/%Y')}."
+                ),
+            )
+
     update_data = data.model_dump(exclude_unset=True)
     # Double-check: only allow whitelisted fields
     for field_name, value in update_data.items():
         if field_name in ALLOWED_UPDATE_FIELDS:
             setattr(current_user, field_name, value)
+
+    current_user.last_profile_change_at = now
     await db.commit()
     await db.refresh(current_user)
     return current_user

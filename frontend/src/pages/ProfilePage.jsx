@@ -46,6 +46,12 @@ export default function ProfilePage() {
     setProfilePicture(profile.profile_picture || null);
   }, [profile]);
 
+  // Regra de negocio: o perfil so pode ser alterado 1 vez a cada 3 meses.
+  const COOLDOWN_DAYS = 90;
+  const lastChange = profile?.last_profile_change_at ? new Date(profile.last_profile_change_at) : null;
+  const nextChangeAt = lastChange ? new Date(lastChange.getTime() + COOLDOWN_DAYS * 24 * 60 * 60 * 1000) : null;
+  const isLocked = !!nextChangeAt && nextChangeAt > new Date();
+
   const handleEdit = () => {
     setError(null);
     setSaved(false);
@@ -94,7 +100,7 @@ export default function ProfilePage() {
 
   async function handleSave(e) {
     e.preventDefault();
-    if (!user?.id) return;
+    if (!user?.id || isLocked) return;
     setSaving(true);
     setError(null);
     setSaved(false);
@@ -145,12 +151,13 @@ export default function ProfilePage() {
         <FadeIn>
           <div className="flex items-center justify-between mb-6 sm:mb-8">
             <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Meu Perfil</h1>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleEdit}
-              className="gap-2"
-            >
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleEdit}
+                disabled={isLocked}
+                className="gap-2"
+              >
               <User className="w-4 h-4" />
               Editar Informações
             </Button>
@@ -171,6 +178,13 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {isLocked && (
+          <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+            Você só pode alterar seu perfil a cada 3 meses. Próxima alteração disponível em {nextChangeAt.toLocaleDateString('pt-BR')}.
+          </div>
+        )}
+
         <form onSubmit={handleSave}>
           {/* Header card with avatar */}
           <ScaleIn delay={0.1}>
@@ -188,11 +202,12 @@ export default function ProfilePage() {
                             <User className="w-8 h-8 sm:w-10 sm:h-10" />
                           </AvatarFallback>
                         </Avatar>
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-brand-accent text-background flex items-center justify-center hover:bg-brand-accent/90 transition-all shadow-lg"
-                        >
+                         <button
+                           type="button"
+                           onClick={() => !isLocked && fileInputRef.current?.click()}
+                           disabled={isLocked}
+                           className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-brand-accent text-background flex items-center justify-center hover:bg-brand-accent/90 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                         >
                           <Camera className="w-3.5 h-3.5" />
                         </button>
                         <input
@@ -238,11 +253,13 @@ export default function ProfilePage() {
                     <Field orientation="vertical">
                       <FieldContent>
                         <FieldLabel>Nome Completo</FieldLabel>
-                        <Input
-                          placeholder="Seu nome completo"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                        />
+                         <Input
+                           placeholder="Seu nome completo"
+                           value={fullName}
+                           onChange={(e) => setFullName(e.target.value)}
+                           maxLength={255}
+                           disabled={isLocked}
+                         />
                       </FieldContent>
                     </Field>
 
@@ -250,14 +267,15 @@ export default function ProfilePage() {
                       <Field orientation="vertical">
                         <FieldContent>
                           <FieldLabel>Idade</FieldLabel>
-                          <Input
-                            type="number"
-                            min="1"
-                            max="120"
-                            placeholder="Ex: 28"
-                            value={age}
-                            onChange={(e) => setAge(e.target.value)}
-                          />
+                           <Input
+                             type="number"
+                             min="1"
+                             max="120"
+                             placeholder="Ex: 28"
+                             value={age}
+                             onChange={(e) => setAge(e.target.value)}
+                             disabled={isLocked}
+                           />
                           <FieldDescription>Anos</FieldDescription>
                         </FieldContent>
                       </Field>
@@ -265,11 +283,12 @@ export default function ProfilePage() {
                       <Field orientation="vertical">
                         <FieldContent>
                           <FieldLabel>Gênero</FieldLabel>
-                          <select
-                            value={gender}
-                            onChange={(e) => setGender(e.target.value)}
-                            className="flex h-10 w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] px-4 py-2.5 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/40 focus-visible:border-brand-accent/30 transition-colors appearance-none"
-                          >
+                           <select
+                             value={gender}
+                             onChange={(e) => setGender(e.target.value)}
+                             disabled={isLocked}
+                             className="flex h-10 w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] px-4 py-2.5 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/40 focus-visible:border-brand-accent/30 transition-colors appearance-none disabled:opacity-50"
+                           >
                             <option value="" className="bg-[#0a0a0a] text-neutral-400">Selecione</option>
                             {GENDER_OPTIONS.map((opt) => (
                               <option key={opt} value={opt} className="bg-[#0a0a0a] text-white">{opt}</option>
@@ -296,11 +315,12 @@ export default function ProfilePage() {
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {STYLE_OPTIONS.map((opt) => (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => setStyleObjective(styleObjective === opt ? '' : opt)}
-                        className={`px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                         <button
+                           key={opt}
+                           type="button"
+                           onClick={() => setStyleObjective(styleObjective === opt ? '' : opt)}
+                           disabled={isLocked}
+                           className={`px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                           styleObjective === opt
                             ? 'bg-brand-accent text-background shadow-[0_0_12px_rgba(212,175,55,0.3)]'
                             : 'bg-white/5 text-text-secondary border border-border hover:border-brand-accent/40 hover:text-text-primary'
@@ -327,12 +347,12 @@ export default function ProfilePage() {
               >
                 Cancelar
               </Button>
-              <Button
-                type="submit"
-                disabled={saving}
-                size="lg"
-                className="gap-2 px-6 sm:px-8"
-              >
+               <Button
+                 type="submit"
+                 disabled={saving || isLocked}
+                 size="lg"
+                 className="gap-2 px-6 sm:px-8"
+               >
                 <Save className="w-4 h-4" />
                 {saving ? 'Salvando...' : 'Salvar Perfil'}
               </Button>

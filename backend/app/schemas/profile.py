@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
@@ -55,5 +56,6 @@ class UserProfileResponse(BaseModel):
     plan: Optional[str] = None
     is_active: Optional[bool] = None
     is_verified: Optional[bool] = None
+    last_profile_change_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}

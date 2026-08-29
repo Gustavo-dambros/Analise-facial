@@ -29,6 +29,9 @@ class Profile(Base):
     plan = Column(SQLEnum(PlanType), default=PlanType.free, nullable=False, server_default="free")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    # Quando o usuario fez a ultima alteracao de perfil. Usado para limitar
+    # edicoes a 1 vez a cada 3 meses. NULL = ainda nao alterou (liberado).
+    last_profile_change_at = Column(DateTime(timezone=True), nullable=True)
 
     # Profile fields
     profile_picture = Column(Text, nullable=True)
