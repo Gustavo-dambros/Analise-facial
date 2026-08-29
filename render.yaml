@@ -81,6 +81,10 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://facemax-api.onrender.com
+      - key: VITE_SUPABASE_URL
+        value: https://lchmfruaaukeqorfmwvg.supabase.co
+      - key: VITE_SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaG1mcnVhYXVrZXFvcmZtd3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMTE2MjIsImV4cCI6MjA5OTc4NzYyMn0.D5nLtiimZqZhCihXlzXahaPhNMLs-Q8SIKwwdyY6y3M
     routes:
       - type: rewrite
         source: /*
