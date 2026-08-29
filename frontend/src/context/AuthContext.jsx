@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProfile, setAccessToken } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const supabase = createClient();
+  const isMounted = useRef(true);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -26,11 +27,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    let mounted = true;
+    isMounted.current = true;
 
     const init = async () => {
       const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
+      if (!isMounted.current) return;
       setSession(data.session);
       if (data.session) {
         try {
@@ -39,31 +40,34 @@ export function AuthProvider({ children }) {
           setUser(null);
         }
       }
-      if (mounted) setLoading(false);
+      if (isMounted.current) setLoading(false);
     };
 
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        if (!mounted) return;
+        if (!isMounted.current) return;
         setSession(newSession);
-        setAccessToken(newSession?.access_token ?? null);
+        if (newSession?.access_token) {
+          setAccessToken(newSession.access_token);
+        } else {
+          setAccessToken(null);
+        }
         if (newSession && event !== 'SIGNED_OUT') {
           try {
-            await fetchProfile();
+            if (isMounted.current) await fetchProfile();
           } catch {
-            setUser(null);
+            if (isMounted.current) setUser(null);
           }
         } else {
-          setUser(null);
+          if (isMounted.current) setUser(null);
         }
-        if (mounted) setLoading(false);
       }
     );
 
     return () => {
-      mounted = false;
+      isMounted.current = false;
       subscription.unsubscribe();
     };
   }, [fetchProfile]);
@@ -78,8 +82,10 @@ export function AuthProvider({ children }) {
       if (error) throw new Error(error.message);
 
       if (data.session) {
-        setAccessToken(data.session.access_token);
-        await fetchProfile();
+        if (isMounted.current) {
+          setAccessToken(data.session.access_token);
+          await fetchProfile();
+        }
         return { success: true };
       }
       return { success: true, message: 'Confirme seu e-mail para ativar a conta.' };
@@ -92,8 +98,10 @@ export function AuthProvider({ children }) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw new Error(error.message);
-      setAccessToken(data.session?.access_token ?? null);
-      await fetchProfile();
+      if (isMounted.current) {
+        setAccessToken(data.session?.access_token ?? null);
+        await fetchProfile();
+      }
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
@@ -101,7 +109,9 @@ export function AuthProvider({ children }) {
   }, [fetchProfile]);
 
   const signOut = useCallback(async () => {
-    setAccessToken(null);
+    if (isMounted.current) {
+      setAccessToken(null);
+    }
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

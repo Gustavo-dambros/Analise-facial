@@ -1,6 +1,22 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RotateCcw, ArrowLeft } from 'lucide-react';
-import ChartRadialText from '@/components/evaluation/ChartRadialText';
+import oval from '@/assets/faces/oval.png';
+import square from '@/assets/faces/square.png';
+import rectangular from '@/assets/faces/rectangular.png';
+import round from '@/assets/faces/round.png';
+import heart from '@/assets/faces/heart.png';
+import diamond from '@/assets/faces/diamond.png';
+import pear from '@/assets/faces/pear.png';
+
+const faceShapeImages = {
+  Oval: oval,
+  Quadrado: square,
+  Retangular: rectangular,
+  Redondo: round,
+  Coração: heart,
+  Diamante: diamond,
+  Pera: pear,
+};
 import FacialThirds from '@/components/evaluation/FacialThirds';
 import RadarAttributes from '@/components/evaluation/RadarAttributes';
 import HighlightBadges from '@/components/evaluation/HighlightBadges';
@@ -116,12 +132,17 @@ export default function ResultsPage() {
                     <div className="rounded-2xl border border-border bg-card-bg p-6">
                       <h3 className="text-sm font-semibold text-text-secondary mb-4">Dicas de Visagismo</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {geometryData.raw.formato_rosto && (
-                          <div className="flex flex-col gap-1">
-                            <p className="text-xs text-text-muted">Formato do Rosto</p>
-                            <p className="text-sm text-text-primary">{geometryData.raw.formato_rosto}</p>
-                          </div>
-                        )}
+{geometryData.raw.formato_rosto && (
+              <div className="flex items-center gap-2">
+                <img
+                  src={faceShapeImages[geometryData.raw.formato_rosto] || square}
+                  alt={geometryData.raw.formato_rosto}
+                  className="h-6 w-auto"
+                />
+                <p className="text-xs text-text-muted">Formato do Rosto</p>
+                <p className="text-sm text-text-primary">{geometryData.raw.formato_rosto}</p>
+              </div>
+            )}
                         {geometryData.raw.cabelo && (
                           <div className="flex flex-col gap-1">
                             <p className="text-xs text-text-muted">Cabelo</p>
