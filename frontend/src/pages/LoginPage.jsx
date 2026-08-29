@@ -101,6 +101,13 @@ export default function LoginPage() {
                   </span>
                 ) : 'Entrar'}
               </Button>
+
+              {loading && (
+                <p className="text-xs text-text-muted text-center -mt-2">
+                  Isso pode levar alguns instantes — o servidor pode estar inicializando.
+                </p>
+              )}
+
               <div className="text-center text-sm text-text-secondary">
                 Nao tem uma conta?{' '}
                 <Link to="/signup" className="underline underline-offset-4 text-brand-accent hover:text-brand-accent/80">

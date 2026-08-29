@@ -240,7 +240,10 @@ export async function forgotPassword(email) {
     body: JSON.stringify({ email }),
   });
 
-  if (!response.ok) {
+  // O backend responde 200 para qualquer e-mail (mensagem genérica p/ evitar
+  // enumeração de contas). Consideramos sucesso qualquer resposta < 500; só
+  // erros 5xx são tratados como falha real do servidor.
+  if (response.status >= 500) {
     await handleApiError(response);
   }
 
