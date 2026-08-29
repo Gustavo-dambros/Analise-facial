@@ -1,13 +1,18 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Request, status, HTTPException
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.connection import get_db
 from app.core.security import get_current_user
 from app.core.config import settings
 from app.models.profile import Profile
+from app.models.analysis import Analysis
 from app.schemas.profile import UserProfileUpdate, UserProfileResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -64,3 +69,35 @@ async def update_profile(
     await db.commit()
     await db.refresh(current_user)
     return current_user
+
+
+@router.delete("/", status_code=status.HTTP_200_OK)
+@limiter.limit(settings.RATE_LIMIT_GENERAL)
+async def delete_account(
+    request: Request,
+    current_user: Profile = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Auto-exclusao da conta do usuario autenticado.
+
+    Remove as analises relacionadas (FK sem cascade), o perfil e, por fim,
+    o usuario do Supabase Auth (via service role).
+    """
+    user_id = current_user.id
+
+    # 1. Analises (bloqueiam a exclusao do perfil via FK).
+    await db.execute(delete(Analysis).where(Analysis.user_id == user_id))
+    # 2. Perfil.
+    await db.delete(current_user)
+    await db.commit()
+
+    # 3. Usuario no Supabase Auth (service role). Melhor esforco.
+    try:
+        from supabase import create_client
+
+        client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+        client.auth.admin.delete_user(str(user_id))
+    except Exception as exc:  # pragma: no cover - melhor esforco
+        logger.warning("Falha ao remover usuario %s do Supabase Auth: %s", user_id, exc)
+
+    return {"detail": "Conta excluida com sucesso."}

@@ -182,6 +182,12 @@ export async function updateProfile(data) {
   });
 }
 
+export async function deleteAccount() {
+  return apiFetch('/api/v1/profile/', {
+    method: 'DELETE',
+  });
+}
+
 /**
  * Envia as fotos para avaliação de um profissional
  * POST /api/v1/analyze/

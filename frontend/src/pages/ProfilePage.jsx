@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Camera, Save, CheckCircle2, User, Mail, Sparkles, LogOut } from 'lucide-react';
+import { Camera, Save, CheckCircle2, User, Mail, Sparkles, LogOut, Key, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { getProfile, updateProfile } from '@/lib/api';
+import { getProfile, updateProfile, deleteAccount } from '@/lib/api';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,13 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
+
+  // Conta: mudar/excluir
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(1);
+  const [confirmText, setConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('');
@@ -133,6 +140,42 @@ export default function ProfilePage() {
       setSaving(false);
     }
   }
+
+  const handleChangePassword = () => navigate('/dashboard/change-password');
+
+  const handleSwitchAccount = async () => {
+    setLoading(true);
+    try {
+      await signOut();
+      navigate('/login');
+    } catch {
+      setLoading(false);
+    }
+  };
+
+  const openDeleteModal = () => {
+    setDeleteStep(1);
+    setConfirmText('');
+    setDeleteError('');
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => setShowDeleteModal(false);
+
+  const handleDeleteAccount = async () => {
+    if (confirmText !== user?.email) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteAccount();
+      await signOut();
+      navigate('/login');
+    } catch (e) {
+      setDeleteError(e?.message || 'Erro ao apagar a conta. Tente novamente.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (!profile) {
     return (
@@ -384,7 +427,108 @@ export default function ProfilePage() {
             </Card>
           </div>
         </FadeIn>
+
+        {/* Account management */}
+        <FadeIn delay={0.6}>
+          <div className="mt-6 sm:mt-8 flex flex-col gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleChangePassword}
+              className="gap-2 justify-start"
+            >
+              <Key className="w-4 h-4" />
+              Alterar senha
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSwitchAccount}
+              disabled={loading}
+              className="gap-2 justify-start"
+            >
+              <LogOut className="w-4 h-4" />
+              Mudar conta
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openDeleteModal}
+              className="gap-2 justify-start text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-400"
+            >
+              <Trash2 className="w-4 h-4" />
+              Apagar conta
+            </Button>
+          </div>
+        </FadeIn>
       </div>
+
+      {/* Modal de exclusao (confirmacao dupla) */}
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={closeDeleteModal}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-card-bg border border-border p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {deleteStep === 1 ? (
+              <>
+                <h3 className="text-lg font-bold text-text-primary">Apagar conta</h3>
+                <p className="text-sm text-text-secondary mt-2">
+                  Tem certeza? Esta ação é <b>irreversível</b> e remove permanentemente
+                  seu perfil, suas análises e seu acesso. Não será possível recuperar os dados.
+                </p>
+                <div className="mt-6 flex justify-end gap-3">
+                  <Button variant="outline" onClick={closeDeleteModal}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setDeleteStep(2)}
+                  >
+                    Quero apagar
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold text-text-primary">Confirmação final</h3>
+                <p className="text-sm text-text-secondary mt-2">
+                  Digite seu e-mail <b>{user?.email}</b> para confirmar a exclusão definitiva:
+                </p>
+                <input
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder={user?.email}
+                  className="mt-3 w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] px-4 py-2.5 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
+                />
+                {deleteError && <p className="mt-2 text-xs text-red-400">{deleteError}</p>}
+                <div className="mt-6 flex justify-end gap-3">
+                  <Button variant="outline" onClick={closeDeleteModal} disabled={deleting}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    disabled={confirmText !== user?.email || deleting}
+                    onClick={handleDeleteAccount}
+                  >
+                    {deleting ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Apagando...
+                      </span>
+                    ) : (
+                      'Apagar permanentemente'
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
