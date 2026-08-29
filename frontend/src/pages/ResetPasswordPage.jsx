@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,15 +12,90 @@ const supabase = createClient();
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const tokenHash = searchParams.get('token_hash');
-  const type = searchParams.get('type');
+  // processing -> validando o token do link; ready -> pode alterar; invalid -> sem token
+  const [status, setStatus] = useState('processing');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const processed = useRef(false);
 
-  const hasTokenOrHash = Boolean(tokenHash || window.location.hash);
+  useEffect(() => {
+    const handle = async () => {
+      if (processed.current) return;
+      processed.current = true;
 
-  if (!hasTokenOrHash) {
+      const code = searchParams.get('code');
+      const tokenHash = searchParams.get('token_hash');
+      const type = searchParams.get('type');
+
+      try {
+        if (code) {
+          // Fluxo PKCE (padrao do @supabase/supabase-js 2.x): troca o ?code por sessao.
+          const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+          if (exErr) throw exErr;
+        } else if (tokenHash && type) {
+          // Fluxo OTP: troca token_hash+type por sessao de recovery.
+          const { error: vErr } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+          if (vErr) throw vErr;
+        } else if (window.location.hash) {
+          // Fluxo implicito (#access_token): o cliente ja estabeleceu a sessao no init.
+        } else {
+          // Nenhum token de verificacao presente no link.
+          throw new Error('no-verification-token');
+        }
+        setStatus('ready');
+      } catch (err) {
+        console.error('[reset-password] falha ao validar token:', err);
+        setStatus('invalid');
+      }
+    };
+    handle();
+  }, [searchParams]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (status !== 'ready') {
+      setError('Link invalido ou expirado. Solicite um novo link de recuperacao.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+
+    try {
+      const formData = new FormData(e.target);
+      const password = formData.get('password');
+      const confirmPassword = formData.get('confirm-password');
+
+      if (password !== confirmPassword) {
+        setError('As senhas nao coincidem');
+        setLoading(false);
+        return;
+      }
+
+      if (!password || password.length < 8) {
+        setError('A senha deve ter pelo menos 8 caracteres');
+        setLoading(false);
+        return;
+      }
+
+      const { error: updErr } = await supabase.auth.updateUser({ password });
+      if (updErr) throw updErr;
+
+      setSuccess(true);
+      setTimeout(() => navigate('/login'), 1200);
+    } catch (err) {
+      const msg = err?.message || '';
+      if (/session|expired|invalid|token/i.test(msg)) {
+        setError('Link invalido ou expirado. Solicite um novo link de recuperacao.');
+      } else {
+        setError(msg || 'Ocorreu um erro inesperado. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (status === 'invalid') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
         <div className="w-full max-w-sm">
@@ -47,56 +122,6 @@ export default function ResetPasswordPage() {
       </div>
     );
   }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const formData = new FormData(e.target);
-      const password = formData.get('password');
-      const confirmPassword = formData.get('confirm-password');
-
-      if (password !== confirmPassword) {
-        setError('As senhas nao coincidem');
-        setLoading(false);
-        return;
-      }
-
-      if (!password || password.length < 8) {
-        setError('A senha deve ter pelo menos 8 caracteres');
-        setLoading(false);
-        return;
-      }
-
-      // Fluxo PKCE de recuperacao do Supabase: troca o token_hash por sessao de
-      // recovery e atualiza a senha diretamente no Supabase Auth.
-      if (tokenHash && type) {
-        const { error: verifyErr } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
-        if (verifyErr) throw verifyErr;
-
-        const { error: updErr } = await supabase.auth.updateUser({ password });
-        if (updErr) throw updErr;
-      } else {
-        // Fluxo implicito (hash #access_token): a sessao ja existe no storage.
-        const { error: updErr } = await supabase.auth.updateUser({ password });
-        if (updErr) throw updErr;
-      }
-
-      setSuccess(true);
-      setTimeout(() => navigate('/login'), 1200);
-    } catch (err) {
-      const msg = err?.message || '';
-      if (/session|expired|invalid|token/i.test(msg)) {
-        setError('Link invalido ou expirado. Solicite um novo link de recuperacao.');
-      } else {
-        setError(msg || 'Ocorreu um erro inesperado. Tente novamente.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
@@ -128,6 +153,13 @@ export default function ResetPasswordPage() {
                   </p>
                 </div>
 
+                {status === 'processing' && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-text-secondary">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Validando link de recuperacao...
+                  </div>
+                )}
+
                 {error && (
                   <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
                     {error}
@@ -158,7 +190,7 @@ export default function ResetPasswordPage() {
 
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || status === 'processing'}
                   className="w-full h-11 bg-brand-accent text-background font-semibold hover:opacity-90 rounded-xl"
                 >
                   {loading ? (
