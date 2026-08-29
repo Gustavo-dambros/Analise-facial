@@ -130,6 +130,11 @@ class AuthService:
 
         O Supabase envia o e-mail com link para /reset-password contendo o token no hash.
         Resposta genérica para evitar enumeração de e-mails.
+
+        Nao bloqueamos por ``is_verified``: o proprio Supabase so envia o e-mail
+        se a conta existir em Auth, e o login continua exigindo a confirmacao de
+        e-mail. Isso evita que uma falha na checagem de verificacao (ex.: API de
+        admin indisponível) impeça o envio do link de recuperacao.
         """
         user = await self.user_repo.get_by_email(email)
         if not user:
@@ -137,26 +142,12 @@ class AuthService:
             redirect_url = f"{settings.FRONTEND_URL}/password-changed"
             return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado.", redirect_url
 
-        # Sincroniza o status de verificacao com o Supabase (fonte de verdade),
-        # exatamente como feito no login. Assim, contas confirmadas no Supabase
-        # mas com is_verified desatualizado no banco local conseguem receber o
-        # e-mail de reset (caso contrario o envio era silenciosamente ignorado).
-        if not user.is_verified and await supabase_service.is_email_confirmed(email):
-            await self.user_repo.verify_user(user)
-            user.is_verified = True
-            logger.info("User verified via Supabase at password reset — email=%s", email)
-
-        if not user.is_verified:
-            logger.info("Forgot password for unverified email: %s", email)
-            redirect_url = f"{settings.FRONTEND_URL}/password-changed"
-            return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado.", redirect_url
-
         try:
             await supabase_service.reset_password_for_email(email)
+            logger.info("Password reset email requested via Supabase — id=%s email=%s", user.id, user.email)
         except SupabaseAuthError as exc:
             logger.warning("Supabase password reset failed for %s: %s", email, exc.message)
 
-        logger.info("Password reset requested via Supabase — id=%s email=%s", user.id, user.email)
         redirect_url = f"{settings.FRONTEND_URL}/password-changed"
         return "Se o e-mail estiver cadastrado, um link de recuperacao foi enviado.", redirect_url
 
