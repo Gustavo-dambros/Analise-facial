@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.database.connection import Base
 from app.core.config import settings
 from app.models import (
-    User,
+    Profile,
     FacialAnalysis,
     AnalysisCategory,
     Order,
