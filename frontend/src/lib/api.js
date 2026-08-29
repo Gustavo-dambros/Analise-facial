@@ -11,6 +11,16 @@ import { createClient } from '@/lib/supabase/client';
 
 const supabase = createClient();
 
+// Cache do access token em memória, alimentado pelo AuthContext via setAccessToken.
+// Evita depender de supabase.auth.getSession() no exato momento da chamada (que
+// pode retornar nulo por corrida de persistência/refresh de sessão -> 401 sem header).
+let _accessToken = null;
+
+export function setAccessToken(token) {
+  console.error('[api] setAccessToken:', token ? 'token-presente' : 'token-nulo');
+  _accessToken = token || null;
+}
+
 /**
  * Base da API FastAPI.
  * Aceita VITE_API_URL com ou sem o sufixo "/api/v1" (normalizado abaixo).
@@ -35,6 +45,7 @@ export const API_BASE = resolveApiBase();
  * Resolve o access token da sessao Supabase (fonte de verdade da autenticacao).
  */
 async function getSupabaseToken() {
+  if (_accessToken) return _accessToken;
   try {
     const { data } = await supabase.auth.getSession();
     return data.session?.access_token || null;
@@ -89,7 +100,8 @@ async function handleApiError(response) {
   }
 
   if (response.status === 401) {
-    // Token invalido/expirado no backend — encerra a sessao Supabase.
+    // Token invalido/expirado no backend — limpa o cache e encerra a sessao Supabase.
+    _accessToken = null;
     try {
       await supabase.auth.signOut();
     } catch {

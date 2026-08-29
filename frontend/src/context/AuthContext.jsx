@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProfile } from '@/lib/api';
+import { getProfile, setAccessToken } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 
 const AuthContext = createContext(null);
@@ -47,6 +47,7 @@ export function AuthProvider({ children }) {
       async (event, newSession) => {
         if (!mounted) return;
         setSession(newSession);
+        setAccessToken(newSession?.access_token ?? null);
         if (newSession && event !== 'SIGNED_OUT') {
           try {
             await fetchProfile();
@@ -76,6 +77,7 @@ export function AuthProvider({ children }) {
       if (error) throw new Error(error.message);
 
       if (data.session) {
+        setAccessToken(data.session.access_token);
         await fetchProfile();
         return { success: true };
       }
@@ -89,6 +91,7 @@ export function AuthProvider({ children }) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw new Error(error.message);
+      setAccessToken(data.session?.access_token ?? null);
       await fetchProfile();
       return { success: true };
     } catch (error) {
@@ -97,6 +100,7 @@ export function AuthProvider({ children }) {
   }, [fetchProfile]);
 
   const signOut = useCallback(async () => {
+    setAccessToken(null);
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
