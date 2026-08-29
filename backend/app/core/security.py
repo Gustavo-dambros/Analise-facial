@@ -38,7 +38,12 @@ async def get_current_user(
 
     secret, algorithms = _jwt_secret_and_algorithms()
     try:
-        payload = jwt.decode(token, secret, algorithms=algorithms)
+        # Supabase access tokens carry an `aud` claim (e.g. "authenticated").
+        # We don't enforce the audience (we already verify signature + expiry),
+        # so disable audience verification to avoid rejecting valid tokens.
+        payload = jwt.decode(
+            token, secret, algorithms=algorithms, options={"verify_aud": False}
+        )
     except JWTError:
         raise credentials_exception
 
