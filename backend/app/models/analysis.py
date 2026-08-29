@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Float, ForeignKey, JSON, DateTime, Integer, Boolean, Enum as SQLEnum, Numeric, Text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from app.database.connection import Base
 import uuid
@@ -64,10 +64,10 @@ class Analysis(Base):
     photo_right_url = Column(Text, nullable=True)
     photo_left_url = Column(Text, nullable=True)
     photo_body_url = Column(Text, nullable=True)
-    result = Column(JSONB, nullable=True)
+    result = Column(JSON, nullable=True)
     verdict_text = Column(Text, nullable=True)
-    body_result = Column(JSONB, nullable=True)
-    exercise_recommendations = Column(JSONB, nullable=True)
+    body_result = Column(JSON, nullable=True)
+    exercise_recommendations = Column(JSON, nullable=True)
     reviewed_by = Column(UUID(as_uuid=True), nullable=True)
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -102,7 +102,7 @@ class Order(Base):
     payment_id = Column(String(100), nullable=True)
     description = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     paid_at = Column(DateTime(timezone=True), nullable=True)
 
     user = relationship("Profile")
@@ -135,7 +135,7 @@ class Shipping(Base):
     address = Column(JSON, nullable=True)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     order = relationship("Order")
 

@@ -32,6 +32,9 @@ class Profile(Base):
     # Quando o usuario fez a ultima alteracao de perfil. Usado para limitar
     # edicoes a 1 vez a cada 3 meses. NULL = ainda nao alterou (liberado).
     last_profile_change_at = Column(DateTime(timezone=True), nullable=True)
+    # Quando o usuario mudou a ultima senha. Usado para limitar
+    # mudancas de senha a 1 vez por mes. NULL = ainda nao mudou (liberado).
+    last_password_change_at = Column(DateTime(timezone=True), nullable=True)
 
     # Profile fields
     profile_picture = Column(Text, nullable=True)

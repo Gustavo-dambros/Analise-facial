@@ -3,22 +3,22 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Request, status, HTTPException
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from sqlalchemy import delete
+from sqlalchemy import delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.connection import get_db
 from app.core.security import get_current_user
 from app.core.config import settings
 from app.models.profile import Profile
 from app.models.analysis import Analysis
-from app.schemas.profile import UserProfileUpdate, UserProfileResponse
+from app.schemas.profile import UserProfileUpdate, UserProfileResponse, PasswordChangeRequest
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
-# Intervalo minimo (em dias) entre alteracoes de perfil.
-PROFILE_EDIT_COOLDOWN_DAYS = 90
+# Intervalo minimo (em dias) entre alteracoes de senha.
+PASSWORD_CHANGE_COOLDOWN_DAYS = 30
 
 # Only these fields can be updated — prevents mass assignment
 ALLOWED_UPDATE_FIELDS = {"full_name", "profile_picture", "gender", "age", "style_objective"}
@@ -101,3 +101,51 @@ async def delete_account(
         logger.warning("Falha ao remover usuario %s do Supabase Auth: %s", user_id, exc)
 
     return {"detail": "Conta excluida com sucesso."}
+
+
+@router.put("/change-password")
+@limiter.limit(settings.RATE_LIMIT_GENERAL)
+async def change_password(
+    request: Request,
+    data: PasswordChangeRequest,
+    current_user: Profile = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Change user's password with 1-month cooldown limit.
+
+    Restricao de negocio: a senha so pode ser alterada 1 vez a cada 30 dias.
+    """
+    now = datetime.now(timezone.utc)
+    last = current_user.last_password_change_at
+    if last is not None:
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        if (now - last) < timedelta(days=PASSWORD_CHANGE_COOLDOWN_DAYS):
+            next_allowed = last + timedelta(days=PASSWORD_CHANGE_COOLDOWN_DAYS)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    f"Você só pode alterar sua senha a cada {PASSWORD_CHANGE_COOLDOWN_DAYS} dias. "
+                    f"Próxima alteração disponível em {next_allowed.strftime('%d/%m/%Y')}."
+                ),
+            )
+
+    # Update password via Supabase Auth (admin client)
+    try:
+        from supabase import create_client
+
+        supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+        # Atualiza a senha do usuário via admin API
+        await supabase.auth.admin.update_user(str(current_user.id), password=data.new_password)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    # Update last password change timestamp
+    current_user.last_password_change_at = now
+    await db.commit()
+    await db.refresh(current_user)
+
+    return {"detail": "Senha alterada com sucesso."}

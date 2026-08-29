@@ -33,9 +33,12 @@ class PaymentService:
     # ------------------------------------------------------------------
     # Create payment (PIX or Checkout Pro / Credit Card)
     # ------------------------------------------------------------------
-    def _get_plan_amount(self, plan_id: str) -> float:
+    def _get_plan_amount(self, plan_id: str, payment_method: str = "pix") -> float:
         """Get plan amount from server-side configuration."""
-        return settings.PLAN_PRICES.get(plan_id, 0.0)
+        plan_prices = settings.PLAN_PRICES.get(plan_id)
+        if not plan_prices:
+            return 0.0
+        return plan_prices.get(payment_method, 0.0)
 
     async def create_pix_payment(
         self,
@@ -45,7 +48,7 @@ class PaymentService:
         pending_url: str,
     ) -> dict:
         """Create a PIX payment via Mercado Pago and return the checkout data."""
-        amount = self._get_plan_amount(plan_id)
+        amount = self._get_plan_amount(plan_id, "pix")
         if amount <= 0:
             raise SanitizedHTTPException(
                 status_code=400,
@@ -125,7 +128,7 @@ class PaymentService:
         pending_url: str,
     ) -> dict:
         """Create a Checkout Pro preference (credit card + redirect)."""
-        amount = self._get_plan_amount(plan_id)
+        amount = self._get_plan_amount(plan_id, "credit_card")
         if amount <= 0:
             raise SanitizedHTTPException(
                 status_code=400,

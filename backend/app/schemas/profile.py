@@ -57,5 +57,21 @@ class UserProfileResponse(BaseModel):
     is_active: Optional[bool] = None
     is_verified: Optional[bool] = None
     last_profile_change_at: Optional[datetime] = None
+    last_password_change_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
+
+
+class PasswordChangeRequest(BaseModel):
+    new_password: str = Field(..., min_length=8)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v):
+        if len(v) < 8:
+            raise ValueError("A senha deve ter pelo menos 8 caracteres.")
+        if not re.search(r"[a-zA-Z]", v):
+            raise ValueError("A senha deve conter pelo menos uma letra.")
+        if not re.search(r"\d", v):
+            raise ValueError("A senha deve conter pelo menos um número.")
+        return v
