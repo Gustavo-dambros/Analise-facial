@@ -21,6 +21,22 @@ from app.models.profile import PlanType
 logger = logging.getLogger(__name__)
 
 
+def _build_attribute_items(attrs_data):
+    """Build a list of AttributeItem from stored attributes_data.
+
+    Supports both the new list format [{name, score, label}] and the legacy
+    dict format {name: score}.
+    """
+    if not attrs_data:
+        return []
+    if isinstance(attrs_data, list):
+        return [AttributeItem(**a) for a in attrs_data]
+    return [
+        AttributeItem(name=name, score=score, label=attribute_score_to_label(score))
+        for name, score in attrs_data.items()
+    ]
+
+
 # ---- Monthly analysis limits per plan ----
 PLAN_MONTHLY_LIMITS: dict[PlanType | str, int] = {
     PlanType.free: 3,
@@ -246,6 +262,13 @@ class AnalysisService:
             for name, score in attributes.items()
         ]
 
+        # List form (name, score, label) used to persist attributes_data and to
+        # build the response's AttributeItem objects.
+        attributes_list = [
+            {"name": name, "score": score, "label": attribute_score_to_label(score)}
+            for name, score in attributes.items()
+        ]
+
         # All scores
         symmetry = compute_symmetry(attributes)
         overall = compute_overall(symmetry, attractiveness)
@@ -274,6 +297,7 @@ class AnalysisService:
             "radar_data": radar_data,
             "highlights": highlights[:4],
             "categories": categories,
+            "attributes_list": attributes_list,
             "visagismo_tips": ai_result.get("visagismo_tips", {}),
             "attractiveness": attractiveness,
             "attributes": attributes,
@@ -298,7 +322,7 @@ class AnalysisService:
             "highlights": result["highlights"],
             "categories": result["categories"],
             "attractiveness": result["attractiveness"],
-            "attributes_data": result["attributes"],
+            "attributes_data": result["attributes_list"],
             "photo_front_url": None,
             "photo_right_url": None,
             "photo_left_url": None,
@@ -313,12 +337,12 @@ class AnalysisService:
             thirds_data=db_analysis.thirds_data,
             radar_data=db_analysis.radar_data,
             highlights=db_analysis.highlights,
-            categories=[
-                {"name": cat.name, "score": cat.score, "badge": cat.badge}
-                for cat in db_analysis.categories
-            ],
+            # `db_analysis.categories` is a lazy relationship; in an async session
+            # accessing it triggers a blocking load. We already have the data in
+            # `result`, so use that to build the response safely.
+            categories=result["categories"],
             attractiveness=db_analysis.attractiveness,
-            attributes=[AttributeItem(**attr) for attr in (db_analysis.attributes_data or [])],
+            attributes=_build_attribute_items(result["attributes_list"]),
             created_at=db_analysis.created_at,
         )
 
@@ -339,7 +363,7 @@ class AnalysisService:
                     for cat in a.categories
                 ],
                 attractiveness=a.attractiveness,
-                attributes=[AttributeItem(**attr) for attr in (a.attributes_data or [])],
+                attributes=_build_attribute_items(a.attributes_data),
                 created_at=a.created_at,
             )
             for a in analyses
