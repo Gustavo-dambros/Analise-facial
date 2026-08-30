@@ -89,10 +89,6 @@ class Settings(BaseSettings):
         "plan_black": {"pix": 54.90, "credit_card": 49.90},
     }
 
-    # Mercado Pago
-    MERCADOPAGO_ACCESS_TOKEN: str = ""
-    MERCADOPAGO_WEBHOOK_SECRET: str = ""
-
     # Application URL (used in email links)
     BASE_URL: str = "http://localhost:8000"
 

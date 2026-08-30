@@ -1,6 +1,6 @@
+from sqlalchemy.dialects.postgresql import UUID as UUID
 from sqlalchemy import Column, String, Float, ForeignKey, JSON, DateTime, Integer, Boolean, Enum as SQLEnum, Numeric, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from app.database.connection import Base
 import uuid
@@ -25,7 +25,7 @@ class FacialAnalysis(Base):
     __tablename__ = "facial_analyses"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("profiles.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False)
     overall_score = Column(Float, nullable=True)
     confidence = Column(Float, nullable=True)
     harmony_score = Column(Float, nullable=True)
@@ -93,7 +93,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("profiles.id"), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False, index=True)
     analysis_id = Column(String(36), ForeignKey("facial_analyses.id"), nullable=True)
     amount = Column(Numeric(10, 2), nullable=False)
     currency = Column(String(3), default="BRL")
@@ -144,7 +144,7 @@ class WeeklyRoutine(Base):
     __tablename__ = "weekly_routines"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("profiles.id"), nullable=False, unique=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False, unique=True)
     exercises = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -1,5 +1,6 @@
 import enum
 import uuid
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column, String, Numeric, DateTime, ForeignKey, Enum as SQLEnum
 from sqlalchemy.sql import func
 from app.database.connection import Base
@@ -24,9 +25,7 @@ class Payment(Base):
     __tablename__ = "payments"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("profiles.id"), nullable=False, index=True)
-    mercado_pago_payment_id = Column(String(100), nullable=True, index=True)
-    mercado_pago_preference_id = Column(String(200), nullable=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False, index=True)
     amount = Column(Numeric(10, 2), nullable=False)
     currency = Column(String(3), default="BRL", nullable=False)
     status = Column(SQLEnum(PaymentStatus), default=PaymentStatus.pending, nullable=False, index=True)
@@ -40,7 +39,6 @@ class Payment(Base):
         return {
             "id": self.id,
             "user_id": self.user_id,
-            "mercado_pago_payment_id": self.mercado_pago_payment_id,
             "amount": float(self.amount) if self.amount else 0,
             "currency": self.currency,
             "status": self.status.value if self.status else None,

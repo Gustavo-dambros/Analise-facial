@@ -66,8 +66,6 @@ def upgrade() -> None:
     op.create_table('payments',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('user_id', sa.String(length=36), nullable=False),
-    sa.Column('mercado_pago_payment_id', sa.String(length=100), nullable=True),
-    sa.Column('mercado_pago_preference_id', sa.String(length=200), nullable=True),
     sa.Column('amount', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('currency', sa.String(length=3), nullable=False),
     sa.Column('status', sa.Enum('pending', 'approved', 'rejected', 'cancelled', 'refunded', 'in_process', 'partial', name='paymentstatus'), nullable=False),
@@ -80,7 +78,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_payments_created_at'), 'payments', ['created_at'], unique=False)
-    op.create_index(op.f('ix_payments_mercado_pago_payment_id'), 'payments', ['mercado_pago_payment_id'], unique=False)
     op.create_index(op.f('ix_payments_status'), 'payments', ['status'], unique=False)
     op.create_index(op.f('ix_payments_user_id'), 'payments', ['user_id'], unique=False)
     op.create_table('weekly_routines',
@@ -172,7 +169,6 @@ def downgrade() -> None:
     op.drop_table('weekly_routines')
     op.drop_index(op.f('ix_payments_user_id'), table_name='payments')
     op.drop_index(op.f('ix_payments_status'), table_name='payments')
-    op.drop_index(op.f('ix_payments_mercado_pago_payment_id'), table_name='payments')
     op.drop_index(op.f('ix_payments_created_at'), table_name='payments')
     op.drop_table('payments')
     op.drop_table('facial_analyses')

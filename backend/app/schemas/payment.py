@@ -17,8 +17,6 @@ class PaymentCreateRequest(BaseModel):
 class PaymentCreateResponse(BaseModel):
     """Response returned by POST /payments/create."""
     payment_id: str = Field(..., description="ID interno do registro de pagamento no Supabase/FastAPI DB.")
-    preference_id: Optional[str] = Field(default=None, description="ID da preferência de checkout no Mercado Pago.")
-    init_point: Optional[str] = Field(default=None, description="URL de redirecionamento para Checkout Pro.")
     payment_method: PaymentMethod
     status: PaymentStatus
     amount: Decimal
@@ -32,35 +30,28 @@ class PaymentStatusResponse(BaseModel):
     """Response for status-check endpoints."""
     payment_id: str
     status: PaymentStatus
-    mercado_pago_payment_id: Optional[str]
     amount: Decimal
     currency: str
     payment_method: PaymentMethod
     plan_id: str
     created_at: Optional[datetime]
     paid_at: Optional[datetime]
-    init_point: Optional[str] = None
-    qr_code: Optional[str] = None
-    qr_code_base64: Optional[str] = None
-    ticket_url: Optional[str] = None
 
 
 class WebhookNotification(BaseModel):
-    """Payload received from Mercado Pago IPN/webhook."""
+    """Payload received from payment gateway webhook."""
+
     action: str = Field(..., description="Tipo de ação (e.g. 'payment.created', 'payment.updated').")
-    api_version: Optional[str] = Field(default=None, alias="api_version")
     data: dict = Field(..., description="Objeto data contendo o resource ID.")
-    date_created: Optional[str] = Field(default=None)
     id: Optional[str] = Field(default=None, description="ID único da notificação.")
-    live_mode: Optional[bool] = Field(default=None)
-    type: str = Field(..., description="Tipo de recurso (e.g. 'payment', 'merchant_order', 'subscription').")
+    type: str = Field(..., description="Tipo de recurso (e.g. 'payment', 'merchant_order').")
     user_id: Optional[str] = Field(default=None)
 
     model_config = {"extra": "ignore"}
 
 
 class PaymentWebhookResponse(BaseModel):
-    """Response sent back to Mercado Pago after processing the webhook."""
+    """Response sent back to payment gateway after processing the webhook."""
     status: str = Field(default="ok")
     payment_id: Optional[str] = Field(default=None, description="ID interno do pagamento atualizado, se aplicável.")
     message: Optional[str] = Field(default=None)
