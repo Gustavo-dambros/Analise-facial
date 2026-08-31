@@ -34,10 +34,18 @@ export function AuthProvider({ children }) {
       if (!isMounted.current) return;
       setSession(data.session);
       if (data.session) {
-        try {
-          await fetchProfile();
-        } catch {
-          setUser(null);
+        const currentPath = window.location.pathname;
+        if (currentPath !== '/login' && currentPath !== '/professional/login') {
+          // ✅ Primeiro seta o token, depois busca o perfil (garante ordem)
+          setAccessToken(data.session.access_token);
+          queueMicrotask(async () => {
+            if (!isMounted.current) return;
+            try {
+              await fetchProfile();
+            } catch {
+              setUser(null);
+            }
+          });
         }
       }
       if (isMounted.current) setLoading(false);
@@ -50,14 +58,18 @@ export function AuthProvider({ children }) {
         if (!isMounted.current) return;
         setSession(newSession);
         if (newSession?.access_token) {
-          try {
-            await fetchProfile();
-            setAccessToken(newSession.access_token);
-          } catch {
-            // Profile failed — clear stale token
-            setAccessToken(null);
-            if (isMounted.current) setUser(null);
-          }
+          // ✅ Primeiro seta o token via queueMicrotask, depois busca o perfil
+          setAccessToken(newSession.access_token);
+          queueMicrotask(async () => {
+            if (!isMounted.current) return;
+            try {
+              await fetchProfile();
+            } catch {
+              // Profile failed — clear stale token
+              setAccessToken(null);
+              if (isMounted.current) setUser(null);
+            }
+          });
         } else {
           if (isMounted.current) setUser(null);
         }
@@ -104,18 +116,20 @@ export function AuthProvider({ children }) {
   }, [fetchProfile]);
 
   const signIn = useCallback(async (email, password) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(error.message);
-      if (isMounted.current) {
-        // Não seta o token ainda — espera o profile carregar com sucesso
-        await fetchProfile();
-      }
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    // Guard Clause: Se houver erro OU sessão não vier, lança exceção e ABORTA
+    // Isso impede que fetchProfile() seja chamado com token nulo/inválido
+    if (error || !data.session) {
+      throw new Error(`Autenticação falhou: ${error?.message || 'Credenciais inválidas'}`);
     }
-  }, [fetchProfile]);
+
+    // ✅ A partir daqui, o runtime GARANTE a presença da session e do token
+    if (isMounted.current) {
+      setAccessToken(data.session.access_token);
+    }
+    return { success: true };
+  }, []);
 
   const signOut = useCallback(async () => {
     if (isMounted.current) {

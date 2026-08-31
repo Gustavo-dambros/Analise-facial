@@ -19,6 +19,8 @@ limiter = Limiter(key_func=get_remote_address)
 
 # Intervalo minimo (em dias) entre alteracoes de senha.
 PASSWORD_CHANGE_COOLDOWN_DAYS = 30
+# Intervalo minimo (em dias) entre alteracoes de perfil.
+PROFILE_EDIT_COOLDOWN_DAYS = 30
 
 # Only these fields can be updated — prevents mass assignment
 ALLOWED_UPDATE_FIELDS = {"full_name", "profile_picture", "gender", "age", "style_objective"}
