@@ -3,7 +3,6 @@ import time
 from typing import Optional
 
 import httpx
-from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,16 +14,6 @@ from app.models.profile import Profile
 
 
 security = HTTPBearer()
-
-
-def _jwt_secret_and_algorithms():
-    """Use the Supabase JWT secret when configured; fall back to SECRET_KEY (dev)."""
-    if settings.SUPABASE_JWT_SECRET:
-        return settings.SUPABASE_JWT_SECRET, [settings.SUPABASE_JWT_ALGORITHM]
-    return settings.SECRET_KEY, [settings.ALGORITHM]
-
-
-# Cache leve da validação de token via Supabase (reduz chamadas de rede por req).
 # Chave: hash do token. Valor: (expiracao_epoch, user_info).
 _token_cache: dict[str, tuple[float, dict]] = {}
 
@@ -91,16 +80,10 @@ async def get_current_user(
         user_id: Optional[str] = user_info.get("id")
         email: Optional[str] = user_info.get("email")
     else:
-        # Fallback: decodifica localmente (HS256) para dev/ambientes sem Supabase.
-        secret, algorithms = _jwt_secret_and_algorithms()
-        try:
-            payload = jwt.decode(
-                token, secret, algorithms=algorithms, options={"verify_aud": False}
-            )
-        except JWTError:
-            raise credentials_exception
-        user_id = payload.get("sub")
-        email = payload.get("email")
+        # Fallback removido — a validação local com HS256/ES256 costuma falhar
+        # quando o SUPABASE_JWT_SECRET e um kid identifier e nao uma chave PEM.
+        # Em producao, sempre use a validacao remota via /auth/v1/user.
+        raise credentials_exception
 
     if not user_id and not email:
         raise credentials_exception

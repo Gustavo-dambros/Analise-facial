@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
@@ -28,12 +29,14 @@ class UserProfileUpdate(BaseModel):
             raise ValueError("Formato de imagem invalido")
         return v
 
-    @field_validator("gender")
-    @classmethod
-    def validate_gender(cls, v):
-        if v is not None and v not in ("", "Masculino", "Feminino", "Neutro"):
-            raise ValueError("Genero invalido")
-        return v
+@field_validator("gender")
+@classmethod
+def validate_gender(cls, v):
+    if v == "":
+        return None
+    if v is not None and v not in ("Masculino", "Feminino", "Neutro"):
+        raise ValueError("Gênero inválido")
+    return v
 
     @field_validator("style_objective")
     @classmethod
@@ -45,7 +48,7 @@ class UserProfileUpdate(BaseModel):
 
 
 class UserProfileResponse(BaseModel):
-    id: str
+    id: UUID
     email: Optional[str] = None
     full_name: Optional[str] = None
     profile_picture: Optional[str] = None
