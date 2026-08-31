@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: facemax-backend
+    name: facemax-backend-teste01
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     env: docker
@@ -24,7 +24,7 @@ services:
       - key: SECRET_KEY
         sync: false
       - key: ALGORITHM
-        value: HS256
+        value: ES256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "30"
       - key: ENABLE_AI_ANALYSIS
@@ -72,7 +72,7 @@ services:
       retries: 3
 
   - type: static
-    name: facemax-frontend
+    name: facemax-frontend-teste01
     rootDir: frontend
     buildCommand: npm run build
     staticPublishPath: ./dist
