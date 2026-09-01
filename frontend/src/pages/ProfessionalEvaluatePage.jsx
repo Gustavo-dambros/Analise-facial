@@ -135,6 +135,7 @@ function formatExercises(arr) {
 export default function ProfessionalEvaluatePage() {
   const { id } = useParams();
   const { user, profile, loading: authLoading } = useAuth();
+  const safeUserId = user?.id;
   const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -375,7 +376,7 @@ export default function ProfessionalEvaluatePage() {
           body_result: bodyEvaluationData,
           exercise_recommendations: exerciseRecommendationsData,
           verdict_text: verdict.trim(),
-          reviewed_by: user.id,
+          reviewed_by: safeUserId,
           reviewed_at: new Date().toISOString(),
         })
         .eq('id', id);
@@ -405,7 +406,7 @@ export default function ProfessionalEvaluatePage() {
         .from('evaluation_reports')
         .insert({
           analysis_id: id,
-          reporter_id: user.id,
+          reporter_id: safeUserId,
           reported_user_id: analysis.user_id,
           category: reportCategory,
           reason: reportReason.trim(),
