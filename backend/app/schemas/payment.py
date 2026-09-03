@@ -24,6 +24,10 @@ class PaymentCreateResponse(BaseModel):
     qr_code: Optional[str] = Field(default=None, description="QR Code textual (copia-e-cola) para PIX.")
     qr_code_base64: Optional[str] = Field(default=None, description="Imagem base64 do QR Code para PIX.")
     ticket_url: Optional[str] = Field(default=None, description="URL do boleto ou tela de pagamento PIX.")
+    preference_id: Optional[str] = Field(default=None, description="ID da preferência MP")
+    init_point: Optional[str] = Field(default=None, description="Link de checkout MP (sandbox_init_point em TEST)")
+
+    model_config = {"extra": "ignore"}
 
 
 class PaymentStatusResponse(BaseModel):
@@ -34,8 +38,13 @@ class PaymentStatusResponse(BaseModel):
     currency: str
     payment_method: PaymentMethod
     plan_id: str
+    mp_payment_id: Optional[str] = None
+    mp_preference_id: Optional[str] = None
+    plan_type: Optional[str] = None
     created_at: Optional[datetime]
     paid_at: Optional[datetime]
+
+    model_config = {"extra": "ignore"}
 
 
 class WebhookNotification(BaseModel):

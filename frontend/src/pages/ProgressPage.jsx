@@ -80,6 +80,18 @@ export default function ProgressPage() {
     if (!user) return;
     fetchData();
     fetchRoutine();
+
+    // Revalida ao voltar para a aba ou ao receber evento de nova analise
+    const onSubmitted = () => fetchData();
+    const onFocus = () => fetchData();
+    window.addEventListener('analysis:submitted', onSubmitted);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      window.removeEventListener('analysis:submitted', onSubmitted);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
   }, [user]);
 
   const fetchRoutine = async () => {
@@ -99,21 +111,32 @@ export default function ProgressPage() {
   };
 
   const fetchData = async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
       const supabase = createClient();
 
-      const { data: pendingData } = await supabase
+      const { data: pendingData, error: pendingError } = await supabase
         .from('analyses')
         .select('*')
+        .eq('user_id', user.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      const { data: completedData } = await supabase
+      if (pendingError) {
+        console.error('Failed to fetch pending analyses:', pendingError.message);
+      }
+
+      const { data: completedData, error: completedError } = await supabase
         .from('analyses')
         .select('*')
+        .eq('user_id', user.id)
         .eq('status', 'completed')
         .order('reviewed_at', { ascending: false });
+
+      if (completedError) {
+        console.error('Failed to fetch completed analyses:', completedError.message);
+      }
 
       setPending((pendingData || []).map(normalizeAnalysis));
       setEvaluated((completedData || []).map(normalizeAnalysis));
@@ -154,8 +177,8 @@ export default function ProgressPage() {
   }
 
   return (
-    <div className="flex-1 p-4 md:p-8 md:pl-4">
-        <div className="max-w-6xl mx-auto">
+    <div className="flex-1 p-3 sm:p-4 md:p-8 md:pl-4 pb-24 md:pb-8 overflow-x-hidden">
+        <div className="max-w-6xl mx-auto min-w-0">
           {/* Header */}
           <FadeIn>
             <div className="flex items-center gap-3 mb-8">
@@ -165,7 +188,7 @@ export default function ProgressPage() {
           </FadeIn>
 
           {/* Stats */}
-          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
             <StaggerItem>
               <Card className="bg-card-bg border-border">
                 <CardContent className="p-5">
@@ -299,21 +322,24 @@ export default function ProgressPage() {
               ) : (
                 <div className="space-y-3">
                   {pending.map((a) => (
-                    <Card key={a.id} className="bg-card-bg border-border">
-                      <CardContent className="p-5 flex items-center gap-4">
+                    <Card key={a.id} className="bg-card-bg border-border cursor-pointer hover:border-brand-accent/40 transition-colors overflow-hidden" onClick={() => navigate(`/dashboard/evaluation/${a.id}`)}>
+                      <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         <PhotoThumbs a={a} onOpen={setLightbox} />
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 w-full">
                           <p className="text-sm font-medium text-text-primary truncate">
                             Analise Facial
                           </p>
-                          <p className="text-xs text-text-muted mt-0.5">
+                          <p className="text-xs text-text-muted mt-0.5 break-words">
                             Enviada em {formatDate(a.createdAt)}
                           </p>
                         </div>
-                        <Badge variant="secondary">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Aguardando
-                        </Badge>
+                        <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                          <Badge variant="secondary" className="text-xs">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Aguardando
+                          </Badge>
+                          <Eye className="w-4 h-4 text-text-muted" />
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -333,24 +359,24 @@ export default function ProgressPage() {
                   {evaluated.map((a) => (
                     <Card
                       key={a.id}
-                      className="bg-card-bg border-border cursor-pointer hover:border-brand-accent/40 transition-colors"
+                      className="bg-card-bg border-border cursor-pointer hover:border-brand-accent/40 transition-colors overflow-hidden"
                       onClick={() => navigate(`/dashboard/evaluation/${a.id}`)}
                     >
-                      <CardContent className="p-5 flex items-center gap-4">
+                      <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         <PhotoThumbs a={a} onOpen={setLightbox} />
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 w-full">
                           <p className="text-sm font-medium text-text-primary truncate">
                             Analise Facial
                           </p>
-                          <p className="text-xs text-text-muted mt-0.5">
+                          <p className="text-xs text-text-muted mt-0.5 break-words">
                             Avaliada em {formatDate(a.evaluation?.evaluatedAt || a.reviewed_at)}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="success">
+                        <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-center">
+                          <Badge variant="success" className="text-xs">
                             Score: {a.evaluation?.overall_score ?? '--'}
                           </Badge>
-                          <Badge variant="default">
+                          <Badge variant="default" className="text-xs hidden xs:inline-flex">
                             {a.evaluation?.categories?.terco_superior ?? '--'}
                           </Badge>
                           <Eye className="w-4 h-4 text-text-muted ml-1" />

@@ -64,7 +64,10 @@ export default function PlanBanners() {
               </ul>
 
               <button
-                onClick={() => navigate('/#pricing')}
+                onClick={() => {
+                  localStorage.setItem('selected_plan', id);
+                  navigate('/checkout-simulation');
+                }}
                 className={`mt-4 w-full py-2.5 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                   isCurrent
                     ? 'bg-brand-accent/15 text-brand-accent cursor-default'

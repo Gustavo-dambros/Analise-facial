@@ -1,2 +1,19 @@
 __pycache__/
 *.pyc
+.env
+backend/.env
+frontend/.env
+*.pem
+*.key
+# build artifacts
+frontend/dist/
+frontend/node_modules/
+backend/.venv/
+backend/venv/
+backend/facial_analysis*.db
+backend/facial_analyses.db
+backend/*.db
+.impeccable/
+.mimocode/
+.kilo/
+node_modules/

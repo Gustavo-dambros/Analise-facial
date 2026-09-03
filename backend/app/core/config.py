@@ -95,6 +95,13 @@ class Settings(BaseSettings):
     # Frontend URL (used in password reset links)
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Mercado Pago (TEST sandbox) — never commit real secrets
+    MERCADOPAGO_PUBLIC_KEY: str = ""
+    MERCADOPAGO_ACCESS_TOKEN: str = ""
+    MERCADOPAGO_WEBHOOK_SECRET: str = ""
+    MERCADOPAGO_ENV: str = "test"
+    MERCADOPAGO_NOTIFICATION_URL: str = ""  # ex: https://facemax.pro/api/v1/payments/webhook
+
     # SMTP Email (Gmail)
     MAIL_SERVER: str = "smtp.gmail.com"
     MAIL_PORT: int = 587

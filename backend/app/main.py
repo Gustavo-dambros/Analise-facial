@@ -78,12 +78,38 @@ def create_app() -> FastAPI:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-    # Add rate-limit info headers to every successful response
+    # SEO + rate-limit + noindex headers
     @app.middleware("http")
-    async def add_rate_limit_headers(request: Request, call_next):
-        response = await call_next(request)
-        # Attach configured limits as hints so the frontend can display them
+    async def seo_and_rate_headers(request: Request, call_next):
         path = request.url.path
+
+        # Ignora APIs, docs e esquemas para evitar 301/307 em chamadas assíncronas
+        if path.startswith(("/api", "/docs", "/openapi.json", "/redoc")):
+            response = await call_next(request)
+            # Rate-limit hint
+            if "/analyze" in path:
+                limit_label = settings.RATE_LIMIT_ANALYSIS
+            elif "/auth" in path:
+                limit_label = settings.RATE_LIMIT_AUTH
+            else:
+                limit_label = settings.RATE_LIMIT_GENERAL
+            response.headers["X-RateLimit-Limit"] = limit_label
+            if any(path.startswith(p) for p in ["/api/v1/profile", "/api/v1/analyze", "/api/v1/payments", "/api/v1/admin"]):
+                response.headers["X-Robots-Tag"] = "noindex, nofollow"
+            return response
+
+        # Mantém a lógica de SEO apenas para o frontend público
+        if path != "/" and path.endswith("/"):
+            qs = f"?{request.url.query}" if request.url.query else ""
+            return JSONResponse(status_code=301, content={"detail": f"Redirect to {path.rstrip('/')}{qs}"}, headers={"Location": path.rstrip("/") + qs})
+
+        # Canonical host: fold www.facemax.pro -> facemax.pro (301) if Host header matches
+        host = request.headers.get("host", "")
+        if host == "www.facemax.pro":
+            qs = f"?{request.url.query}" if request.url.query else ""
+            return JSONResponse(status_code=301, content={"detail": "Canonical redirect"}, headers={"Location": f"https://facemax.pro{path}{qs}"})
+        response = await call_next(request)
+        # Rate-limit hint
         if "/analyze" in path:
             limit_label = settings.RATE_LIMIT_ANALYSIS
         elif "/auth" in path:
@@ -91,6 +117,10 @@ def create_app() -> FastAPI:
         else:
             limit_label = settings.RATE_LIMIT_GENERAL
         response.headers["X-RateLimit-Limit"] = limit_label
+        # X-Robots-Tag noindex for private areas
+        if any(path.startswith(p) for p in ["/api/v1/profile", "/api/v1/analyze", "/api/v1/payments", "/api/v1/admin", "/dashboard"]):
+            response.headers["X-Robots-Tag"] = "noindex, nofollow"
+        # Soft 404 guard is handled by FastAPI 404; ensure no redirect to home on unknown routes
         return response
 
     # CORS — restricted methods and headers in production

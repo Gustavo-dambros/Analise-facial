@@ -31,6 +31,10 @@ class Payment(Base):
     status = Column(SQLEnum(PaymentStatus), default=PaymentStatus.pending, nullable=False, index=True)
     payment_method = Column(SQLEnum(PaymentMethod), nullable=False)
     plan_id = Column(String(50), nullable=False)
+    # Mercado Pago linkage
+    mp_payment_id = Column(String(100), nullable=True, index=True)
+    mp_preference_id = Column(String(100), nullable=True, index=True)
+    plan_type = Column(String(20), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     paid_at = Column(DateTime(timezone=True), nullable=True)
@@ -44,6 +48,9 @@ class Payment(Base):
             "status": self.status.value if self.status else None,
             "payment_method": self.payment_method.value if self.payment_method else None,
             "plan_id": self.plan_id,
+            "mp_payment_id": self.mp_payment_id,
+            "mp_preference_id": self.mp_preference_id,
+            "plan_type": self.plan_type,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "paid_at": self.paid_at.isoformat() if self.paid_at else None,
         }

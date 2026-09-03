@@ -29,12 +29,17 @@ import ChangePasswordPage from '@/pages/ChangePasswordPage';
 import PasswordChangedPage from '@/pages/PasswordChangedPage';
 import ConfirmEmailPage from '@/pages/ConfirmEmailPage';
 import WaitingPage from '@/pages/WaitingPage';
+import NotFoundPage from '@/pages/NotFoundPage';
+import FAQPage from '@/pages/FAQPage';
+import BlogPostPage from '@/pages/BlogPostPage';
 
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import ProfessionalRoute from '@/routes/ProfessionalRoute';
 import AdminRoute from '@/routes/AdminRoute';
 
+import { useCanonicalAndTrailingSlash } from '@/lib/useCanonical';
 export default function App() {
+  useCanonicalAndTrailingSlash();
   return (
     <>
       <Routes>
@@ -52,6 +57,10 @@ export default function App() {
         <Route path="/email-confirmado" element={<EmailConfirmadoPage />} />
         <Route path="/confirm-email" element={<ConfirmEmailPage />} />
         <Route path="/waiting" element={<WaitingPage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
+        <Route path="/404" element={<NotFoundPage />} />
+        <Route path="*" element={<NotFoundPage />} />
 
         {/* DASHBOARD routes — wrapped in DashboardLayout + auth guards */}
         <Route element={<Layout />}>

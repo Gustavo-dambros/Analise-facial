@@ -1,0 +1,31 @@
+User-agent: *
+Allow: /
+
+# AI / LLM crawlers — explicit public allow
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: ByteSpider
+Allow: /
+
+# Private areas — no crawl
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /checkout
+Disallow: /professional/dashboard
+Disallow: /dashboard/
+
+Sitemap: https://facemax.pro/sitemap.xml
+Sitemap: https://facemax.pro/feed.xml

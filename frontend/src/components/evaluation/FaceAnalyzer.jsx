@@ -177,6 +177,10 @@ export default function FaceAnalyzer() {
       setPhotos({ front: null, left: null, right: null, body: null });
       setActiveSlot('front');
       stopCamera();
+      // Atualiza contador imediatamente para feedback; ProgressPage recarrega via Supabase ao navegar
+      setAnalysesCount((c) => c + 1);
+      // Dispara evento para que outras abas/páginas possam recarregar se ouvirem
+      try { window.dispatchEvent(new CustomEvent('analysis:submitted', { detail: result })); } catch {}
     } catch (err) {
       setSendError(err.message || 'Erro ao enviar imagem para análise');
     } finally {
@@ -303,12 +307,28 @@ export default function FaceAnalyzer() {
               Formatos: JPG, PNG, WebP — max. 5MB
             </p>
 
-            {/* Erro */}
-            {sendError && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                {sendError}
-              </div>
-            )}
+            {/* Erro — paywall só no envio, login/conta continuam grátis */}
+            {sendError && (() => {
+              const msg = String(sendError || '');
+              const isPaywall = /limite|assine|gratuito não inclui|plano gratuito/i.test(msg);
+              if (isPaywall) {
+                return (
+                  <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                    <p className="text-sm font-medium text-yellow-400">{msg}</p>
+                    <p className="text-xs text-text-secondary mt-1">Login e cadastro são gratuitos. A cobrança é apenas para enviar avaliações.</p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <button onClick={() => navigate('/checkout-simulation')} className="px-4 py-2 rounded-xl bg-brand-accent text-background text-sm font-semibold hover:opacity-90">Ver planos</button>
+                      <button onClick={() => navigate('/dashboard/profile')} className="px-4 py-2 rounded-xl border border-border text-sm text-text-secondary hover:text-text-primary">Meu plano</button>
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  {sendError}
+                </div>
+              );
+            })()}
 
             {/* Notificacao de sucesso */}
             {submitted && (

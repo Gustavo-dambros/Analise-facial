@@ -32,11 +32,11 @@ export default function CheckoutSimulationPage() {
 
   useEffect(() => {
     const selectedPlan = localStorage.getItem('selected_plan');
-    if (!selectedPlan || !PLANS[selectedPlan]) {
-      navigate('/');
-      return;
+    if (selectedPlan && PLANS[selectedPlan]) {
+      setPlanId(selectedPlan);
+    } else {
+      setPlanId(null);
     }
-    setPlanId(selectedPlan);
   }, [navigate]);
 
   const handlePixPayment = async () => {
@@ -171,9 +171,13 @@ export default function CheckoutSimulationPage() {
     setError('');
   };
 
-  if (!planId || !PLANS[planId]) return null;
+  if (planId && !PLANS[planId]) return null;
 
-  const plan = PLANS[planId];
+  const plan = planId ? PLANS[planId] : null;
+  const handleSelectPlan = (id) => {
+    localStorage.setItem('selected_plan', id);
+    setPlanId(id);
+  };
   const showPaymentScreen = paymentMethod === 'pix_pending' || paymentMethod === 'card_pending';
   const showMethodSelection = !paymentMethod || (paymentMethod === 'pix' || paymentMethod === 'card');
 
@@ -305,6 +309,48 @@ export default function CheckoutSimulationPage() {
     );
   }
 
+  // Plan selection (quando acessa direto /checkout-simulation sem plano) — mostra os 3
+  if (!planId) {
+    return (
+      <div className="min-h-screen bg-background flex items-start sm:items-center justify-center p-4 font-urbanist py-8">
+        <motion.div
+          className="w-full max-w-6xl"
+          initial={prefersReduced ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: easeOutExpo }}
+        >
+          <button onClick={handleBack} className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-6 text-sm">
+            <ArrowLeft className="w-4 h-4" /> Voltar ao início
+          </button>
+          <div className="text-center mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-text-primary font-alpino flex items-center justify-center gap-2"><Sparkles className="w-5 h-5 text-brand-accent" /> Escolha seu plano</h1>
+            <p className="text-text-secondary text-sm mt-2">Toda avaliação cobre 12 atributos, terços, simetria e visagismo. Pagamento em Reais, sem IOF.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Object.values(PLANS).map((p) => (
+              <Card key={p.id} className={`relative rounded-2xl border p-5 flex flex-col ${p.highlight ? 'border-brand-accent/60 bg-brand-accent/5 shadow-[0_0_30px_rgba(212,175,55,0.12)]' : 'border-border bg-card-bg'}`}>
+                {p.tag && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-accent text-background text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full whitespace-nowrap">{p.tag}</span>}
+                <h3 className="text-sm font-semibold text-text-primary">{p.name}</h3>
+                <div className="flex items-baseline gap-1 mt-1 mb-3">
+                  <span className="text-text-muted text-sm">R$</span>
+                  <span className="text-2xl font-black text-text-primary font-playfair">{p.price}</span>
+                  <span className="text-text-muted text-xs">/ {p.period}</span>
+                  <span className="ml-auto text-[11px] text-text-muted">PIX R$ {p.pixPrice}</span>
+                </div>
+                <ul className="flex flex-col gap-2 flex-1">
+                  {p.benefits.map((b,i) => (
+                    <li key={i} className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-brand-accent mt-0.5" strokeWidth={2.5}/><span className="text-text-secondary text-xs leading-relaxed">{b}</span></li>
+                  ))}
+                </ul>
+                <Button onClick={() => handleSelectPlan(p.id)} className={`mt-4 w-full rounded-xl font-semibold ${p.highlight ? 'bg-brand-accent text-background hover:opacity-90' : 'border border-brand-accent/50 text-brand-accent hover:bg-brand-accent/10 bg-transparent'}`}>Escolher {p.name}</Button>
+              </Card>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   // Payment Method Selection Screen
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 font-urbanist">
@@ -321,6 +367,10 @@ export default function CheckoutSimulationPage() {
           <ArrowLeft className="w-4 h-4" />
           Voltar ao início
         </button>
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={() => { localStorage.removeItem('selected_plan'); setPlanId(null); }} className="text-xs text-text-muted hover:text-brand-accent underline">Trocar plano</button>
+          <span className="text-xs text-text-muted">Plano: {plan.name}</span>
+        </div>
 
         <Card className="bg-card-bg border-border overflow-hidden">
           <CardContent className="p-0">

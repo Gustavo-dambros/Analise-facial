@@ -40,7 +40,8 @@ psycopg2-binary>=2.9.0
 # HTTP client / AI (OpenRouter)
 httpx>=0.28.0
 
-# Payments
+# Payments — Mercado Pago SDK (TEST sandbox)
+mercadopago>=2.2.0
 
 # Email (Gmail SMTP via stdlib smtplib)
 # Uses Python's built-in smtplib module (no extra package required)

@@ -40,11 +40,27 @@ def _build_attribute_items(attrs_data):
     ]
 
 
-# ---- Monthly analysis limits per plan ----
-PLAN_MONTHLY_LIMITS: dict[PlanType | str, int] = {
-    PlanType.free: 3,
-    PlanType.pro: 5,
-    PlanType.enterprise: -1,  # unlimited
+# ---- Mapping plan_id (frontend) -> PlanType + monthly limits ----
+# Frontend plan_ids: plan_monthly, plan_annual, plan_black ; backend PlanType: free/pro/enterprise
+PLAN_ID_TO_TYPE: dict[str, PlanType] = {
+    "free": PlanType.free,
+    "plan_monthly": PlanType.pro,
+    "plan_annual": PlanType.enterprise,
+    "plan_black": PlanType.enterprise,
+    "pro": PlanType.pro,
+    "enterprise": PlanType.enterprise,
+}
+
+# Cotas por plan_id (COUNT no banco, sem coluna contador)
+# Free: 0 bloqueado (precisa assinar); monthly 1, annual 2, black 4
+PLAN_MONTHLY_LIMITS: dict[str, int] = {
+    "free": 0,
+    "plan_monthly": 1,
+    "plan_annual": 2,
+    "plan_black": 4,
+    PlanType.free: 0,
+    PlanType.pro: 30,
+    PlanType.enterprise: -1,
 }
 
 
@@ -134,20 +150,31 @@ class AnalysisService:
             logger.info("User %s is superuser — skipping monthly limit check", user.id)
             return
 
-        plan = user.plan
-        limit = PLAN_MONTHLY_LIMITS.get(plan, PLAN_MONTHLY_LIMITS[PlanType.free])
+        # plan may be PlanType or plan_id string; free is blocked (0)
+        plan = getattr(user, "plan", PlanType.free) or PlanType.free
+        # Prefer limit by exact plan value (supports both plan_id and PlanType keys)
+        limit = PLAN_MONTHLY_LIMITS.get(plan, None)
+        if limit is None:
+            # fallback: try mapping plan_id -> PlanType -> limit
+            mapped = PLAN_ID_TO_TYPE.get(str(plan))
+            limit = PLAN_MONTHLY_LIMITS.get(mapped, PLAN_MONTHLY_LIMITS[PlanType.free]) if mapped else PLAN_MONTHLY_LIMITS[PlanType.free]
 
-        # Unlimited plans (-1)
+        # Unlimited (-1)
         if limit == -1:
             return
 
         count = await self.analysis_repo.count_monthly_analyses(user.id)
 
-        if count >= limit:
-            plan_label = "Gratuito" if plan == PlanType.free else "Profissional" if plan == PlanType.pro else str(plan)
+        if limit == 0:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Limite mensal de analises atingido no plano {plan_label}.",
+                detail="Plano gratuito não inclui envios — assine um plano para enviar análises.",
+            )
+        if count >= limit:
+            plan_label = "Gratuito" if str(plan) == "free" else str(plan)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Limite mensal de analises atingido no plano {plan_label} ({count}/{limit}).",
             )
 
         logger.info(
@@ -339,7 +366,13 @@ class AnalysisService:
             "photo_body_url": photo_body_url,
         })
 
-        logger.info("Created pending analysis %s for user %s", db_analysis.id, uid)
+        # Fonte única: public.analyses já é o Postgres do Supabase (DATABASE_URL).
+        # O segundo insert via PostgREST causava duplicate key 23505 e poluía o log.
+        logger.info(
+            "Created pending analysis %s for user %s",
+            db_analysis.id,
+            uid,
+        )
         return AnalysisSubmissionResponse(
             id=str(db_analysis.id),
             status=db_analysis.status,

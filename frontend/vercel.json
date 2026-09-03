@@ -1,4 +1,12 @@
 {
+  "headers": [
+    { "source": "/dashboard/:path*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/api/:path*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
+  ],
+  "redirects": [
+    { "source": "/(.*)/", "destination": "/$1", "permanent": true },
+    { "source": "https://www.facemax.pro/:path*", "destination": "https://facemax.pro/:path*", "permanent": true, "has": [{ "type": "host", "value": "www.facemax.pro" }] }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

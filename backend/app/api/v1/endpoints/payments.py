@@ -51,6 +51,25 @@ async def create_payment(
     return PaymentCreateResponse(**result)
 
 
+@router.post("/create-preference", response_model=PaymentCreateResponse, status_code=status.HTTP_201_CREATED)
+async def create_preference(
+    request: Request,
+    payment_data: PaymentCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Create Mercado Pago preference — alias for /create (spec: POST /create-preference)."""
+    service = PaymentService(db)
+    result = await service.create_preference(
+        user=current_user,
+        plan_id=payment_data.plan_id,
+        success_url=payment_data.success_url,
+        pending_url=payment_data.pending_url,
+        payment_method=payment_data.payment_method,
+    )
+    return PaymentCreateResponse(**result)
+
+
 @router.post("/webhook", status_code=status.HTTP_204_NO_CONTENT)
 async def payment_webhook(
     request: Request,
@@ -58,21 +77,20 @@ async def payment_webhook(
 ):
     """Receive and process Mercado Pago webhook notifications (IPN).
 
-    Validates the HMAC-SHA256 signature, parses the payload, and returns
-    HTTP 204 immediately.  The actual processing (DB update, status lookup,
-    user unlock) runs asynchronously in the background via
-    ``asyncio.create_task`` so the caller is never blocked.
+    Validates x-signature (ts,v1) + x-request-id manifest HMAC-SHA256, parses payload, returns 204 immediately.
+    Processing runs in background via asyncio.create_task.
     """
-    # Read raw body for signature validation
     raw_body = await request.body()
 
-    # Validate webhook signature (HMAC-SHA256)
+    # Mercado Pago official headers: x-signature, x-request-id
     signature = (
-        request.headers.get("X-Hub-Signature-256", "")
-        or request.headers.get("x-hub-signature-256", "")
+        request.headers.get("x-signature", "")
+        or request.headers.get("X-Signature", "")
+        or request.headers.get("X-Hub-Signature-256", "")
     )
-    if not PaymentService.validate_webhook_signature(raw_body, signature):
-        logger.warning("Invalid or missing webhook signature received.")
+    x_request_id = request.headers.get("x-request-id", "") or request.headers.get("X-Request-Id", "")
+    if not PaymentService.validate_webhook_signature(raw_body, signature, x_request_id):
+        logger.warning("Invalid or missing webhook signature received. sig=%s req_id=%s", signature, x_request_id)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Assinatura do webhook invalida.",

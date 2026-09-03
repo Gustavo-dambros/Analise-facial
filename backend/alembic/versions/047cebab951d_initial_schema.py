@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import UUID
 
 
 # revision identifiers, used by Alembic.
@@ -92,7 +93,7 @@ def upgrade() -> None:
     )
     op.create_table('analysis_categories',
     sa.Column('id', sa.String(length=36), nullable=False),
-    sa.Column('analysis_id', sa.String(length=36), nullable=False),
+    sa.Column('analysis_id', UUID(as_uuid=True), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('score', sa.Float(), nullable=False),
     sa.Column('badge', sa.String(length=50), nullable=False),
@@ -102,7 +103,7 @@ def upgrade() -> None:
     op.create_table('orders',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('user_id', sa.String(length=36), nullable=False),
-    sa.Column('analysis_id', sa.String(length=36), nullable=True),
+    sa.Column('analysis_id', UUID(as_uuid=True), nullable=True),
     sa.Column('amount', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('currency', sa.String(length=3), nullable=True),
     sa.Column('status', sa.Enum('pending', 'paid', 'cancelled', 'refunded', name='orderstatus'), nullable=False),

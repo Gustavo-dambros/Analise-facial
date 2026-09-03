@@ -6,6 +6,7 @@ import {
   RadarChart,
   ResponsiveContainer,
   Tooltip,
+  PolarRadiusAxis,
 } from "recharts"
 
 import {
@@ -41,6 +42,11 @@ export default function BodyRadarChart({ bodyEvaluation }) {
 
   const data = [
     {
+      feature: "Geral",
+      score: Math.max(0, Math.min(100, Number(bodyEvaluation.score) || 0)),
+      label: `${Number(bodyEvaluation.score) || 0}/100`,
+    },
+    {
       feature: "Postura",
       score: CATEGORY_SCORES[bodyEvaluation.postura] || 50,
       label: bodyEvaluation.postura,
@@ -72,13 +78,13 @@ export default function BodyRadarChart({ bodyEvaluation }) {
         <CardHeader className="items-center pb-0">
           <CardTitle className="text-sm text-text-primary">Avaliação do Físico</CardTitle>
           <CardDescription className="text-xs text-text-secondary">
-            Pontuação: <span className="text-brand-accent font-bold">{bodyEvaluation.score}/100</span>
+            Geral: <span className="text-brand-accent font-bold">{data[0].score}/100</span> • 5 eixos 0-100 (categorias mapeadas: Excelente 90, Bom 70, Regular 50, Ajustável 35)
           </CardDescription>
         </CardHeader>
-        <CardContent className="pb-0 pt-2">
-          <div className="w-full h-[260px]">
+        <CardContent className="pb-0 pt-2 px-2 sm:px-6">
+          <div className="w-full h-[260px] sm:h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={data} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+              <RadarChart data={data} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <PolarGrid
                   gridType="polygon"
                   stroke="rgba(211, 171, 57, 0.15)"
@@ -88,6 +94,7 @@ export default function BodyRadarChart({ bodyEvaluation }) {
                   tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "inherit" }}
                   tickLine={false}
                 />
+                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickCount={6} />
                 <Radar
                   dataKey="score"
                   stroke="#d3ab39"
@@ -101,11 +108,11 @@ export default function BodyRadarChart({ bodyEvaluation }) {
               </RadarChart>
             </ResponsiveContainer>
           </div>
-          <div className="grid grid-cols-2 gap-2 pb-4 pt-2">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2 pb-4 pt-2">
             {data.map((item) => (
-              <div key={item.feature} className="flex items-center justify-between text-xs">
-                <span className="text-text-muted">{item.feature}</span>
-                <span className="text-brand-accent font-medium">{item.label}</span>
+              <div key={item.feature} className="flex items-center justify-between gap-2 text-xs min-w-0">
+                <span className="text-text-muted truncate">{item.feature}</span>
+                <span className="text-brand-accent font-medium shrink-0">{item.label} ({item.score})</span>
               </div>
             ))}
           </div>

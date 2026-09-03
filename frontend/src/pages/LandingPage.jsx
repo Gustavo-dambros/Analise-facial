@@ -16,6 +16,7 @@ import {
   ScrollStaggerItem,
 } from '@/components/ui/page-transition';
 import { PLANS } from '@/lib/plans';
+import { Seo, jsonLdOrganization, jsonLdSoftwareApp } from '@/lib/seo';
 
 const navItems = [
   {
@@ -153,7 +154,10 @@ function SelectPlanButton({ planId, children, className }) {
   const navigate = useNavigate();
   const handleClick = () => {
     localStorage.setItem('selected_plan', planId);
-    navigate('/signup');
+    const token = localStorage.getItem('sb-lchmfruaaukeqorfmwvg-auth-token');
+    // Se já logado, vai direto pro checkout; senão, cadastro
+    const hasSession = !!token;
+    navigate(hasSession ? '/checkout-simulation' : '/signup');
   };
   return (
     <button type="button" onClick={handleClick} className={className}>
@@ -179,6 +183,7 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen w-screen bg-background overflow-x-hidden font-urbanist">
+      <Seo title="Home" description="A melhor IA brasileira de avaliação facial. Simetria, terços faciais e visagismo por especialistas." canonical="/" type="website" jsonLd={[jsonLdOrganization, jsonLdSoftwareApp]} />
 
       {/* Hero Section */}
       <section className="relative h-screen w-full">

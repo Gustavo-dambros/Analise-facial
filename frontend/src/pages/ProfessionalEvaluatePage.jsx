@@ -55,6 +55,25 @@ const FACIAL_ATTRIBUTES = [
   { key: 'formatoRosto', label: 'Formato do Rosto', icon: '🔷' },
 ];
 
+// Mapa canônico key (camelCase) <-> nome persistido (backend ATTRIBUTE_NAMES)
+const ATTR_KEY_TO_NAME = {
+  tercoSuperior: 'Terco Superior',
+  tercoMedio: 'Terco Medio',
+  tercoInferior: 'Terco Inferior',
+  olhos: 'Olhos',
+  sobrancelhas: 'Sobrancelhas',
+  nariz: 'Nariz',
+  'lábios': 'Labios',
+  mandibula: 'Mandibula',
+  queixo: 'Queixo',
+  macasRosto: 'Macas do Rosto',
+  testa: 'Testa',
+  formatoRosto: 'Formato do Rosto',
+};
+const ATTR_NAME_TO_KEY = Object.fromEntries(
+  Object.entries(ATTR_KEY_TO_NAME).map(([k, v]) => [v, k])
+);
+
 const WEEK_DAYS = [
   { key: 'monday', label: 'Segunda', short: 'Seg' },
   { key: 'tuesday', label: 'Terça', short: 'Ter' },
@@ -158,7 +177,7 @@ export default function ProfessionalEvaluatePage() {
   const [oculos, setOculos] = useState('');
   const [verdict, setVerdict] = useState('');
 
-  // Terços faciais (%)
+  // Terços faciais (%) — separados da nota 1-10, soma inteira deve ser 100
   const [tercoSuperior, setTercoSuperior] = useState(33);
   const [tercoMedio, setTercoMedio] = useState(34);
   const [tercoInferior, setTercoInferior] = useState(33);
@@ -196,18 +215,28 @@ export default function ProfessionalEvaluatePage() {
     }
   }, [id, authLoading, user, profile]);
 
-  // Validate terços sum = 100
+  // Validate terços soma inteira exata 100
   useEffect(() => {
-    const sum = Number(tercoSuperior) + Number(tercoMedio) + Number(tercoInferior);
-    setTercoError(sum !== 100);
+    const a = Number(tercoSuperior);
+    const b = Number(tercoMedio);
+    const c = Number(tercoInferior);
+    const allIntegers = Number.isInteger(a) && Number.isInteger(b) && Number.isInteger(c);
+    const inRange = [a, b, c].every(v => v >= 0 && v <= 100);
+    const sum = a + b + c;
+    setTercoError(!(allIntegers && inRange && sum === 100));
   }, [tercoSuperior, tercoMedio, tercoInferior]);
 
-  // Computed values
-  const symmetryScore = useMemo(() => calculateSymmetry(attributes), [attributes]);
-  const overallScore = useMemo(() => calculateOverall(symmetryScore, attractiveness), [symmetryScore, attractiveness]);
+  // Computed values — simetria = média dos 12 atributos 1-10 (inclui terços nota)
+  const symmetryScore = useMemo(
+    () => (attributes && Object.keys(attributes).length > 0 ? calculateSymmetry(attributes) : 0),
+    [attributes]
+  );
+  const overallScore = useMemo(
+    () => calculateOverall(symmetryScore, attractiveness),
+    [symmetryScore, attractiveness]
+  );
 
-  const highlights = highlightsInput
-    .split(',')
+  const highlights = (highlightsInput || '').split(',')
     .map((h) => h.trim())
     .filter(Boolean);
 
@@ -231,26 +260,37 @@ export default function ProfessionalEvaluatePage() {
       if (data?.result && typeof data.result === 'object' && Object.keys(data.result).length > 0) {
         const r = data.result;
         
-        // Load 13 attributes
+        // Load 12 attributes (nota 1-10) — r.attributes é { "Terco Superior": 7, ... }
         if (r.attributes) {
           const loadedAttrs = {};
           FACIAL_ATTRIBUTES.forEach(attr => {
-            if (r.attributes[attr.key] != null) {
-              loadedAttrs[attr.key] = r.attributes[attr.key];
-            }
+            const name = ATTR_KEY_TO_NAME[attr.key];
+            const v = r.attributes[name] ?? r.attributes[attr.key];
+            if (v != null) loadedAttrs[attr.key] = Number(v);
           });
           setAttributes(loadedAttrs);
         }
 
-        // Load terços
+        // Load terços % separados (inteiros 0-100, soma 100)
         if (r.thirds) {
-          if (r.thirds.superior != null) setTercoSuperior(r.thirds.superior);
-          if (r.thirds.medio != null) setTercoMedio(r.thirds.medio);
-          if (r.thirds.inferior != null) setTercoInferior(r.thirds.inferior);
+          if (r.thirds.superior != null) setTercoSuperior(Number(r.thirds.superior));
+          if (r.thirds.medio != null) setTercoMedio(Number(r.thirds.medio));
+          if (r.thirds.inferior != null) setTercoInferior(Number(r.thirds.inferior));
+          // retrocompat: thirds como { superior:{percentage}, ... } ou array thirds_data
+          if (r.thirds.superior?.percentage != null) setTercoSuperior(Number(r.thirds.superior.percentage));
+          if (r.thirds.medio?.percentage != null) setTercoMedio(Number(r.thirds.medio.percentage));
+          if (r.thirds.inferior?.percentage != null) setTercoInferior(Number(r.thirds.inferior.percentage));
         }
-// Load attractiveness
-        if (r.attractiveness != null) setAttractiveness(r.attractiveness);
-        if (r.face_shape) setFaceShape(r.face_shape);
+        if (r.thirds_data && Array.isArray(r.thirds_data)) {
+          // IA legado: [{label,value}]
+          const findVal = (needle) => r.thirds_data.find(t => t.label?.toLowerCase().includes(needle))?.value;
+          const s = findVal('superior'); if (s != null) setTercoSuperior(Math.round(Number(s)));
+          const m = findVal('médio') ?? findVal('medio'); if (m != null) setTercoMedio(Math.round(Number(m)));
+          const i = findVal('inferior'); if (i != null) setTercoInferior(Math.round(Number(i)));
+        }
+
+        // Load attractiveness
+        if (r.attractiveness != null) setAttractiveness(Number(r.attractiveness));
         if (r.face_shape) setFaceShape(r.face_shape);
 
         // Load highlights
@@ -327,15 +367,20 @@ export default function ProfessionalEvaluatePage() {
     try {
       const supabase = createClient();
 
-      const hasAllAttributes = ATTRIBUTE_DEFS.every((name) => attributes[name] != null);
+      // Validação forte: terços inteiros 0-100 soma 100
+      const tS = Number(tercoSuperior), tM = Number(tercoMedio), tI = Number(tercoInferior);
+      if (!Number.isInteger(tS) || !Number.isInteger(tM) || !Number.isInteger(tI) || tS + tM + tI !== 100) {
+        setTercoError(true);
+        throw new Error('Terços devem ser inteiros 0-100 somando exatamente 100%.');
+      }
 
+      // Mapeia attributes por key -> nome persistido, usando fallback 5 se vazio
       const evalAttrs = {};
-      ATTRIBUTE_DEFS.forEach((name) => {
-        evalAttrs[name] = attributes[name] ?? 5;
+      FACIAL_ATTRIBUTES.forEach(({ key }) => {
+        const name = ATTR_KEY_TO_NAME[key];
+        const v = attributes[key];
+        evalAttrs[name] = v != null && v !== '' ? Number(v) : 5;
       });
-
-      const attrSymmetry = ATTRIBUTE_DEFS.reduce((sum, name) => sum + (evalAttrs[name] || 0), 0) / ATTRIBUTE_DEFS.length;
-      const attrOverall = ((attrSymmetry + Number(attractiveness)) / 2) * 10;
 
       const evaluationData = {
         face_shape: faceShape,
@@ -343,9 +388,9 @@ export default function ProfessionalEvaluatePage() {
         symmetry_score: Number(symmetryScore.toFixed(2)),
         overall_score: Number(overallScore.toFixed(1)),
         thirds: {
-          superior: Number(tercoSuperior),
-          medio: Number(tercoMedio),
-          inferior: Number(tercoInferior),
+          superior: tS,
+          medio: tM,
+          inferior: tI,
         },
         attributes: evalAttrs,
         highlights,
@@ -678,45 +723,49 @@ export default function ProfessionalEvaluatePage() {
             </section>
           </FadeIn>
 
-{/* Terços Faciais */}
+{/* Terços Faciais — seção separada: mede como o rosto é dividido, soma exata 100% inteiros */}
           <FadeIn delay={0.15}>
             <section className="rounded-2xl border border-border bg-card-bg p-6 space-y-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-text-secondary">Divisao dos Tercos Faciais (%)</h2>
+                <h2 className="text-sm font-semibold text-text-secondary">Divisão dos Terços Faciais (%)</h2>
                 <span className={`text-xs font-medium ${tercoError ? 'text-red-400' : 'text-green-400'}`}>
                   Soma: {Number(tercoSuperior) + Number(tercoMedio) + Number(tercoInferior)}%
-                  {tercoError && ' (deve ser 100%)'}
+                  {tercoError ? ' (deve ser 100% — inteiros 0-100)' : ' ✓'}
                 </span>
               </div>
+              <p className="text-[11px] text-text-muted -mt-3">Seção separada da nota 1-10. Mede a proporção vertical do rosto; a soma dos 3 deve ser exatamente 100%.</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <div className="space-y-2">
-                  <Label>Terco Superior (%)</Label>
+                  <Label>Terço Superior (%) — inteiro 0-100</Label>
                   <Input
                     type="number"
+                    step="1"
                     min="0"
                     max="100"
                     value={tercoSuperior}
-                    onChange={(e) => setTercoSuperior(e.target.value)}
+                    onChange={(e) => setTercoSuperior(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Terco Medio (%)</Label>
+                  <Label>Terço Médio (%) — inteiro 0-100</Label>
                   <Input
                     type="number"
+                    step="1"
                     min="0"
                     max="100"
                     value={tercoMedio}
-                    onChange={(e) => setTercoMedio(e.target.value)}
+                    onChange={(e) => setTercoMedio(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Terco Inferior (%)</Label>
+                  <Label>Terço Inferior (%) — inteiro 0-100</Label>
                   <Input
                     type="number"
+                    step="1"
                     min="0"
                     max="100"
                     value={tercoInferior}
-                    onChange={(e) => setTercoInferior(e.target.value)}
+                    onChange={(e) => setTercoInferior(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                 </div>
               </div>

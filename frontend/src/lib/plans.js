@@ -62,9 +62,11 @@ export const PLANS = {
 export const PLAN_ORDER = ['plan_monthly', 'plan_annual', 'plan_black'];
 
 // Mapeia o plano salvo no perfil/localStorage para um dos ids acima.
+// Retorna null se for free/sem plano (permite escolher qualquer um)
 export function resolveCurrentPlan(user) {
   const fromStorage = typeof window !== 'undefined' ? localStorage.getItem('user_subscription') : null;
   const fromUser = user?.plan;
-  const candidate = fromStorage || fromUser || 'plan_monthly';
-  return PLANS[candidate] ? candidate : 'plan_monthly';
+  const candidate = fromStorage || fromUser || null;
+  if (!candidate || candidate === 'free') return null;
+  return PLANS[candidate] ? candidate : null;
 }

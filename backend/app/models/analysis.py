@@ -94,7 +94,7 @@ class Order(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False, index=True)
-    analysis_id = Column(String(36), ForeignKey("facial_analyses.id"), nullable=True)
+    analysis_id = Column(UUID(as_uuid=True), ForeignKey("facial_analyses.id"), nullable=True)
     amount = Column(Numeric(10, 2), nullable=False)
     currency = Column(String(3), default="BRL")
     status = Column(SQLEnum(OrderStatus), default=OrderStatus.pending, nullable=False, index=True)

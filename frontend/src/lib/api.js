@@ -165,7 +165,7 @@ async function apiFetch(endpoint, options = {}) {
 
 /**
  * Obtém o perfil do usuário autenticado
- * GET /api/v1/profile/
+ * GET /api/v1/profile/  (com barra — casa com @router.get("/") + prefix /profile)
  */
 export async function getProfile() {
   return apiFetch('/api/v1/profile/');
@@ -190,7 +190,7 @@ export async function deleteAccount() {
 
 /**
  * Envia as fotos para avaliação de um profissional
- * POST /api/v1/analyze/
+ * POST /api/v1/analyze/  (com barra — casa com @router.post("/"))
  */
 export async function submitAnalysis(photos) {
   const body = { photo_front: photos.front };

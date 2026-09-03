@@ -37,17 +37,19 @@ export default function AttributeTable({ attributes = {}, overall = 0 }) {
               return (
                 <div
                   key={name}
-                  className="flex items-center justify-between py-2 px-3 rounded-xl bg-white/[0.02] border border-border/40 hover:border-brand-accent/20 transition-colors"
+                  className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 xs:gap-2 py-2.5 px-3 rounded-xl bg-white/[0.02] border border-border/40 hover:border-brand-accent/20 transition-colors min-w-0"
                 >
-                  <span className="text-sm text-text-primary min-w-[120px]">
+                  <span className="text-sm text-text-primary xs:min-w-[120px] truncate pr-2">
                     {name}
                   </span>
-                  <span className={`text-sm font-semibold text-center flex-1 ${labelColor(label)}`}>
-                    {label}
-                  </span>
-                  <span className="text-sm font-bold text-brand-accent min-w-[40px] text-right">
-                    {score}/10
-                  </span>
+                  <div className="flex items-center justify-between xs:justify-end gap-3 w-full xs:w-auto shrink-0">
+                    <span className={`text-xs sm:text-sm font-semibold ${labelColor(label)}`}>
+                      {label}
+                    </span>
+                    <span className="text-sm font-bold text-brand-accent min-w-[40px] text-right">
+                      {score}/10
+                    </span>
+                  </div>
                 </div>
               );
             })}

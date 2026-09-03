@@ -3,13 +3,13 @@
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
-  <!-- Páginas públicas -->
+  <!-- Páginas públicas — lastmod atualizado (SSR sitemap dinâmico em /api/v1/sitemap.xml também) -->
   <url>
-    <loc>https://analise-facial.vercel.app/</loc>
-    <lastmod>2026-08-17</lastmod>
+    <loc>https://facemax.pro/</loc>
+    <lastmod>2026-09-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://analise-facial.vercel.app/"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://facemax.pro/"/>
   </url>
 
   <url>
