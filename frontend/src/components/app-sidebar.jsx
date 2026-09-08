@@ -47,15 +47,15 @@ export function AppSidebar({ ...props }) {
   }
 
   return (
-    <Sidebar className="border-r border-border" {...props}>
-      <SidebarHeader className="p-3">
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
+    <Sidebar className="border-r apple-material-gold" {...props}>
+      <SidebarHeader className="p-4">
+        <div className="flex items-center gap-3 px-2 py-2">
           <img src={logo} alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
           <div className="hidden lg:block">
-            <p className="text-[13px] font-bold tracking-wide text-text-primary leading-tight">
+            <p className="text-[13px] font-bold tracking-wide text-text-primary leading-tight" style={{ letterSpacing: '-0.022em' }}>
               FACE<span className="text-brand-accent">MAX</span>
             </p>
-            <p className="text-[10px] text-text-muted leading-tight">
+            <p className="text-[10px] text-text-muted leading-tight" style={{ letterSpacing: '-0.011em' }}>
               {role === 'professional' || role === 'admin' ? 'Painel Profissional' : 'Elite da Estetica'}
             </p>
           </div>
@@ -74,15 +74,15 @@ export function AppSidebar({ ...props }) {
                       isActive={isActive}
                       onClick={() => navigate(path)}
                       className={`
-                        h-10 px-3 text-[13px] font-medium transition-all duration-150
+                        h-11 px-4 text-[13px] font-medium apple-transition apple-focus apple-badge
                         ${isActive
                           ? 'bg-brand-accent/10 text-brand-accent'
-                          : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.03]'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'
                         }
                       `}
                     >
                       <Icon className="w-[18px] h-[18px] shrink-0" />
-                      <span className="hidden lg:inline truncate">{label}</span>
+                      <span className="hidden lg:inline truncate" style={{ letterSpacing: '-0.011em' }}>{label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
@@ -92,12 +92,12 @@ export function AppSidebar({ ...props }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
+      <SidebarFooter className="p-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => navigate(role === 'professional' || role === 'admin' ? '/professional/dashboard' : '/dashboard')}
-              className="h-10 px-3 text-[13px] font-semibold bg-brand-accent text-background hover:opacity-90 transition-opacity"
+              className="h-11 px-6 text-[13px] font-semibold bg-brand-accent text-background hover:opacity-90 apple-button apple-focus apple-transition"
             >
               <Plus className="w-[18px] h-[18px] shrink-0" />
               <span className="hidden lg:inline truncate">
@@ -105,19 +105,19 @@ export function AppSidebar({ ...props }) {
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <div className="h-px bg-border my-1" />
+          <div className="h-px bg-border my-2" />
           {role === 'client' && (
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => navigate('/dashboard/profile')}
-                className={`h-10 px-3 text-[13px] font-medium transition-all duration-150 ${
+                className={`h-11 px-4 text-[13px] font-medium apple-transition apple-focus apple-badge ${
                   location.pathname === '/dashboard/profile'
                     ? 'bg-brand-accent/10 text-brand-accent'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.03]'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'
                 }`}
               >
                 <UserCircle className="w-[18px] h-[18px] shrink-0" />
-                <span className="hidden lg:inline truncate">Meu Perfil</span>
+                <span className="hidden lg:inline truncate" style={{ letterSpacing: '-0.011em' }}>Meu Perfil</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}

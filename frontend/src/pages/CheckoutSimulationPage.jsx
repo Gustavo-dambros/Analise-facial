@@ -161,7 +161,7 @@ export default function CheckoutSimulationPage() {
 
   const handleBack = () => {
     localStorage.removeItem('selected_plan');
-    navigate('/');
+    navigate(user ? '/dashboard' : '/');
   };
 
   const handleBackToMethods = () => {

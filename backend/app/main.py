@@ -12,8 +12,13 @@ from app.core.config import settings
 from app.core.exceptions import SanitizedHTTPException
 from app.api.v1 import api_router
 from app.database.connection import engine, Base
+from app.core.request_id import request_id_middleware, RequestIdFilter
 
 logger = logging.getLogger(__name__)
+# Attach request_id to all logs and sanitize
+for h in logging.getLogger().handlers:
+    h.addFilter(RequestIdFilter())
+logging.getLogger().addFilter(RequestIdFilter())
 
 # Rate limiter — keyed by client IP
 limiter = Limiter(key_func=get_remote_address)
@@ -74,6 +79,9 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Request ID (must be first)
+    app.middleware("http")(request_id_middleware)
+
     # Rate limiting
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -109,6 +117,9 @@ def create_app() -> FastAPI:
             qs = f"?{request.url.query}" if request.url.query else ""
             return JSONResponse(status_code=301, content={"detail": "Canonical redirect"}, headers={"Location": f"https://facemax.pro{path}{qs}"})
         response = await call_next(request)
+        # HSTS para LGPD Art.46 — trânsito com TLS
+        if not settings.DEBUG and request.url.scheme == "https":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         # Rate-limit hint
         if "/analyze" in path:
             limit_label = settings.RATE_LIMIT_ANALYSIS
@@ -135,13 +146,18 @@ def create_app() -> FastAPI:
             allow_headers=allow_headers,
         )
 
-    # Global exception handler — never expose internals
+    # Global exception handler — never expose internals (masked when DEBUG=False)
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
-        logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+        from app.core.request_id import request_id_ctx
+        rid = request_id_ctx.get("")
+        logger.exception("Unhandled exception [%s] on %s %s", rid, request.method, request.url.path)
+        if settings.DEBUG:
+            return JSONResponse(status_code=500, content={"detail": str(exc), "request_id": rid})
         return JSONResponse(
             status_code=500,
-            content={"detail": "Erro interno do servidor. Tente novamente."},
+            content={"detail": "Erro interno do servidor. Tente novamente.", "request_id": rid},
+            headers={"X-Request-ID": rid},
         )
 
     @app.exception_handler(SanitizedHTTPException)

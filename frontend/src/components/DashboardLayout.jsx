@@ -9,9 +9,9 @@ export default function DashboardLayout() {
   return (
     <>
       <PrivateNoindex />
-      <SidebarProvider>
+      <SidebarProvider style={{ gap: '16px' }}>
         <AppSidebar />
-        <SidebarInset className="bg-background font-noto-sans overflow-y-auto">
+        <SidebarInset className="bg-background font-noto-sans overflow-y-auto" style={{ padding: '8px' }}>
           <PageTransition>
             <Outlet />
           </PageTransition>

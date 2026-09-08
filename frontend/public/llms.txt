@@ -1,7 +1,7 @@
 # FaceMax - llms.txt — https://facemax.pro
 # Generated: dynamic — sitemap + blog + API
 
-> FaceMax — plataforma brasileira de análise estética facial por IA + especialistas. Harmonia, simetria, terços faciais, visagismo.
+> FaceMax — plataforma brasileira de análise estética facial por especialistas. Harmonia, simetria, terços faciais, visagismo.
 
 ## Estrutura
 - Home: https://facemax.pro/

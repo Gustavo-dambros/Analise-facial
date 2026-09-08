@@ -1,6 +1,6 @@
 import { Seo, jsonLdFAQ } from '@/lib/seo'
 const faqs = [
-  { q: 'Como funciona a análise?', a: 'Envie 3 fotos (frontal, perfil esquerdo e direito). Nossa IA + especialista avalia terços, simetria e visagismo.' },
+  { q: 'Como funciona a análise?', a: 'Envie 3 fotos (frontal, perfil esquerdo e direito). Nosso especialista avalia terços, simetria e visagismo com cuidado profissional.' },
   { q: 'Meus dados são seguros?', a: 'Sim — fotos criptografadas, bucket privado, acesso só com seu login.' },
   { q: 'Quanto custa?', a: 'Plano Free gratuito, Pro a partir de R$ 29,90.' },
 ]

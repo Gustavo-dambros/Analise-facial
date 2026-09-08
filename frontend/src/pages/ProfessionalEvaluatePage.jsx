@@ -282,7 +282,7 @@ export default function ProfessionalEvaluatePage() {
           if (r.thirds.inferior?.percentage != null) setTercoInferior(Number(r.thirds.inferior.percentage));
         }
         if (r.thirds_data && Array.isArray(r.thirds_data)) {
-          // IA legado: [{label,value}]
+          // Legado: [{label,value}]
           const findVal = (needle) => r.thirds_data.find(t => t.label?.toLowerCase().includes(needle))?.value;
           const s = findVal('superior'); if (s != null) setTercoSuperior(Math.round(Number(s)));
           const m = findVal('médio') ?? findVal('medio'); if (m != null) setTercoMedio(Math.round(Number(m)));

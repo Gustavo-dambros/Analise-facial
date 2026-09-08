@@ -5,7 +5,7 @@ const CANONICAL = 'https://facemax.pro'
 export function Seo({ title, description, canonical, type='website', image, noindex=false, jsonLd }) {
   const url = canonical ? `${CANONICAL}${canonical}` : CANONICAL
   const metaTitle = title ? `${title} — FaceMax` : 'FaceMax — Elite da Estética'
-  const desc = description || 'A melhor IA brasileira de avaliação facial. Simetria, terços faciais e visagismo por especialistas reais.'
+  const desc = description || 'A melhor avaliação facial brasileira. Simetria, terços faciais e visagismo por especialistas reais.'
   const ogImg = image || `${CANONICAL}/og-image?title=${encodeURIComponent(title||'FaceMax')}`
   return (
     <>

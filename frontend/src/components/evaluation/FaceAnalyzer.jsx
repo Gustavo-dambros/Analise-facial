@@ -20,6 +20,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
+// Apple UI Design System – Verified: 8pt Grid, SF Pro Typography, Material-Depth, Natural Spring Motion
 import PlanBanners from '@/components/PlanBanners';
 
 const PHOTO_SLOTS = [
@@ -138,8 +139,13 @@ export default function FaceAnalyzer() {
     setPhotos((prev) => ({ ...prev, [key]: null }));
   }, []);
 
+  const [biometricConsent, setBiometricConsent] = useState(false);
   const handleSend = async () => {
     if (sending) return;
+    if (!biometricConsent) {
+      setSendError('Você precisa consentir o tratamento de dados biométricos sensíveis para enviar (LGPD Art.11).');
+      return;
+    }
     setSending(true);
     setSendError(null);
 
@@ -195,25 +201,36 @@ export default function FaceAnalyzer() {
     setSubmitted(false);
   };
 
+  const completedSlots = Object.values(photos).filter(Boolean).length;
+  const requiredDone = ['front','left','right'].filter(k => photos[k]).length;
+  const canSend = photos.front && photos.left && photos.right && !sending;
+
   return (
     <div className="flex-1 p-4 sm:p-6 md:p-8 md:pl-4 pb-24 sm:pb-6 md:pb-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          {/* Personalized greeting */}
-          <p className="text-xs sm:text-sm text-text-secondary mb-2">
-            {user?.full_name ? `Olá, ${user.full_name}!` : "Olá!"}
-          </p>
-
-          {/* Evaluation count */}
-          {analysesCount > 0 && (
-            <p className="text-xs sm:text-sm text-text-secondary mb-2">
-              {analysesCount === 1 ? '1 análise realizada' : `${analysesCount} análises realizadas`}
+        {/* Header — com hierarquia e progresso */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 mb-2">
+            <p className="text-sm sm:text-base text-text-primary font-medium">
+              {user?.full_name ? `Olá, ${user.full_name} 👋` : "Olá! 👋"}
             </p>
-          )}
+            {analysesCount > 0 && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-border text-[11px] text-text-muted">
+                {analysesCount} {analysesCount === 1 ? 'análise' : 'análises'} • {requiredDone}/3 obrigatórias
+              </span>
+            )}
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary font-alpino">Nova Análise</h1>
+          <p className="text-xs sm:text-sm text-text-muted mt-1.5 max-w-2xl leading-relaxed">Fotografe de frente, perfil esquerdo e direito com luz natural. Um especialista avalia em até 48h — o físico é opcional e melhora a consulta.</p>
 
-          <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Nova Análise</h1>
-          <p className="text-xs sm:text-sm text-text-muted mt-1">Capture ou envie as fotos do rosto (frontal, perfil esquerdo e perfil direito) para avaliação de um profissional</p>
+          {/* Progresso sutil */}
+          <div className="mt-4 flex items-center gap-2">
+            <div className="h-1.5 flex-1 max-w-[280px] rounded-full bg-white/[0.06] overflow-hidden">
+              <div className="h-full bg-brand-accent transition-all duration-500" style={{ width: `${(requiredDone/3)*100}%` }} />
+            </div>
+            <span className="text-[11px] text-text-muted">{requiredDone}/3</span>
+            <span className="text-[11px] text-text-secondary hidden sm:inline">{completedSlots === 4 ? 'Completo' : completedSlots ? `${completedSlots} fotos` : 'Comece pela frontal'}</span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_410px] gap-6">
@@ -236,13 +253,24 @@ export default function FaceAnalyzer() {
               )}
 
               {!cameraActive && !photos[activeSlot] && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 sm:gap-4 px-4">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-border flex items-center justify-center bg-white/[0.02]">
-                    <Camera className="w-7 h-7 sm:w-8 sm:h-8 text-text-secondary" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 sm:gap-4 px-5 sm:px-8 text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border border-border bg-white/[0.03] flex items-center justify-center">
+                    <Camera className="w-6 h-6 sm:w-7 sm:h-7 text-text-secondary" />
                   </div>
-                  <p className="text-text-secondary text-xs sm:text-sm text-center">
-                    {cameraError || `Ative a câmera ou faça upload de "${PHOTO_SLOTS.find(s => s.key === activeSlot)?.label}"`}
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-text-primary text-xs sm:text-sm font-medium">
+                      {cameraError ? 'Câmera indisponível' : `Foto: ${PHOTO_SLOTS.find(s => s.key === activeSlot)?.label}`}
+                    </p>
+                    <p className="text-text-muted text-[11px] sm:text-xs leading-relaxed max-w-[320px]">
+                      {cameraError || (activeSlot === 'front' ? 'Centralize o rosto, luz natural de frente, sem filtro.' : activeSlot === 'body' ? 'Opcional — corpo de frente ajuda no visagismo.' : 'Rosto a 90° — orelha e contorno visíveis.')}
+                    </p>
+                    {!cameraError && (
+                      <div className="flex flex-wrap gap-2 justify-center pt-1">
+                        <span className="text-[11px] px-2 py-1 rounded-full bg-white/[0.04] border border-border text-text-muted">JPG/PNG/WebP • até 5MB</span>
+                        <button onClick={() => fileInputRefs.current[activeSlot]?.click()} className="text-[11px] px-2 py-1 rounded-full bg-brand-accent/10 border border-brand-accent/20 text-brand-accent">Escolher arquivo</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -255,12 +283,13 @@ export default function FaceAnalyzer() {
               )}
             </div>
 
-            {/* Botoes de acao */}
-            <div className="flex flex-wrap gap-2 sm:gap-3">
+            {/* Ações — com a11y e feedback */}
+            <div className="flex flex-wrap gap-4">
               {!cameraActive ? (
                 <button
                   onClick={startCamera}
-                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-brand-accent text-background font-semibold text-xs sm:text-sm hover:opacity-90 transition-opacity"
+                  aria-label="Ativar câmera"
+                  className="inline-flex items-center gap-2 h-11 px-6 rounded-xl bg-brand-accent text-background font-semibold text-xs sm:text-sm hover:scale-[1.02] active:scale-[0.96] apple-transition apple-focus apple-button"
                 >
                   <Camera className="w-4 h-4" />
                   Ativar Câmera
@@ -269,14 +298,16 @@ export default function FaceAnalyzer() {
                 <>
                   <button
                     onClick={capturePhoto}
-                    className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-brand-accent text-background font-semibold text-xs sm:text-sm hover:opacity-90 transition-opacity"
+                    aria-label={`Capturar ${PHOTO_SLOTS.find(s=>s.key===activeSlot)?.label}`}
+                    className="inline-flex items-center gap-2 h-11 px-6 rounded-xl bg-brand-accent text-background font-semibold text-xs sm:text-sm hover:scale-[1.02] active:scale-[0.96] apple-transition apple-focus apple-button"
                   >
                     <Camera className="w-4 h-4" />
                     Capturar
                   </button>
                   <button
                     onClick={stopCamera}
-                    className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl border border-border text-text-secondary font-medium text-xs sm:text-sm hover:text-text-primary hover:bg-white/5 transition-colors"
+                    aria-label="Parar câmera"
+                    className="inline-flex items-center gap-2 h-11 px-6 rounded-xl border apple-material text-text-secondary font-medium text-xs sm:text-sm hover:text-text-primary apple-transition apple-focus"
                   >
                     <CameraOff className="w-4 h-4" />
                     Parar
@@ -284,13 +315,15 @@ export default function FaceAnalyzer() {
                 </>
               )}
 
-              <label
+              <button
+                type="button"
                 onClick={() => fileInputRefs.current[activeSlot]?.click()}
-                className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl border border-border text-text-secondary font-medium text-xs sm:text-sm hover:text-text-primary hover:bg-white/5 transition-colors cursor-pointer"
+                aria-label="Fazer upload"
+                className="inline-flex items-center gap-2 h-11 px-6 rounded-xl border apple-material text-text-secondary font-medium text-xs sm:text-sm hover:text-text-primary cursor-pointer apple-transition apple-focus"
               >
                 <Upload className="w-4 h-4" />
                 Upload
-              </label>
+              </button>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -300,11 +333,19 @@ export default function FaceAnalyzer() {
                   handlePhotoUpload(e.target.files?.[0]);
                   e.target.value = '';
                 }}
+                aria-hidden="true"
               />
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard/photo-guide')}
+                className="text-[11px] sm:text-xs text-text-muted hover:text-text-secondary underline underline-offset-4 px-1"
+              >
+                Ver guia de fotos
+              </button>
             </div>
 
             <p className="text-[11px] text-text-muted">
-              Formatos: JPG, PNG, WebP — max. 5MB
+              Dica: fundo claro, sem óculos escuros. Você pode refazer qualquer foto antes de enviar.
             </p>
 
             {/* Erro — paywall só no envio, login/conta continuam grátis */}
@@ -360,19 +401,22 @@ export default function FaceAnalyzer() {
             )}
           </div>
 
-          {/* Coluna Direta: Slot Frontal */}
+          {/* Coluna Direita: Slots */}
           <div className="flex flex-col gap-4">
-            <div className="rounded-2xl border border-border bg-card-bg p-4">
-              <h2 className="text-sm font-semibold text-text-primary mb-3">Foto Frontal (Obrigatória)</h2>
-              <div className="grid grid-cols-1 gap-3">
-                {PHOTO_SLOTS.filter(s => s.key === 'front').map(({ key, label, hint }) => (
+            <div className="rounded-2xl border apple-material-gold bg-card-bg p-4 apple-card">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-text-primary" style={{ letterSpacing: '-0.022em' }}>Fotos</h2>
+                <span className="text-[11px] px-2 py-1 rounded-full bg-white/[0.04] border border-border text-text-muted apple-badge">{requiredDone}/3 obrigatórias</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {PHOTO_SLOTS.map(({ key, label, hint, optional }) => (
                   <ContextMenu key={key}>
                     <ContextMenuTrigger asChild>
                       <div
                         onClick={() => setActiveSlot(key)}
-                        className={`relative flex flex-col rounded-xl border overflow-hidden cursor-pointer transition-all duration-300 ${
+                        className={`relative flex flex-col rounded-xl border overflow-hidden cursor-pointer apple-transition apple-card ${
                           activeSlot === key
-                            ? 'border-brand-accent shadow-[0_0_20px_rgba(255,255,255,0.15)]'
+                            ? 'border-brand-accent shadow-[0_4px_12px_rgba(0,0,0,0.1)] scale-[1.02]'
                             : photos[key]
                               ? 'border-border hover:border-brand-accent/40'
                               : 'border-dashed border-border/60 hover:border-brand-accent/50 hover:bg-white/[0.02]'
@@ -397,8 +441,10 @@ export default function FaceAnalyzer() {
                             </div>
                           </div>
                         )}
-                        <div className="px-2.5 py-1.5 border-t border-border">
-                          <p className="text-[11px] sm:text-xs font-medium text-text-secondary text-center">{label}</p>
+                        <div className="px-2 py-1.5 border-t border-border flex items-center justify-center gap-1.5">
+                          <p className="text-[11px] sm:text-xs font-medium text-text-secondary text-center truncate">{label}</p>
+                          {optional && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.06] border border-border text-text-muted">Opcional</span>}
+                          {!optional && photos[key] && <span className="w-1.5 h-1.5 rounded-full bg-green-500" aria-hidden="true" />}
                         </div>
                       </div>
                     </ContextMenuTrigger>
@@ -441,47 +487,24 @@ export default function FaceAnalyzer() {
               </div>
             </div>
 
-            {/* Preview of all captured photos */}
-            {Object.values(photos).some(p => p) && (
-              <div className="rounded-2xl border border-border bg-card-bg p-4">
-                <h2 className="text-sm font-semibold text-text-primary mb-2">Fotos capturadas</h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {PHOTO_SLOTS.map(({ key, label, hint, optional }) => {
-                    const photo = photos[key];
-                    if (!photo) return null;
-                    const isOptional = key === 'body' && optional;
-                    const slotLabel = isOptional && !photo ? '' : label;
-                    return (
-                      <div
-                        key={key}
-                        className="flex flex-col items-center gap-1.5 px-2 py-2 rounded-xl border border-border transition-colors hover:border-brand-accent/40 cursor-pointer"
-                      >
-                        <img
-                          src={photo}
-                          alt={label}
-                          className="w-16 h-16 object-cover rounded-md"
-                        />
-                        <p className="text-[10px] sm:text-xs font-medium text-text-primary text-center">{slotLabel}</p>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleRemovePhoto(key); }}
-                          className="w-5 h-5 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 hover:text-red-300 text-[10px] sm:text-xs transition-colors"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+            {/* Botao Enviar — com helper */}
+            {!canSend && !sending && !submitted && (
+              <p className="text-[11px] text-text-muted px-1" style={{ letterSpacing: '-0.011em' }}>
+                {requiredDone === 0 ? 'Envie a frontal para começar' : requiredDone === 1 ? 'Falta perfil esquerdo e direito' : requiredDone === 2 ? 'Falta 1 perfil (esquerdo ou direito)' : ''}
+              </p>
             )}
-
-            {/* Botao Enviar */}
+            <label className="flex items-start gap-2 p-3 rounded-xl bg-white/[0.03] border border-border text-xs text-text-secondary">
+              <input type="checkbox" checked={biometricConsent} onChange={(e) => setBiometricConsent(e.target.checked)} className="mt-0.5" />
+              <span>Consinto o tratamento das minhas fotos como dado sensível biométrico para avaliação estética por profissional, com armazenamento em bucket privado e exclusão pós-laudo — <a href="/privacidade" className="underline text-brand-accent">Política</a>. Versão 1.0 03/09/2026</span>
+            </label>
             <button
               onClick={handleSend}
-              disabled={!photos.front || sending}
-              className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm transition-all ${
-                photos.front && photos.left && photos.right && !sending
-                  ? 'bg-brand-accent text-background hover:opacity-90'
+              disabled={!canSend || !biometricConsent}
+              aria-disabled={!canSend || !biometricConsent}
+              aria-busy={sending}
+              className={`flex items-center justify-center gap-2 w-full h-11 rounded-xl font-semibold text-sm apple-transition apple-focus apple-button ${
+                canSend && biometricConsent
+                  ? 'bg-brand-accent text-background hover:scale-[1.02] active:scale-[0.96] shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
                   : 'bg-white/5 text-text-muted border border-border cursor-not-allowed'
               }`}
             >
@@ -497,6 +520,7 @@ export default function FaceAnalyzer() {
                 </>
               )}
             </button>
+            {canSend && <p className="text-[11px] text-text-muted text-center">Revise as fotos — você pode refazer antes de enviar.</p>}
           </div>
         </div>
       </div>

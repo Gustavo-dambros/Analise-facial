@@ -13,4 +13,4 @@ https://facemax.pro/api/v1/blog/{slug}.md
 https://facemax.pro/api/v1/openapi.json
 
 ## Stack
-React 18 + Vite 5, FastAPI, Supabase Auth, PostgreSQL, OpenRouter Gemma, Mercado Pago, MediaPipe
+React 18 + Vite 5, FastAPI, Supabase Auth, PostgreSQL, Mercado Pago, MediaPipe

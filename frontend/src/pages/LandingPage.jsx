@@ -1,550 +1,261 @@
+// Apple UI Design System – Verified: 8pt Grid, SF Typography adapted Dark Gold, Material-Depth, Spring Motion
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useReducedMotion, useInView } from 'framer-motion';
 import { useRef, useEffect } from 'react';
 import { useAnimatedNumber } from '@/hooks/useAnimatedNumber';
-import { ScanFace, BarChart3, Lightbulb, ShieldCheck, Camera, Users, BookOpen, Sparkles, TrendingUp, Check, Lock, Crown, Zap, Award, Globe } from 'lucide-react';
+import { ScanFace, BarChart3, Lightbulb, ShieldCheck, Camera, Users, BookOpen, Sparkles, Check, Lock, Crown, Zap, Award, Globe, ArrowRight, Eye } from 'lucide-react';
 import { FaInstagram, FaTwitter, FaLinkedin, FaGithub } from 'react-icons/fa';
-import GradientText from '@/components/ui/GradientText';
-import CardNav from '@/components/ui/CardNav';
-import GlassSurface from '@/components/ui/GlassSurface';
 import logo from '@/assets/logo.png';
-import heroBg from '@/assets/background_ladinpage.png';
-import heroMobileBg from '@/assets/hero-mobile.jpg';
-import {
-  ScrollFadeUp,
-  ScrollStaggerContainer,
-  ScrollStaggerItem,
-} from '@/components/ui/page-transition';
 import { PLANS } from '@/lib/plans';
 import { Seo, jsonLdOrganization, jsonLdSoftwareApp } from '@/lib/seo';
-
-const navItems = [
-  {
-    label: "Sobre",
-    bgColor: "#000000",
-    textColor: "#fff",
-    links: [
-      { label: "Como Funciona", href: "#como-funciona", ariaLabel: "Como Funciona" },
-      { label: "Relatório", href: "#relatorio", ariaLabel: "Ver Relatório" }
-    ]
-  },
-  {
-    label: "Planos",
-    bgColor: "#000000",
-    textColor: "#fff",
-    links: [
-      { label: "Mensal", href: "#pricing", ariaLabel: "Plano Mensal" },
-      { label: "Anual", href: "#pricing", ariaLabel: "Plano Anual" },
-      { label: "Black", href: "#pricing", ariaLabel: "Plano Black" }
-    ]
-  },
-  {
-    label: " Contato",
-    bgColor: "#000000",
-    textColor: "#fff",
-    links: [
-      { label: "Suporte", href: "mailto:suporte@facemax.com.br", ariaLabel: "Suporte" },
-      { label: "Instagram", href: "#instagram", ariaLabel: "Instagram" }
-    ]
-  }
-];
-
-const features = [
-  {
-    icon: ScanFace,
-    title: "Análise de Elite",
-    description: "IA proprietária que mapeia mais de 468 pontos faciais com precisão milimétrica, complementada pelo olhar clínico de um especialista real.",
-    hueA: 43,
-    hueB: 50,
-  },
-  {
-    icon: BarChart3,
-    title: "Relatório Premium",
-    description: "Dashboard interativo com terços faciais, simetria, harmonia e eixos estéticos traçados diretamente nas suas fotos.",
-    hueA: 35,
-    hueB: 45,
-  },
-  {
-    icon: Lightbulb,
-    title: "Visagismo Profissional",
-    description: "Recomendações exclusivas de corte, barba e armações escritas por especialistas em estética facial.",
-    hueA: 40,
-    hueB: 55,
-  },
-  {
-    icon: ShieldCheck,
-    title: "Privacidade Absoluta",
-    description: "Suas fotos são processadas localmente e nunca saem do nosso servidor. Seu rosto é só seu.",
-    hueA: 30,
-    hueB: 42,
-  },
-];
-
-const steps = [
-  {
-    number: "01",
-    title: "Envio de Fotos",
-    description: "Envie 3 fotos simples: uma de frente e duas de perfil. Nossa IA captura cada detalhe com precisão cirúrgica.",
-    icon: Camera,
-  },
-  {
-    number: "02",
-    title: "Avaliação Humana",
-    description: "Um especialista em estética facial analisa sua simetria, estrutura e características únicas com olhar clínico.",
-    icon: Users,
-  },
-  {
-    number: "03",
-    title: "Protocolo Personalizado",
-    description: "Receba seu relatório completo com notas, gráficos e um guia visual de visagismo sob medida para você.",
-    icon: BookOpen,
-  },
-];
-
-const easeOutExpo = [0.16, 1, 0.3, 1];
-
-function FeatureCard({ feature, index }) {
-  const prefersReduced = useReducedMotion();
-  const hue = (h) => `hsl(${h}, 100%, 50%)`;
-  const isEven = index % 2 === 0;
-
-  const isLeft = index === 0 || index === 2;
-  const isRight = index === 1 || index === 3;
-
-  return (
-    <motion.div
-      className={`flex items-center relative py-8 ${isLeft ? 'justify-start pl-8' : isRight ? 'justify-end pr-8' : 'justify-center'}`}
-      style={{ marginBottom: index < features.length - 1 ? '-28px' : '0' }}
-      initial={prefersReduced ? false : { opacity: 0, y: 80, rotate: isEven ? 6 : -6 }}
-      whileInView={{ opacity: 1, y: 40, rotate: isEven ? -6 : 6 }}
-      viewport={{ once: true, amount: 0.6 }}
-      transition={{ type: "spring", stiffness: 200, damping: 24, mass: 0.8 }}
-    >
-      <div className="relative">
-        <div
-          className="absolute -inset-6 opacity-100 pointer-events-none"
-          style={{
-            background: `linear-gradient(${isEven ? 306 : 54}deg, ${hue(feature.hueA)}, ${hue(feature.hueB)})`,
-            clipPath: `path("M 0 303.5 C 0 292.454 8.995 285.101 20 283.5 L 460 219.5 C 470.085 218.033 480 228.454 480 239.5 L 500 430 C 500 441.046 491.046 450 480 450 L 20 450 C 8.954 450 0 441.046 0 430 Z")`,
-            transform: `scale(1.125) ${isLeft ? 'scaleX(-1)' : ''}`,
-            transformOrigin: 'center',
-          }}
-        />
-        <div className="relative z-10 w-[200px] h-[274px] rounded-2xl bg-card-bg border border-border flex flex-col items-center justify-center gap-2 shadow-2xl overflow-hidden">
-          <div className="flex flex-col items-center justify-center gap-2 p-3.5">
-            <motion.span
-              className="text-brand-accent"
-              initial={prefersReduced ? false : { scale: 0.5, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.15 }}
-            >
-              <feature.icon className="w-[40px] h-[40px]" strokeWidth={1.5} />
-            </motion.span>
-            <h3 className="text-[15px] font-bold text-text-primary text-center font-montenegrin">{feature.title}</h3>
-            <p className="text-[11px] text-text-secondary text-center leading-relaxed">{feature.description}</p>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 function SelectPlanButton({ planId, children, className }) {
   const navigate = useNavigate();
   const handleClick = () => {
     localStorage.setItem('selected_plan', planId);
-    const token = localStorage.getItem('sb-lchmfruaaukeqorfmwvg-auth-token');
-    // Se já logado, vai direto pro checkout; senão, cadastro
-    const hasSession = !!token;
+    const hasSession = !!localStorage.getItem('sb-lchmfruaaukeqorfmwvg-auth-token');
     navigate(hasSession ? '/checkout-simulation' : '/signup');
   };
-  return (
-    <button type="button" onClick={handleClick} className={className}>
-      {children}
-    </button>
-  );
+  return <button type="button" onClick={handleClick} className={`${className} apple-transition apple-focus active:scale-[0.96] hover:scale-[1.01]`}>{children}</button>;
 }
 
 export default function LandingPage() {
   const prefersReduced = useReducedMotion();
   const { scrollY } = useScroll();
-  const heroBgY = useTransform(scrollY, [0, 600], [0, 150]);
-  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0.3]);
-  const heroScale = useTransform(scrollY, [0, 600], [1, 1.08]);
-
-  const circleRef = useRef(null);
-  const circleInView = useInView(circleRef, { once: true, amount: 0.5 });
-  const animatedScore = useAnimatedNumber(circleInView ? 85 : 0, 1200, 300);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  const heroY = useTransform(scrollY, [0, 600], [0, 80]);
+  const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
+  const reportRef = useRef(null);
+  const reportInView = useInView(reportRef, { once: true, amount: 0.3 });
+  const score = useAnimatedNumber(reportInView ? 85 : 0, 1200, 300);
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="relative min-h-screen w-screen bg-background overflow-x-hidden font-urbanist">
-      <Seo title="Home" description="A melhor IA brasileira de avaliação facial. Simetria, terços faciais e visagismo por especialistas." canonical="/" type="website" jsonLd={[jsonLdOrganization, jsonLdSoftwareApp]} />
+    <div className="relative min-h-screen w-screen bg-[#050507] text-white overflow-x-hidden" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", Urbanist, sans-serif' }}>
+      <Seo title="Home" description="Avaliação facial especializada por profissionais reais. Simetria, terços faciais e visagismo." canonical="/" type="website" jsonLd={[jsonLdOrganization, jsonLdSoftwareApp]} />
 
-      {/* Hero Section */}
-      <section className="relative h-screen w-full">
-        <motion.div
-          className="absolute inset-0 w-full h-full z-0"
-          style={{ y: heroBgY, opacity: heroOpacity, scale: heroScale }}
-        >
-          <img src={heroBg} alt="Background" className="w-full h-full object-cover hidden md:block" />
-          <img src={heroMobileBg} alt="Background" className="w-full h-full object-cover md:hidden" />
-          <div className="absolute inset-0 bg-background/50" />
-        </motion.div>
-
-        <header className="absolute top-0 left-0 w-full z-30 pointer-events-auto">
-          <div className="relative w-full">
-            <div className="absolute inset-0 z-0">
-              <GlassSurface width="100%" height="100%" borderRadius={0} backgroundOpacity={0.08} blur={20} saturation={2} brightness={60} displace={2} distortionScale={-250} redOffset={40} greenOffset={15} blueOffset={5} borderWidth={0.1} opacity={0.85} mixBlendMode="screen" className="w-full h-full" />
-            </div>
-            <motion.div className="relative z-10" initial={prefersReduced ? false : { opacity: 0, scaleX: 0, originX: 0.5 }} animate={{ opacity: 1, scaleX: 1 }} transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1], delay: 0.15 }}>
-              <CardNav logo={logo} logoAlt="FaceMax" items={navItems} baseColor="rgba(0, 0, 0, 0.85)" menuColor="#ffffff" buttonBgColor="#D4AF37" buttonTextColor="#000000" />
-            </motion.div>
+      {/* Ato 0 — Nav vidro escuro 8pt */}
+      <nav className="fixed top-0 inset-x-0 z-50 h-11 flex items-center border-b border-white/[0.06]" style={{ background: 'rgba(10,10,10,0.72)', backdropFilter: 'blur(20px) saturate(180%)' }}>
+        <div className="max-w-6xl mx-auto w-full px-6 flex items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-2">
+            <img src={logo} alt="FaceMax" className="w-7 h-7 rounded-lg" width={28} height={28} />
+            <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-white" style={{ letterSpacing: '0.14em' }}>FACEMAX</span>
+            <span className="hidden sm:inline text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10 text-white/60 tracking-widest uppercase">Elite da Estética</span>
+          </Link>
+          <div className="hidden md:flex items-center gap-6 text-[12px] font-medium">
+            <a href="#como-funciona" className="text-white/60 hover:text-white apple-transition">Método</a>
+            <a href="#relatorio" className="text-white/60 hover:text-white apple-transition">Prova</a>
+            <a href="#pricing" className="text-white/60 hover:text-white apple-transition">Planos</a>
           </div>
-        </header>
+          <div className="flex items-center gap-2">
+            <Link to="/login" className="hidden sm:inline-flex h-8 px-4 rounded-full text-[12px] font-medium text-white/70 hover:text-white hover:bg-white/[0.06] apple-transition">Entrar</Link>
+            <Link to="/login" className="inline-flex h-8 sm:h-9 px-5 rounded-full bg-[#D4AF37] text-black text-[12px] font-semibold apple-button shadow-[0_4px_12px_rgba(0,0,0,0.15)]">Começar</Link>
+          </div>
+        </div>
+      </nav>
 
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6">
-          <motion.span className="text-brand-accent text-xs font-semibold tracking-[0.4em] uppercase mb-6" initial={prefersReduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: easeOutExpo, delay: 0.1 }}>
-            Pioneirismo Nacional em Estética Facial
-          </motion.span>
-
-          <motion.h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-center max-w-5xl leading-tight font-montenegrin" initial={prefersReduced ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: easeOutExpo, delay: 0.25 }}>
-            <GradientText colors={["#D4AF37", "#B8860B", "#FFD700", "#8B6914"]} animationSpeed={4}>
-              A Elite da Estética<br />Brasileira
-            </GradientText>
-          </motion.h1>
-
-          <motion.p className="text-text-secondary text-base md:text-lg text-center max-w-2xl mt-6 leading-relaxed" initial={prefersReduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: easeOutExpo, delay: 0.4 }}>
-            A melhor IA brasileira de avaliação facial trabalhando em conjunto com o olhar clínico de profissionais reais. Resultados que transformam vidas.
-          </motion.p>
-
-          <motion.div className="mt-6 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full border border-brand-accent/30 bg-brand-accent/5 max-w-full overflow-hidden" initial={prefersReduced ? false : { opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: easeOutExpo, delay: 0.5 }}>
-            <span className="text-brand-accent text-[10px] sm:text-xs font-bold tracking-[0.15em] sm:tracking-[0.2em] uppercase flex items-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis">
-              <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="truncate">O Único Site de Looksmaxxing que Cobra em Reais. Sem taxas abusivas de câmbio, sem IOF.</span>
-            </span>
+      {/* Ato 1 — Provocação tipográfica */}
+      <section className="relative w-full pt-11">
+        <div className="max-w-6xl mx-auto px-6 pt-24 pb-16 md:pt-32 md:pb-24">
+          <motion.div style={{ y: heroY, opacity: heroOpacity }} className="max-w-3xl">
+            <p className="text-[10px] font-semibold tracking-[0.28em] uppercase text-[#D4AF37] mb-4">Pioneirismo Nacional — Desde 2024</p>
+            <h1 className="text-[40px] sm:text-[56px] md:text-[72px] font-semibold leading-[0.9] tracking-tight" style={{ letterSpacing: '-0.04em', lineHeight: 0.9 }}>
+              <span className="block text-white">Seu rosto</span>
+              <span className="block text-white/40">está te</span>
+              <span className="block text-[#D4AF37]">favorecendo?</span>
+            </h1>
+            <p className="mt-4 text-[15px] leading-relaxed text-white/60 max-w-xl" style={{ letterSpacing: '-0.011em' }}>
+              Não é autoestima genérica. É medida. Três fotos, um especialista, um veredito visual que você entende em segundos.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link to="/login" className="inline-flex h-11 px-6 rounded-full bg-[#D4AF37] text-black font-semibold text-[13px] apple-button">Começar Agora — É Grátis</Link>
+              <a href="#como-funciona" className="inline-flex h-11 px-6 rounded-full border border-white/10 text-white text-[13px] font-medium apple-transition hover:bg-white/[0.04]">Ver método em 30s</a>
+            </div>
+            <p className="mt-3 text-[11px] text-white/30">Sem IA • Sem cartão • Fotos excluídas após laudo</p>
           </motion.div>
 
-          <div className="flex flex-nowrap gap-3 sm:gap-4 mt-10">
-            <motion.div initial={prefersReduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.6, ease: easeOutExpo }}>
-              <Link to="/login" className="inline-flex items-center justify-center px-5 sm:px-8 h-[44px] sm:h-[48px] rounded-xl bg-brand-accent text-background font-bold text-xs sm:text-sm whitespace-nowrap hover:opacity-90 transition-all duration-300 shadow-[0_0_30px_rgba(212,175,55,0.3)] hover:shadow-[0_0_50px_rgba(212,175,55,0.5)]">
-                Começar Agora — É Grátis
-              </Link>
-            </motion.div>
-            <motion.div initial={prefersReduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.6, ease: easeOutExpo }}>
-              <GlassSurface width={160} height={44} borderRadius={12} backgroundOpacity={0.15} blur={10} saturation={1.3} brightness={50} displace={0.3}>
-                <a href="#como-funciona" className="inline-flex items-center justify-center w-full h-full text-white font-medium text-xs sm:text-sm text-center whitespace-nowrap">
-                  Como Funciona
-                </a>
-              </GlassSurface>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Authority Badge Section */}
-      <section className="relative z-20 w-full py-16 bg-gradient-to-b from-background via-brand-accent/5 to-background">
-        <ScrollFadeUp className="max-w-5xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
-            {[
-              { icon: Award, label: "Especialistas Reais", sub: "Profissionais clínicos" },
-              { icon: Zap, label: "Entrega Expressa", sub: "Até 12 horas úteis" },
-              { icon: Globe, label: "100% Brasileiro", sub: "Pioneirismo Nacional" },
-              { icon: ShieldCheck, label: "Privacidade Total", sub: "Fotos nunca armazenadas" },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-accent/10 flex items-center justify-center">
-                  <item.icon className="w-5 h-5 text-brand-accent" />
-                </div>
-                <div>
-                  <p className="text-text-primary text-sm font-semibold">{item.label}</p>
-                  <p className="text-text-muted text-xs">{item.sub}</p>
-                </div>
+          {/* Prova em números — quebra de simetria, não card centralizado */}
+          <motion.div className="mt-12 grid grid-cols-3 gap-3 max-w-xl pb-16" initial={prefersReduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2, ease: [0.25,0.1,0.25,1] }}>
+            {[{ k: '12', l: 'atributos avaliados' }, { k: '48h', l: 'prazo padrão' }, { k: '4.9', l: 'avaliação média' }].map(s => (
+              <div key={s.k} className="rounded-[16px] bg-white/[0.04] border border-white/[0.06] p-4">
+                <p className="text-xl font-semibold text-white" style={{ letterSpacing: '-0.022em' }}>{s.k}</p>
+                <p className="text-[11px] text-white/40 leading-tight">{s.l}</p>
               </div>
             ))}
-          </div>
-        </ScrollFadeUp>
-      </section>
-
-      {/* Features Section */}
-      <section className="relative z-20 w-full bg-background">
-        <ScrollFadeUp className="w-full flex flex-col items-center justify-center pt-24 pb-12 px-6">
-          <span className="text-brand-accent text-sm font-medium tracking-widest uppercase mb-4">Funcionalidades</span>
-          <h2 className="text-3xl md:text-4xl font-bold text-text-primary text-center max-w-2xl font-montenegrin">
-            Análise facial com inteligência artificial e olhar humano
-          </h2>
-          <p className="text-text-secondary text-center mt-4 max-w-xl">
-            Descubra os segredos da sua harmonia facial com tecnologia de ponta aliada a especialistas reais
-          </p>
-        </ScrollFadeUp>
-
-        <div className="max-w-5xl mx-auto px-6 pb-20">
-          {features.map((feature, i) => (
-            <FeatureCard key={feature.title} feature={feature} index={i} />
-          ))}
+          </motion.div>
         </div>
       </section>
 
-      {/* Como Funciona Section */}
-      <section id="como-funciona" className="relative z-20 w-full bg-background">
-        <ScrollFadeUp className="w-full flex flex-col items-center justify-center pt-24 pb-12 px-6">
-          <span className="text-brand-accent text-sm font-medium tracking-widest uppercase mb-4">Processo Simples</span>
-          <h2 className="text-3xl md:text-4xl font-bold text-text-primary text-center max-w-2xl font-montenegrin">
-            Sua Jornada de Evolução em 3 Passos
-          </h2>
-        </ScrollFadeUp>
-
-        <ScrollStaggerContainer className="max-w-5xl mx-auto px-6 pb-24 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {steps.map((step) => (
-            <ScrollStaggerItem key={step.number}>
-              <div className="bg-card-bg border border-border rounded-2xl p-8 flex flex-col items-center text-center h-full hover:border-brand-accent/30 transition-colors duration-300">
-                <span className="text-6xl font-black text-brand-accent mb-4 font-playfair">{step.number}</span>
-                <step.icon className="w-12 h-12 text-brand-accent mb-4" strokeWidth={1.5} />
-                <h3 className="text-lg font-semibold text-text-primary mb-3 font-montenegrin">{step.title}</h3>
-                <p className="text-sm text-text-secondary leading-relaxed">{step.description}</p>
-              </div>
-            </ScrollStaggerItem>
-          ))}
-        </ScrollStaggerContainer>
+      {/* Ato 2 — Método como linha do tempo horizontal */}
+      <section id="como-funciona" className="w-full border-y border-white/[0.06] bg-[#0A0A0A]">
+        <div className="max-w-6xl mx-auto px-6 py-16">
+          <div className="flex flex-wrap items-baseline justify-between gap-4 mb-8">
+            <h2 className="text-[22px] font-semibold tracking-tight text-white" style={{ letterSpacing: '-0.022em' }}>Método em 3 atos</h2>
+            <p className="text-[12px] tracking-widest uppercase text-white/30">Captura • Olhar clínico • Protocolo</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { n: '01', t: 'Envio', d: 'Frente + perfis a 90°, luz natural, fundo neutro. Guia visual te impede de errar.' },
+              { n: '02', t: 'Leitura', d: 'Especialista marca terços, simetria e eixos. Nada automático, nada genérico.' },
+              { n: '03', t: 'Veredito', d: 'Notas 0–10, gráficos e visagismo acionável. Você sai com plano, não com elogio.' },
+            ].map((s, i) => (
+              <motion.div key={s.n} className="relative rounded-[20px] bg-white/[0.03] border border-white/[0.06] p-6 overflow-hidden" initial={prefersReduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 + i * 0.05, ease: [0.25,0.1,0.25,1] }}>
+                <span className="text-[48px] font-semibold leading-none text-white/[0.06]" style={{ letterSpacing: '-0.04em' }}>{s.n}</span>
+                <h3 className="mt-2 text-[15px] font-semibold text-white" style={{ letterSpacing: '-0.011em' }}>{s.t}</h3>
+                <p className="text-[13px] leading-relaxed text-white/50 mt-1.5">{s.d}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </section>
 
-      {/* Seu Relatório por Dentro Section */}
-      <section id="relatorio" className="relative z-20 w-full bg-background">
-        <div className="max-w-6xl mx-auto px-6 py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <ScrollFadeUp className="flex flex-col gap-6">
-            <span className="text-brand-accent text-sm font-medium tracking-widest uppercase">Seu Relatório por Dentro</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-text-primary leading-tight font-montenegrin">
-              Um relatório de elite, direto ao ponto
-            </h2>
-            <p className="text-text-secondary text-base leading-relaxed">
-              Cada análise gera um relatório completo com métricas precisas, gráficos interativos e recomendações personalizadas por um especialista real. Tudo organizado para você entender exatamente o seu perfil facial.
-            </p>
-            <ul className="flex flex-col gap-3 mt-2">
-              {['Gráficos de simetria e harmonia facial', 'Divisão precisa dos terços faciais', 'Dicas exclusivas do especialista'].map((item, i) => (
-                <li key={i} className="flex items-center gap-3 text-text-secondary text-sm">
-                  <span className="w-2 h-2 rounded-full bg-brand-accent flex-shrink-0" />
-                  {item}
-                </li>
+      {/* Ato 3 — Prova viva: relatório que monta no scroll */}
+      <section id="relatorio" className="w-full bg-[#050507] py-16">
+        <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center">
+          <div>
+            <p className="text-[11px] font-semibold tracking-widest uppercase text-[#D4AF37]">Prova viva</p>
+            <h2 className="mt-2 text-[28px] md:text-[36px] font-semibold leading-tight text-white" style={{ letterSpacing: '-0.022em' }}>O relatório não é mock.<br />É o seu.</h2>
+            <p className="mt-3 text-[15px] leading-relaxed text-white/60" style={{ letterSpacing: '-0.011em' }}>Cada traço vira número, cada número vira instrução. Simetria, terços e recomendações que um humano assina.</p>
+            <ul className="mt-6 space-y-2">
+              {['Simetria em escala 0–100', 'Terços com soma 100% auditável', 'Dica de especialista acionável'].map(t => (
+                <li key={t} className="flex items-center gap-2 text-[13px] text-white/70"><span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />{t}</li>
               ))}
             </ul>
-          </ScrollFadeUp>
+            <Link to="/login" className="mt-6 inline-flex h-11 px-6 rounded-full bg-white text-black font-semibold text-[13px] apple-button">Gerar o meu</Link>
+          </div>
 
-          <ScrollFadeUp className="flex justify-center lg:justify-end" amount={0.2}>
-            <div className="w-full max-w-md bg-card-bg border border-border rounded-2xl shadow-2xl overflow-hidden">
-              <div className="px-6 pt-6 pb-4 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-text-primary font-semibold text-sm font-playfair">Pontuação de Harmonia</h4>
-                    <p className="text-text-secondary text-xs mt-0.5">Análise Biométrica em Tempo Real</p>
+          <motion.div ref={reportRef} className="rounded-[20px] bg-[#0A0A0A] border border-white/[0.06] overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.5)]" initial={prefersReduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.25,0.1,0.25,1] }}>
+            <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+              <div>
+                <p className="text-[12px] font-semibold text-white">Pontuação de Harmonia</p>
+                <p className="text-[11px] text-white/40">Laudo assinado por especialista</p>
+              </div>
+              <span className="text-[10px] font-medium px-2.5 py-1 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20">Relatório</span>
+            </div>
+            <div className="p-6">
+              <div className="flex justify-center">
+                <div className="relative w-40 h-40">
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
+                    <motion.circle cx="60" cy="60" r="52" fill="none" stroke="#D4AF37" strokeWidth="10" strokeLinecap="round" strokeDasharray="327" initial={{ strokeDashoffset: 327 }} animate={reportInView ? { strokeDashoffset: 49 } : {}} transition={{ duration: 1.2, ease: [0.25,0.1,0.25,1], delay: 0.2 }} />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-semibold text-white">{Math.round(score)}</span>
+                    <span className="text-[10px] tracking-widest uppercase text-white/40">Harmonia</span>
                   </div>
-                  <span className="text-brand-accent text-[10px] font-medium bg-brand-accent/10 px-2.5 py-1 rounded-full uppercase tracking-wider">Relatório</span>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="flex justify-center mb-6">
-                  <div className="relative w-36 h-36" ref={circleRef}>
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                      <circle cx="60" cy="60" r="52" fill="none" stroke="#141414" strokeWidth="10" />
-                      <motion.circle
-                        cx="60" cy="60" r="52" fill="none" stroke="#D4AF37" strokeWidth="10"
-                        strokeLinecap="round" strokeDasharray="327"
-                        initial={{ strokeDashoffset: 327 }}
-                        whileInView={{ strokeDashoffset: 49 }}
-                        viewport={{ once: true, amount: 0.5 }}
-                        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-white text-xl font-bold">{Math.round(animatedScore)}</span>
-                      <span className="text-text-secondary text-[9px]">Pontuação Geral</span>
-                    </div>
+              <div className="mt-6 space-y-3">
+                {[{ l: 'Terço Superior', v: 33 }, { l: 'Terço Médio', v: 33 }, { l: 'Terço Inferior', v: 34 }].map(i => (
+                  <div key={i.l} className="space-y-1">
+                    <div className="flex justify-between text-[11px]"><span className="text-white/50">{i.l}</span><span className="text-white font-medium">{i.v}%</span></div>
+                    <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden"><motion.div className="h-full bg-[#D4AF37] rounded-full" initial={{ width: 0 }} animate={{ width: `${i.v}%` }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2, ease: [0.25,0.1,0.25,1] }} /></div>
                   </div>
-                </div>
-                <div className="mb-6">
-                  <h5 className="text-text-primary text-xs font-semibold mb-3">Proporção dos Terços Faciais</h5>
-                  <div className="flex flex-col gap-3">
-                    {[{ label: 'Terço Superior', value: 33 }, { label: 'Terço Médio', value: 33 }, { label: 'Terço Inferior', value: 34 }].map((item) => (
-                      <div key={item.label} className="flex flex-col gap-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-text-secondary text-[11px]">{item.label}</span>
-                          <span className="text-text-primary text-[11px] font-medium">{item.value}%</span>
-                        </div>
-                        <div className="w-full h-2 bg-background rounded-full overflow-hidden">
-                          <div className="h-full bg-brand-accent rounded-full" style={{ width: `${item.value}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="p-4 bg-background rounded-xl border border-brand-accent/20">
-                  <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-brand-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Sparkles className="w-3.5 h-3.5 text-brand-accent" />
-                    </div>
-                    <div>
-                      <span className="text-brand-accent text-[11px] font-semibold block mb-1">Dica do Especialista</span>
-                      <p className="text-text-secondary text-[11px] leading-relaxed">Seus terços estão equilibrados. Um corte com volume lateral pode realçar ainda mais a harmonia do seu rosto.</p>
-                    </div>
-                  </div>
-                </div>
+                ))}
+              </div>
+              <div className="mt-6 p-3 rounded-xl bg-[#D4AF37]/[0.06] border border-[#D4AF37]/15 flex gap-3">
+                <Sparkles className="w-4 h-4 text-[#D4AF37] mt-0.5 shrink-0" />
+                <p className="text-[12px] leading-relaxed text-white/60"><span className="text-[#D4AF37] font-medium">Dica do especialista:</span> terços equilibrados — volume lateral realça ainda mais.</p>
               </div>
             </div>
-          </ScrollFadeUp>
+          </motion.div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="relative z-20 w-full bg-background">
-        <div className="max-w-6xl mx-auto px-6 py-24">
-          <ScrollFadeUp className="text-center mb-16">
-            <span className="text-brand-accent text-sm font-medium tracking-widest uppercase mb-4 block">Elite da Estética</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-text-primary mb-4 font-montenegrin">
-              Escolha o seu plano de transformação
-            </h2>
-            <p className="text-text-secondary text-base max-w-2xl mx-auto leading-relaxed">
-              Acesso direto a avaliadores e especialistas reais em visagismo. Sem automações, sem respostas genéricas de IA. Apenas olhos clínicos de profissionais.
-            </p>
-          </ScrollFadeUp>
-
-          <ScrollStaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-start">
-            {/* Card 1 - Mensal */}
-            <ScrollStaggerItem>
-              <div className="bg-card-bg border border-border rounded-2xl p-8 flex flex-col h-full hover:border-brand-accent/20 transition-colors duration-300">
-                <div className="mb-6">
-                  <h3 className="text-text-secondary text-sm font-medium uppercase tracking-wider mb-2">Acesso Regular</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-text-muted text-lg">R$</span>
-                    <span className="text-4xl md:text-5xl font-black text-text-primary font-playfair">24</span>
-                    <span className="text-text-muted text-sm">,90 / mês</span>
+      {/* Ato 4 — Diferenciais em lista editorial, não cards clichês */}
+      <section className="w-full bg-[#0A0A0A] border-y border-white/[0.06]">
+        <div className="max-w-6xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <p className="text-[11px] font-semibold tracking-widest uppercase text-[#D4AF37]">Por que FaceMax</p>
+              <h2 className="mt-2 text-[24px] font-semibold text-white" style={{ letterSpacing: '-0.022em' }}>Sem template.<br />Sem genérico.</h2>
+            </div>
+            <div className="space-y-6">
+              {[
+                { t: 'Olho humano, sem automação', d: 'Cada foto é lida por gente. O especialista assina o laudo com nome.' },
+                { t: 'Visagismo que age', d: 'Corte, barba e óculos recomendados para o seu rosto, não tendências.' },
+                { t: 'Privacidade de verdade', d: 'Bucket privado, URL assinada, exclusão pós-laudo. Seus dados não treinam nada.' },
+              ].map((f, i) => (
+                <motion.div key={f.t} className="flex gap-4" initial={prefersReduced ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.05 }}>
+                  <span className="text-[11px] font-semibold tracking-widest text-[#D4AF37] mt-1">0{i+1}</span>
+                  <div>
+                    <p className="text-[14px] font-semibold text-white" style={{ letterSpacing: '-0.011em' }}>{f.t}</p>
+                    <p className="text-[13px] text-white/50 leading-relaxed mt-1">{f.d}</p>
                   </div>
-                </div>
-                <SelectPlanButton planId="plan_monthly" className="w-full py-3.5 px-6 rounded-xl border border-brand-accent/50 text-brand-accent font-semibold text-sm text-center hover:bg-brand-accent/10 transition-colors mb-8">
-                  Assinar Mensal
-                </SelectPlanButton>
-                <ul className="flex flex-col gap-3.5 flex-1">
-                  {PLANS.plan_monthly.benefits.map((benefit, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <Check className="w-4 h-4 text-brand-accent flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-                      <span className="text-text-secondary text-sm leading-relaxed">{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </ScrollStaggerItem>
-
-            {/* Card 2 - Anual (MAIS VENDIDO) */}
-            <ScrollStaggerItem>
-              <div className="bg-card-bg border-2 border-brand-accent/60 rounded-2xl p-8 flex flex-col h-full relative shadow-[0_0_30px_rgba(212,175,55,0.1)]">
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                  <span className="bg-brand-accent text-background text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(212,175,55,0.4)] whitespace-nowrap">
-                    Mais Vendido — Economize R$ 120
-                  </span>
-                </div>
-                <div className="mb-6">
-                  <h3 className="text-brand-accent text-sm font-medium uppercase tracking-wider mb-2">Evolução Contínua</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-text-muted text-lg">R$</span>
-                    <span className="text-4xl md:text-5xl font-black text-text-primary font-playfair">179</span>
-                    <span className="text-text-muted text-sm">,00 / ano</span>
-                  </div>
-                  <p className="text-brand-accent/80 text-xs mt-2 font-medium">Equivale a R$ 14,92/mês</p>
-                </div>
-                <SelectPlanButton planId="plan_annual" className="w-full py-3.5 px-6 rounded-xl bg-brand-accent text-background font-bold text-sm text-center hover:opacity-90 transition-all duration-300 shadow-[0_0_30px_rgba(212,175,55,0.25)] hover:shadow-[0_0_50px_rgba(212,175,55,0.4)] mb-8 animate-glow-pulse">
-                  Assinar Anual
-                </SelectPlanButton>
-                <ul className="flex flex-col gap-3.5 flex-1">
-                  {PLANS.plan_annual.benefits.map((benefit, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <Check className="w-4 h-4 text-brand-accent flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-                      <span className="text-text-secondary text-sm leading-relaxed">{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </ScrollStaggerItem>
-
-            {/* Card 3 - Black */}
-            <ScrollStaggerItem>
-              <div className="bg-card-bg border border-border rounded-2xl p-8 flex flex-col h-full hover:border-brand-accent/20 transition-colors duration-300">
-                <div className="mb-6">
-                  <h3 className="text-brand-accent text-sm font-medium uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <Crown className="w-4 h-4" />
-                    Elite Estética
-                  </h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-text-muted text-lg">R$</span>
-                    <span className="text-4xl md:text-5xl font-black text-text-primary font-playfair">49</span>
-                    <span className="text-text-muted text-sm">,90 / mês</span>
-                  </div>
-                </div>
-                <SelectPlanButton planId="plan_black" className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#1a1a1a] to-[#2a2a2a] border border-[#333] text-text-primary font-semibold text-sm text-center hover:border-brand-accent/40 transition-all duration-300 mb-8">
-                  Assinar Black
-                </SelectPlanButton>
-                <ul className="flex flex-col gap-3.5 flex-1">
-                  {PLANS.plan_black.benefits.map((benefit, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <Check className="w-4 h-4 text-brand-accent flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-                      <span className="text-text-secondary text-sm leading-relaxed">{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </ScrollStaggerItem>
-          </ScrollStaggerContainer>
-
-          <ScrollFadeUp className="mt-12 text-center">
-            <p className="text-text-muted text-sm flex items-center justify-center gap-2">
-              <Lock className="w-4 h-4" />
-              Transações 100% seguras via Stripe. Cancele ou altere o seu plano a qualquer momento.
-            </p>
-          </ScrollFadeUp>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* CTA Final Section */}
-      <section className="relative z-20 w-full py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-brand-accent/5 to-background" />
-        <div className="relative max-w-3xl mx-auto px-6 text-center">
-          <ScrollFadeUp>
-            <Sparkles className="w-12 h-12 text-brand-accent mx-auto mb-6" strokeWidth={1.5} />
-            <h2 className="text-3xl md:text-5xl font-bold text-text-primary mb-6 leading-tight font-montenegrin">
-              Pronto para descobrir o seu{' '}
-              <span className="text-brand-accent">verdadeiro potencial</span>?
-            </h2>
-            <p className="text-text-secondary text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed">
-              Junte-se a milhares de brasileiros que já transformaram sua auto-imagem com o FaceMax. Comece agora gratuitamente.
-            </p>
-            <Link to="/login" className="group relative inline-flex items-center justify-center px-10 h-14 rounded-xl bg-brand-accent text-background font-bold text-base hover:opacity-90 transition-all duration-300 shadow-[0_0_40px_rgba(212,175,55,0.3)] hover:shadow-[0_0_60px_rgba(212,175,55,0.5)]">
-              <span className="relative z-10 flex items-center gap-2">
-                Criar Minha Conta Grátis
-                <TrendingUp className="w-5 h-5" />
-              </span>
-            </Link>
-            <p className="text-text-muted text-xs mt-4">Sem cartão de crédito. Cancele quando quiser.</p>
-          </ScrollFadeUp>
+      {/* Ato 5 — Preço como tabela comparativa, não 3 cards clonados */}
+      <section id="pricing" className="w-full bg-[#050507] py-16">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-4">
+            <h2 className="text-[22px] font-semibold text-white" style={{ letterSpacing: '-0.022em' }}>Escolha seu ritmo</h2>
+            <p className="text-[12px] text-white/30 tracking-widest uppercase">Reais • Sem IOF • Cancele quando quiser</p>
+          </div>
+
+          <div className="mt-6 overflow-x-auto rounded-[20px] border border-white/[0.06] bg-white/[0.02]">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="p-4 text-[11px] font-semibold tracking-widest uppercase text-white/40">Recurso</th>
+                  <th className="p-4 text-center text-[12px] font-semibold text-white/60">Regular<br /><span className="text-white font-semibold">R$ 24,90/mês</span></th>
+                  <th className="p-4 text-center bg-[#D4AF37] text-black rounded-t-[20px]">
+                    <span className="text-[10px] font-bold tracking-widest uppercase">Mais Vendido</span><br />
+                    <span className="text-[13px] font-semibold">Contínua — R$ 179/ano</span>
+                  </th>
+                  <th className="p-4 text-center text-[12px] font-semibold text-white/60">Elite<br /><span className="text-white font-semibold">R$ 49,90/mês</span></th>
+                </tr>
+              </thead>
+              <tbody className="text-[13px]">
+                {[
+                  ['Avaliações/mês', '1', '2', '4'],
+                  ['Prazo', '5 dias', '48h', '12h'],
+                  ['Visagismo', '✓', '✓ + evolução', '✓ completo + cores'],
+                  ['Relatório', 'Essencial', 'Estendido', 'Estendido+'],
+                ].map(row => (
+                  <tr key={row[0]} className="border-b border-white/[0.04]">
+                    <td className="p-4 text-white/70">{row[0]}</td>
+                    <td className="p-4 text-center text-white/60">{row[1]}</td>
+                    <td className="p-4 text-center bg-[#D4AF37]/10 text-white font-medium">{row[2]}</td>
+                    <td className="p-4 text-center text-white/60">{row[3]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <SelectPlanButton planId="plan_monthly" className="h-11 rounded-full border border-white/10 text-white text-[13px] font-medium hover:bg-white/[0.04]">Assinar Regular</SelectPlanButton>
+            <SelectPlanButton planId="plan_annual" className="h-11 rounded-full bg-[#D4AF37] text-black font-semibold text-[13px]">Assinar Contínua</SelectPlanButton>
+            <SelectPlanButton planId="plan_black" className="h-11 rounded-full bg-white text-black font-semibold text-[13px]">Assinar Elite</SelectPlanButton>
+          </div>
+          <p className="mt-3 text-center text-[11px] text-white/30 flex items-center justify-center gap-1.5"><Lock className="w-3 h-3" /> Transações seguras via Mercado Pago</p>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative z-20 w-full bg-card-bg text-center flex flex-col items-center gap-4 py-12 border-t border-border">
-        <div className="flex gap-3">
-          {[FaInstagram, FaTwitter, FaLinkedin, FaGithub].map((Icon, i) => (
-            <a key={i} href="#" className="w-10 h-10 flex items-center justify-center rounded-lg border border-border text-text-secondary hover:text-brand-accent hover:border-brand-accent/40 transition-colors">
-              <Icon className="w-5 h-5" />
-            </a>
-          ))}
+      {/* Ato 6 — Fechamento */}
+      <section className="w-full bg-[#0A0A0A] py-16 border-y border-white/[0.06]">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-[28px] md:text-[40px] font-semibold leading-tight text-white" style={{ letterSpacing: '-0.022em' }}>Pronto para o <span className="text-[#D4AF37]">veredito?</span></h2>
+          <p className="text-[15px] text-white/60 mt-3">Milhares já viram o rosto com outros olhos. Comece sem cartão.</p>
+          <Link to="/login" className="mt-6 inline-flex h-11 px-6 rounded-full bg-[#D4AF37] text-black font-semibold text-[13px] apple-button">Criar Conta Grátis <ArrowRight className="w-4 h-4 ml-1" /></Link>
         </div>
-        <div className="w-12 h-[2px] bg-brand-accent/30 my-2" />
-        <p className="text-text-secondary text-sm font-normal max-w-md leading-relaxed">
-          A melhor IA brasileira de avaliação facial. Mapeamos mais de 468 pontos faciais para revelar o seu potencial visual único.
-        </p>
-        <div className="w-full h-[1px] bg-border my-2" />
-        <div className="text-text-muted text-sm">
-          {new Date().getFullYear()} — <strong className="text-brand-accent font-playfair">FaceMax</strong> — Elite da Estética
+      </section>
+
+      <footer className="w-full bg-[#050507] border-t border-white/[0.06] py-8">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col items-center gap-4 text-center">
+          <div className="flex gap-3">
+            {[FaInstagram, FaTwitter, FaLinkedin, FaGithub].map((Icon,i) => (
+              <a key={i} href="#" className="w-9 h-9 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/40 hover:text-[#D4AF37] apple-transition"><Icon className="w-4 h-4" /></a>
+            ))}
+          </div>
+          <p className="text-[12px] text-white/40 max-w-md" style={{ letterSpacing: '-0.011em' }}>Avaliação facial por profissionais reais para revelar seu potencial visual único.</p>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-white/30">
+            <a href="/privacidade" className="hover:text-[#D4AF37] underline underline-offset-4">Privacidade</a><span>•</span><a href="/termos" className="hover:text-[#D4AF37] underline underline-offset-4">Termos</a><span>•</span><a href="mailto:dpo@facemax.pro">dpo@facemax.pro</a>
+          </div>
+          <p className="text-[11px] text-white/20">{new Date().getFullYear()} — FaceMax — Elite da Estética</p>
         </div>
       </footer>
     </div>

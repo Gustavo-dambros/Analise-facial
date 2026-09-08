@@ -96,7 +96,7 @@ async def llms_txt():
 # Canonical: {CANONICAL}
 # Generated: {_now_iso()}
 
-> FaceMax é a plataforma brasileira de análise estética facial por IA — harmonia, simetria, terços faciais, visagismo.
+> FaceMax é a plataforma brasileira de análise estética facial por especialistas — harmonia, simetria, terços faciais, visagismo.
 
 ## Estrutura
 - Home: {CANONICAL}/
@@ -136,7 +136,7 @@ async def llms_full():
 {CANONICAL}/api/v1/openapi.json
 
 ## Stack
-Frontend React+Vite, Backend FastAPI, Supabase Auth, Mercado Pago, OpenRouter Gemma 26B
+Frontend React+Vite, Backend FastAPI, Supabase Auth, Mercado Pago, MediaPipe
 
 ## Páginas públicas (SSR)
 - / : Home — SoftwareApplication + Organization
@@ -158,7 +158,7 @@ async def feed():
 <channel>
   <title>FaceMax Blog</title>
   <link>{CANONICAL}/blog</link>
-  <description>Análises, visagismo e harmonia facial por IA + especialistas</description>
+  <description>Análises, visagismo e harmonia facial por especialistas</description>
   <language>pt-BR</language>
   <lastBuildDate>{now}</lastBuildDate>
   <atom:link href="{CANONICAL}/feed.xml" rel="self" type="application/rss+xml" />
@@ -180,7 +180,7 @@ async def og_image(title: str = "FaceMax — Elite da Estética"):
     svg = f"""<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
 <rect width="1200" height="630" fill="#0a0a0a"/>
 <text x="60" y="280" font-family="Urbanist, sans-serif" font-size="64" font-weight="800" fill="#d3ab39">{title[:60]}</text>
-<text x="60" y="360" font-family="Noto Sans JP" font-size="28" fill="#94a3b8">facemax.pro — análise facial por IA + especialistas</text>
+<text x="60" y="360" font-family="Noto Sans JP" font-size="28" fill="#94a3b8">facemax.pro — análise facial por especialistas</text>
 </svg>"""
     return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400", "Content-Disposition": "inline"})
 

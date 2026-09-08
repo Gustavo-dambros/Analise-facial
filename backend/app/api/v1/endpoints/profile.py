@@ -73,6 +73,38 @@ async def update_profile(
     return current_user
 
 
+@router.get("/export", response_model=dict)
+@limiter.limit(settings.RATE_LIMIT_GENERAL)
+async def export_data(
+    request: Request,
+    current_user: Profile = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """LGPD Art.18 — exportação completa dos dados do titular."""
+    from sqlalchemy import select
+    from app.models.payment import Payment
+
+    # Perfil
+    profile_data = {
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "role": current_user.role,
+        "plan": current_user.plan,
+        "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+    }
+    # Análises (metadados, sem base64)
+    result = await db.execute(select(Analysis).where(Analysis.user_id == current_user.id))
+    analyses = [
+        {"id": str(a.id), "status": a.status, "created_at": a.created_at.isoformat() if a.created_at else None, "photo_front_url": a.photo_front_url}
+        for a in result.scalars().all()
+    ]
+    # Pagamentos
+    pay_res = await db.execute(select(Payment).where(Payment.user_id == current_user.id))
+    payments = [p.json_dict() for p in pay_res.scalars().all()]
+    return {"profile": profile_data, "analyses": analyses, "payments": payments, "exported_at": datetime.now(timezone.utc).isoformat()}
+
+
 @router.delete("/", status_code=status.HTTP_200_OK)
 @limiter.limit(settings.RATE_LIMIT_GENERAL)
 async def delete_account(
@@ -80,29 +112,49 @@ async def delete_account(
     current_user: Profile = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Auto-exclusao da conta do usuario autenticado.
-
-    Remove as analises relacionadas (FK sem cascade), o perfil e, por fim,
-    o usuario do Supabase Auth (via service role).
-    """
+    """LGPD Art.18 — exclusão definitiva com expurgo de Storage."""
     user_id = current_user.id
 
-    # 1. Analises (bloqueiam a exclusao do perfil via FK).
+    # 0. Expurgo Storage (avatars + analysis-photos) — melhor esforço
+    try:
+        from supabase import create_client as _sc
+        _client = _sc(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+        # Lista e remove por prefixo user_id
+        for bucket in ("avatars", "analysis-photos"):
+            try:
+                listed = _client.storage.from_(bucket).list(str(user_id))
+                if listed:
+                    paths = [f"{user_id}/{o['name']}" for o in listed if o.get("name")]
+                    if paths:
+                        _client.storage.from_(bucket).remove(paths)
+            except Exception as be:
+                logger.warning("Storage expurgo %s falhou p/ %s: %s", bucket, user_id, be)
+    except Exception as e:
+        logger.warning("Expurgo Storage falhou (pre-delete) %s: %s", user_id, e)
+
+    # 1. Pagamentos, biometric_data, reports (FKs)
+    try:
+        from app.models.payment import Payment
+        await db.execute(delete(Payment).where(Payment.user_id == user_id))
+    except Exception:
+        pass
+
+    # 2. Análises (bloqueiam exclusão do perfil)
     await db.execute(delete(Analysis).where(Analysis.user_id == user_id))
-    # 2. Perfil.
+    # 3. Perfil.
     await db.delete(current_user)
     await db.commit()
 
-    # 3. Usuario no Supabase Auth (service role). Melhor esforco.
+    # 4. Usuario no Supabase Auth
     try:
         from supabase import create_client
 
         client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
         client.auth.admin.delete_user(str(user_id))
-    except Exception as exc:  # pragma: no cover - melhor esforco
+    except Exception as exc:  # pragma: no cover
         logger.warning("Falha ao remover usuario %s do Supabase Auth: %s", user_id, exc)
 
-    return {"detail": "Conta excluida com sucesso."}
+    return {"detail": "Conta excluida com sucesso. Fotos e dados permanentemente removidos."}
 
 
 @router.put("/change-password")

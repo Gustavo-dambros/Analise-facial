@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { Clock, CheckCircle2, AlertCircle, BarChart3, Eye, TrendingUp, Loader2 } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, BarChart3, Eye, TrendingUp, Loader2, Crown, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import WeeklyRoutineTable from '@/components/evaluation/WeeklyRoutineTable';
 import { StaggerContainer, StaggerItem, FadeIn, ScaleIn } from '@/components/ui/page-transition';
+import { PLANS, resolveCurrentPlan } from '@/lib/plans';
+import { Button } from '@/components/ui/button';
 
 const BUCKET = 'analysis-photos';
 
@@ -170,8 +172,20 @@ export default function ProgressPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="w-6 h-6 text-brand-accent animate-spin" />
+      <div className="flex-1 p-3 sm:p-4 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+            {[1,2,3].map(i => (
+              <div key={i} className="h-[88px] rounded-2xl bg-white/[0.03] border border-border animate-pulse" />
+            ))}
+          </div>
+          <div className="h-[220px] rounded-2xl bg-white/[0.03] border border-border animate-pulse mb-6" />
+          <div className="space-y-3">
+            {[1,2].map(i => (
+              <div key={i} className="h-[88px] rounded-2xl bg-white/[0.03] border border-border animate-pulse" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -181,10 +195,62 @@ export default function ProgressPage() {
         <div className="max-w-6xl mx-auto min-w-0">
           {/* Header */}
           <FadeIn>
-            <div className="flex items-center gap-3 mb-8">
-              <BarChart3 className="w-5 h-5 text-brand-accent" />
-              <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Meu Progresso</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4 text-brand-accent" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Meu Progresso</h1>
+                  <p className="text-xs text-text-muted hidden sm:block">Acompanhe sua evolução e avaliações</p>
+                </div>
+              </div>
+              <button onClick={() => navigate('/dashboard')} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-brand-accent text-background text-xs sm:text-sm font-semibold hover:opacity-90 transition-opacity w-full sm:w-auto">
+                Nova análise
+              </button>
             </div>
+          </FadeIn>
+
+          {/* Plano Atual — Apple card */}
+          <FadeIn>
+            {(() => {
+              const pid = resolveCurrentPlan(user);
+              const plan = pid ? PLANS[pid] : null;
+              const isFree = !pid;
+              return (
+                <Card className="apple-card apple-material-gold overflow-hidden mb-6 sm:mb-8">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center">
+                        <Crown className="w-4 h-4 text-brand-accent" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-[15px] font-semibold" style={{ letterSpacing: '-0.022em' }}>Plano Atual</CardTitle>
+                        <CardDescription className="text-[13px]" style={{ letterSpacing: '-0.011em' }}>{isFree ? 'Gratuito — sem envios' : `${plan.name} • ${plan.period}`}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      {isFree ? (
+                        <>
+                          <p className="text-sm font-semibold text-text-primary">Free — 0 envios/mês</p>
+                          <p className="text-xs text-text-muted mt-1">Assine para enviar avaliações. Login e cadastro continuam gratuitos.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-semibold text-text-primary" style={{ letterSpacing: '-0.011em' }}>{plan.name} — R$ {plan.price}/{plan.period}</p>
+                          <p className="text-xs text-text-muted mt-1">{plan.benefits[0]}</p>
+                        </>
+                      )}
+                    </div>
+                    <Button onClick={() => navigate(isFree ? '/checkout-simulation' : '/dashboard/profile')} className="h-11 px-6 rounded-xl bg-brand-accent text-background font-semibold apple-button apple-focus gap-2 shrink-0">
+                      {isFree ? <><Zap className="w-4 h-4" /> Ver planos</> : 'Gerenciar plano'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })()}
           </FadeIn>
 
           {/* Stats */}
@@ -315,9 +381,17 @@ export default function ProgressPage() {
             {/* Pending */}
             <TabsContent value="pending">
               {pending.length === 0 ? (
-                <div className="flex flex-col items-center gap-4 py-16">
-                  <CheckCircle2 className="w-12 h-12 text-green-400" />
-                  <p className="text-sm text-text-secondary">Nenhuma analise pendente. Tudo em dia!</p>
+                <div className="flex flex-col items-center gap-3 py-12 sm:py-16 text-center px-4">
+                  <div className="w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+                    <CheckCircle2 className="w-7 h-7 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-text-primary">Tudo em dia!</p>
+                    <p className="text-xs text-text-muted mt-1">Nenhuma análise pendente. Que tal criar uma nova?</p>
+                  </div>
+                  <button onClick={() => navigate('/dashboard')} className="mt-2 px-4 py-2 rounded-xl bg-card-bg border border-border text-text-secondary text-xs hover:text-text-primary hover:border-brand-accent/20 transition-colors">
+                    Criar nova análise
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -350,9 +424,17 @@ export default function ProgressPage() {
             {/* Evaluated */}
             <TabsContent value="evaluated">
               {evaluated.length === 0 ? (
-                <div className="flex flex-col items-center gap-4 py-16">
-                  <AlertCircle className="w-12 h-12 text-text-muted" />
-                  <p className="text-sm text-text-secondary">Nenhuma avaliacao realizada ainda.</p>
+                <div className="flex flex-col items-center gap-3 py-12 sm:py-16 text-center px-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-border flex items-center justify-center">
+                    <AlertCircle className="w-7 h-7 text-text-muted" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-text-primary">Sem avaliações ainda</p>
+                    <p className="text-xs text-text-muted mt-1 max-w-[320px]">Suas análises avaliadas aparecerão aqui com score e detalhes. Envie suas primeiras fotos.</p>
+                  </div>
+                  <button onClick={() => navigate('/dashboard')} className="mt-2 px-4 py-2 rounded-xl bg-brand-accent text-background text-xs font-semibold hover:opacity-90">
+                    Enviar fotos
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -374,11 +456,13 @@ export default function ProgressPage() {
                         </div>
                         <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-center">
                           <Badge variant="success" className="text-xs">
-                            Score: {a.evaluation?.overall_score ?? '--'}
+                            Score {a.evaluation?.overall_score ?? '--'}
                           </Badge>
-                          <Badge variant="default" className="text-xs hidden xs:inline-flex">
-                            {a.evaluation?.categories?.terco_superior ?? '--'}
-                          </Badge>
+                          {a.evaluation?.attractiveness != null && (
+                            <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
+                              Atratividade {a.evaluation?.attractiveness}/10
+                            </Badge>
+                          )}
                           <Eye className="w-4 h-4 text-text-muted ml-1" />
                         </div>
                       </CardContent>

@@ -1,6 +1,10 @@
-import { Camera, CheckCircle, XCircle, AlertTriangle, Lightbulb, Sun, Eye, User } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Camera, CheckCircle, XCircle, AlertTriangle, Lightbulb, Sun, Eye, User, Crown, Zap } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FadeIn, StaggerContainer, StaggerItem } from '@/components/ui/page-transition';
+import { useAuth } from '@/context/AuthContext';
+import { PLANS, resolveCurrentPlan } from '@/lib/plans';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const doTips = [
   {
@@ -49,17 +53,47 @@ const dontTips = [
 ];
 
 export default function PhotoGuidePage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const pid = resolveCurrentPlan(user);
+  const plan = pid ? PLANS[pid] : null;
+  const isFree = !pid;
   return (
-    <div className="flex-1 p-4 md:p-8 md:pl-4">
+    <div className="flex-1 p-4 md:p-8 md:pl-4 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
           <FadeIn>
             <div className="flex items-center gap-3 mb-2">
               <Camera className="w-5 h-5 text-brand-accent" />
-              <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino">Guia de Fotos</h1>
+              <h1 className="text-lg font-bold tracking-tight text-text-primary font-alpino" style={{ letterSpacing: '-0.022em' }}>Guia de Fotos</h1>
             </div>
-            <p className="text-text-secondary text-sm mb-8 max-w-xl">
+            <p className="text-text-secondary text-sm mb-6 max-w-xl" style={{ letterSpacing: '-0.011em' }}>
               Siga estas instruções para garantir que o especialista consiga avaliar sua face com precisão clínica.
             </p>
+          </FadeIn>
+
+          {/* Plano no guia — Apple card */}
+          <FadeIn delay={0.05}>
+            <Card className="apple-card apple-material-gold overflow-hidden mb-8">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center">
+                    <Crown className="w-4 h-4 text-brand-accent" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-[15px] font-semibold" style={{ letterSpacing: '-0.022em' }}>Plano Atual</CardTitle>
+                    <CardDescription className="text-[13px]">{isFree ? 'Gratuito — sem envios' : `${plan.name} • R$ ${plan.price}/${plan.period}`}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <p className="text-xs text-text-muted max-w-md">
+                  {isFree ? 'Você está no plano gratuito. Escolha um plano para liberar envios. As fotos seguem o mesmo padrão para todos os planos.' : `Seu plano ${plan.name} libera ${plan.benefits[0].toLowerCase()}. Capriche nas fotos para melhor avaliação.`}
+                </p>
+                <Button onClick={() => navigate(isFree ? '/checkout-simulation' : '/dashboard')} className="h-11 px-6 rounded-xl bg-brand-accent text-background font-semibold apple-button apple-focus gap-2 shrink-0">
+                  {isFree ? <><Zap className="w-4 h-4" /> Ver planos</> : 'Nova análise'}
+                </Button>
+              </CardContent>
+            </Card>
           </FadeIn>
 
           {/* Important Notice */}
@@ -155,6 +189,19 @@ export default function PhotoGuidePage() {
                 </div>
               </CardContent>
             </Card>
+          </FadeIn>
+
+          {/* CTA */}
+          <FadeIn delay={0.45}>
+            <div className="mt-8 p-4 rounded-2xl bg-brand-accent/5 border border-brand-accent/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-text-primary">Pronto para enviar?</p>
+                <p className="text-xs text-text-muted">Siga o guia e volte para capturar suas fotos.</p>
+              </div>
+              <a href="/dashboard" className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-brand-accent text-background text-sm font-semibold hover:opacity-90 transition-opacity w-full sm:w-auto">
+                Ir para Nova Análise
+              </a>
+            </div>
           </FadeIn>
 
           {/* Body Photo Guide */}

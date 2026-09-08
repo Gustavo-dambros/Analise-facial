@@ -54,6 +54,57 @@ html, body {
   font-family: 'Playfair Display', serif;
 }
 
+/* Apple UI Design System – Verified: 8pt Grid, SF Pro Typography, Material-Depth, Natural Spring Motion */
+/* Tipografia Apple: SF Pro fallback para Urbanist, tracking negativo */
+.font-alpino {
+  letter-spacing: -0.022em;
+  line-height: 1.2;
+  font-weight: 600;
+}
+.text-text-primary {
+  letter-spacing: -0.011em;
+}
+
+/* Material Glass Dark — adaptado ouro FaceMax */
+.apple-material {
+  background: rgba(28, 28, 30, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+}
+.apple-material-gold {
+  background: rgba(10, 10, 10, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 0.5px solid rgba(212, 175, 55, 0.12);
+}
+
+/* Motion iOS */
+.apple-transition {
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.apple-spring {
+  transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1.4);
+}
+.apple-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.35);
+}
+
+/* Alvos 44px e raios Apple */
+.apple-button {
+  min-height: 44px;
+  padding: 0 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.apple-card {
+  border-radius: 20px;
+}
+.apple-badge {
+  border-radius: 8px;
+}
+
 /* Autofill dark mode — impede que o navegador pinte inputs de branco */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,

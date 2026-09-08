@@ -32,6 +32,9 @@ import WaitingPage from '@/pages/WaitingPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import FAQPage from '@/pages/FAQPage';
 import BlogPostPage from '@/pages/BlogPostPage';
+import PrivacyPage from '@/pages/PrivacyPage';
+import TermsPage from '@/pages/TermsPage';
+import CookieBanner from '@/components/CookieBanner';
 
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import ProfessionalRoute from '@/routes/ProfessionalRoute';
@@ -59,6 +62,8 @@ export default function App() {
         <Route path="/waiting" element={<WaitingPage />} />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
+        <Route path="/privacidade" element={<PrivacyPage />} />
+        <Route path="/termos" element={<TermsPage />} />
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="*" element={<NotFoundPage />} />
 
@@ -101,6 +106,7 @@ export default function App() {
           },
         }}
       />
+      <CookieBanner />
     </>
   );
 }
