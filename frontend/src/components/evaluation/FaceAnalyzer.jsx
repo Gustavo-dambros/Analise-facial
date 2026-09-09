@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/context-menu';
 // Apple UI Design System – Verified: 8pt Grid, SF Pro Typography, Material-Depth, Natural Spring Motion
 import PlanBanners from '@/components/PlanBanners';
+import { getAnalysisHistory, getProfile } from '@/lib/api';
 
 const PHOTO_SLOTS = [
   { key: 'front', label: 'Frontal', hint: 'Rosto de frente' },
@@ -48,6 +49,22 @@ export default function FaceAnalyzer() {
   const streamRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRefs = useRef({});
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const history = await getAnalysisHistory();
+        setAnalysesCount(history.length);
+        // Carrega a foto frontal da análise mais recente, se houver
+        const first = history.find((a) => a.photo_front_url);
+        if (first && photos.front !== first.photo_front_url) {
+          setPhotos((p) => ({ ...p, front: first.photo_front_url }));
+        }
+      } catch (err) {
+        console.error('Falha ao carregar histórico de análises:', err);
+      }
+    })();
+  }, [user?.id]);
 
   const startCamera = useCallback(async () => {
     setCameraError(null);

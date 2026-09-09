@@ -57,6 +57,41 @@ export const PLANS = {
       'Fila Expressa Ultra-VIP (12 horas)',
     ],
   },
+  enterprise: {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: 'ilimitado',
+    priceRaw: -1,
+    pixPrice: 'ilimitado',
+    pixPriceRaw: -1,
+    period: 'ilimitado',
+    highlight: true,
+    benefits: [
+      'Avaliações ilimitadas por mês',
+      'Painel de Evolução Temporal (compare seus scores)',
+      'Score de Atratividade e Harmonia Facial detalhado',
+      'Relatório estendido de proporções e destaques',
+      'Fila Prioritária',
+      'Suporte dedicado',
+    ],
+  },
+  pro: {
+    id: 'pro',
+    name: 'Profissional',
+    price: '30',
+    priceRaw: 30,
+    pixPrice: '30',
+    pixPriceRaw: 30,
+    period: 'mês',
+    highlight: false,
+    benefits: [
+      '30 Avaliações faciais completas por mês',
+      'Análise dos 12 atributos faciais (escala 0-10)',
+      'Relatório de Terços Faciais e Simetria',
+      'Dicas de Visagismo (cabelo, barba e óculos)',
+      'Fila prioritária',
+    ],
+  },
 };
 
 export const PLAN_ORDER = ['plan_monthly', 'plan_annual', 'plan_black'];

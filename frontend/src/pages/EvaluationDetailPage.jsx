@@ -348,7 +348,7 @@ export default function EvaluationDetailPage() {
             )}
 
             {/* Exercícios */}
-            {ev.exercise_recommendations ? (
+{ev.exercise_recommendations ? (
               <Card className="bg-card-bg border-border overflow-hidden">
                 <CardHeader className="px-4 sm:px-6"><CardTitle className="text-sm">Recomendações de Exercícios</CardTitle>
                   <CardDescription className="text-xs">Semana organizada por dia</CardDescription>
@@ -361,16 +361,18 @@ export default function EvaluationDetailPage() {
                     const map = isLegacy ? ev.exercise_recommendations : data;
                     if (!map || Object.keys(map).length===0) return null;
                     return (
-                      <div key={type} className="min-w-0">
-                        <p className="text-xs font-medium text-text-secondary uppercase mb-2">{type==='general' ? 'Gerais' : 'Faciais'}</p>
-                        <div className="space-y-2">
-                          {WEEK_DAYS.map(d => {
-                            const val = map[d.key] || map[d.label] || '';
-                            if (!val) return null;
-                            return <div key={d.key} className="flex flex-col xs:flex-row xs:gap-2 gap-1 text-sm min-w-0"><span className="font-medium shrink-0 xs:min-w-[90px]">{d.label}:</span><span className="text-text-secondary break-words min-w-0">{Array.isArray(val) ? val.join(', ') : val}</span></div>
-                          })}
-                        </div>
-                      </div>
+                      <table key={type} className="w-full text-sm text-text-secondary divide-y divide-border-border">
+                        {WEEK_DAYS.map(d => {
+                          const val = map[d.key] || map[d.label] || '';
+                          if (!val) return null;
+                          return (
+                            <tr key={d.key}>
+                              <td className="p-2 font-medium text-text-secondary">{d.label}</td>
+                              <td className="p-2 break-words">{Array.isArray(val) ? val.join(', ') : val}</td>
+                            </tr>
+                          )
+                        })}
+                      </table>
                     )
                   })}
                 </CardContent>

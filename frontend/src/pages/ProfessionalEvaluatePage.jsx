@@ -359,6 +359,15 @@ export default function ProfessionalEvaluatePage() {
     }));
   };
 
+  const trimExerciseRecs = (recs) => {
+    const result = {};
+    Object.keys(recs || {}).forEach((day) => {
+      const val = (recs[day] || '').trim();
+      if (val) result[day] = val;
+    });
+    return result;
+  };
+
   const handleSubmit = async () => {
     if (tercoError || submitting || !hasAllPhotos) return;
     setSubmitting(true);
@@ -409,8 +418,8 @@ export default function ProfessionalEvaluatePage() {
       } : null;
 
       const exerciseRecommendationsData = {
-        general: exerciseRecs.general,
-        facial: exerciseRecs.facial,
+        general: trimExerciseRecs(exerciseRecs.general),
+        facial: trimExerciseRecs(exerciseRecs.facial),
       };
 
       const { error: updateError } = await supabase
