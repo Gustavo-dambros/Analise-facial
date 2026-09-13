@@ -11,8 +11,9 @@ class ProfileRepository:
         result = await self.db.execute(select(Profile).where(Profile.email == email))
         return result.scalar_one_or_none()
 
-    async def get_by_id(self, profile_id: str) -> Profile | None:
-        result = await self.db.execute(select(Profile).where(Profile.id == profile_id))
+    async def get_by_id(self, profile_id: str):
+        from app.services.payment_service import _coerce_uuid
+        result = await self.db.execute(select(Profile).where(Profile.id == _coerce_uuid(profile_id)))
         return result.scalar_one_or_none()
 
     async def create(self, profile: Profile) -> Profile:

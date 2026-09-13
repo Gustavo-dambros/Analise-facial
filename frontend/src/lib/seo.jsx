@@ -48,7 +48,7 @@ export const jsonLdSoftwareApp = {
   "operatingSystem": "Web",
   "offers": [
     { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "BRL" },
-    { "@type": "Offer", "name": "Pro", "price": "29.90", "priceCurrency": "BRL" }
+    { "@type": "Offer", "name": "Pro", "price": "24.90", "priceCurrency": "BRL" }
   ],
   "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "1247" }
 }

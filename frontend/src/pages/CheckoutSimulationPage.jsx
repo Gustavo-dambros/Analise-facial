@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import {
-  Check, CreditCard, Shield, ArrowLeft, Sparkles, Copy, CheckCircle,
-  QrCode, Zap, AlertTriangle, Clock, RefreshCw, Loader2
+  Check, Shield, ArrowLeft, Sparkles, Copy, CheckCircle,
+  QrCode, Zap, Loader2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
-import { createPayment, getPaymentStatus } from '@/lib/api';
+import { createCaktoPayment, getPaymentStatus } from '@/lib/api';
 import { PLANS } from '@/lib/plans';
 
 const easeOutExpo = [0.16, 1, 0.3, 1];
@@ -19,7 +19,7 @@ const MAX_POLL_ATTEMPTS = 60; // 5 minutes
 export default function CheckoutSimulationPage() {
   const navigate = useNavigate();
   const prefersReduced = useReducedMotion();
-  const { user, token, refreshProfile } = useAuth();
+  const { user, refreshProfile } = useAuth();
 
   const [planId, setPlanId] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(null);
@@ -39,70 +39,30 @@ export default function CheckoutSimulationPage() {
     }
   }, [navigate]);
 
-  const handlePixPayment = async () => {
+  const handleCaktoPayment = async () => {
     setError('');
     setProcessing(true);
-
-    const plan = PLANS[planId];
-    const amount = plan.pixPriceRaw;
     const origin = window.location.origin;
-
     try {
-      const result = await createPayment(
-        {
-          planId: planId,
-          amount: amount,
-          paymentMethod: 'pix',
-          successUrl: `${origin}/checkout-success`,
-          pendingUrl: `${origin}/checkout-pending`,
-        },
-        token,
-      );
-
+      // Chave de idempotência por tentativa de checkout: se o POST falhar por
+      // rede e o usuário clicar de novo, a Cakto deduplica pela mesma chave
+      // (o backend também cancela pagamentos órfãos anteriores do mesmo plano).
+      const idempotencyKey =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const result = await createCaktoPayment({
+        planId: planId,
+        successUrl: `${origin}/checkout-success`,
+        pendingUrl: `${origin}/checkout-pending`,
+        idempotencyKey,
+      });
       setPaymentId(result.payment_id);
       setPaymentData(result);
-      setPaymentMethod('pix_pending');
-
-      // Start polling for payment status
+      setPaymentMethod('cakto_pending');
       startPolling(result.payment_id);
     } catch (err) {
-      setError(err.message || 'Erro ao criar pagamento. Tente novamente.');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleCardPayment = async () => {
-    setError('');
-    setProcessing(true);
-
-    const plan = PLANS[planId];
-    const amount = plan.priceRaw;
-    const origin = window.location.origin;
-
-    try {
-      const result = await createPayment(
-        {
-          planId: planId,
-          amount: amount,
-          paymentMethod: 'credit_card',
-          successUrl: `${origin}/checkout-success`,
-          pendingUrl: `${origin}/checkout-pending`,
-        },
-        token,
-      );
-
-      // Redirect to Mercado Pago Checkout Pro
-      if (result.init_point) {
-        window.location.href = result.init_point;
-      } else {
-        setPaymentId(result.payment_id);
-        setPaymentData(result);
-        setPaymentMethod('card_pending');
-        startPolling(result.payment_id);
-      }
-    } catch (err) {
-      setError(err.message || 'Erro ao criar checkout. Tente novamente.');
+      setError(err.message || 'Erro ao criar pagamento Cakto. Verifique a oferta configurada.');
     } finally {
       setProcessing(false);
     }
@@ -115,7 +75,8 @@ export default function CheckoutSimulationPage() {
     const poll = async () => {
       attempts++;
       try {
-        const status = await getPaymentStatus(internalPaymentId, token);
+        // O token vai no header Authorization via apiFetch/AuthContext.
+        const status = await getPaymentStatus(internalPaymentId);
         if (status.status === 'approved') {
           setPolling(false);
           localStorage.setItem('user_subscription', planId);
@@ -129,7 +90,7 @@ export default function CheckoutSimulationPage() {
         }
         if (status.status === 'rejected' || status.status === 'cancelled') {
           setPolling(false);
-          setError('Pagamento foi rejeitado. Tente outro método.');
+          setError('Pagamento recusado pela Cakto. Gere um novo PIX para tentar novamente.');
           return;
         }
         if (attempts < MAX_POLL_ATTEMPTS) {
@@ -149,7 +110,7 @@ export default function CheckoutSimulationPage() {
     };
 
     poll();
-  }, [token, navigate, planId, refreshProfile, user, paymentData]);
+  }, [navigate, planId, refreshProfile, user, paymentData]);
 
   const handleCopyPix = async () => {
     if (paymentData?.qr_code) {
@@ -164,13 +125,6 @@ export default function CheckoutSimulationPage() {
     navigate(user ? '/dashboard' : '/');
   };
 
-  const handleBackToMethods = () => {
-    setPaymentMethod(null);
-    setPaymentId(null);
-    setPaymentData(null);
-    setError('');
-  };
-
   if (planId && !PLANS[planId]) return null;
 
   const plan = planId ? PLANS[planId] : null;
@@ -178,13 +132,10 @@ export default function CheckoutSimulationPage() {
     localStorage.setItem('selected_plan', id);
     setPlanId(id);
   };
-  const showPaymentScreen = paymentMethod === 'pix_pending' || paymentMethod === 'card_pending';
-  const showMethodSelection = !paymentMethod || (paymentMethod === 'pix' || paymentMethod === 'card');
+  const showPaymentScreen = paymentMethod === 'cakto_pending';
 
   // Payment Confirmation / Waiting Screen
   if (showPaymentScreen && paymentData) {
-    const isPix = paymentData.payment_method === 'pix';
-
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4 font-urbanist">
         <motion.div
@@ -193,7 +144,7 @@ export default function CheckoutSimulationPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: easeOutExpo }}
         >
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center mb-6">
             <button
               onClick={handleBack}
               className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors text-sm"
@@ -201,32 +152,20 @@ export default function CheckoutSimulationPage() {
               <ArrowLeft className="w-4 h-4" />
               Voltar
             </button>
-            <button
-              onClick={handleBackToMethods}
-              className="text-brand-accent text-xs hover:underline"
-            >
-              Trocar método
-            </button>
           </div>
 
           <Card className="bg-card-bg border-border overflow-hidden">
             <CardContent className="p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-brand-accent/20 flex items-center justify-center">
-                  {isPix ? (
-                    <QrCode className="w-5 h-5 text-brand-accent" />
-                  ) : (
-                    <CreditCard className="w-5 h-5 text-brand-accent" />
-                  )}
+                  <QrCode className="w-5 h-5 text-brand-accent" />
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-text-primary font-alpino">
-                    {isPix ? 'Pagamento via PIX' : 'Redirecionando...'}
+                    Pagamento via PIX (Cakto)
                   </h1>
                   <p className="text-text-secondary text-sm">
-                    {isPix
-                      ? 'Escaneie o QR Code ou copie e cole o código'
-                      : 'Você será redirecionado ao checkout do Mercado Pago'}
+                    QR Code Pix gerado pela Cakto — copie e cole
                   </p>
                 </div>
               </div>
@@ -237,8 +176,7 @@ export default function CheckoutSimulationPage() {
                 </div>
               )}
 
-              {isPix && (
-                <>
+              <>
                   {paymentData.qr_code_base64 ? (
                     <img
                       src={paymentData.qr_code_base64}
@@ -288,7 +226,6 @@ export default function CheckoutSimulationPage() {
                     </p>
                   )}
                 </>
-              )}
 
               {polling && (
                 <div className="flex items-center justify-center gap-2 p-4 rounded-lg bg-brand-accent/10 border border-brand-accent/20 mb-4">
@@ -309,7 +246,7 @@ export default function CheckoutSimulationPage() {
     );
   }
 
-  // Plan selection (quando acessa direto /checkout-simulation sem plano) — mostra os 3
+  // Plan selection (quando acessa direto /checkout-simulation sem plano) — mostra os 4
   if (!planId) {
     return (
       <div className="min-h-screen bg-background flex items-start sm:items-center justify-center p-4 font-urbanist py-8">
@@ -326,7 +263,7 @@ export default function CheckoutSimulationPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-text-primary font-alpino flex items-center justify-center gap-2"><Sparkles className="w-5 h-5 text-brand-accent" /> Escolha seu plano</h1>
             <p className="text-text-secondary text-sm mt-2">Toda avaliação cobre 12 atributos, terços, simetria e visagismo. Pagamento em Reais, sem IOF.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {Object.values(PLANS).map((p) => (
               <Card key={p.id} className={`relative rounded-2xl border p-5 flex flex-col ${p.highlight ? 'border-brand-accent/60 bg-brand-accent/5 shadow-[0_0_30px_rgba(212,175,55,0.12)]' : 'border-border bg-card-bg'}`}>
                 {p.tag && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-accent text-background text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full whitespace-nowrap">{p.tag}</span>}
@@ -377,14 +314,14 @@ export default function CheckoutSimulationPage() {
             <div className="relative px-8 pt-8 pb-6 bg-gradient-to-br from-brand-accent/10 via-transparent to-transparent">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 rounded-xl bg-brand-accent/20 flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-brand-accent" />
+                  <Zap className="w-5 h-5 text-brand-accent" />
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-text-primary font-alpino">
                     Finalizar Assinatura
                   </h1>
                   <p className="text-text-secondary text-sm">
-                    Resumo do seu plano selecionado
+                    Pagamento 100% via PIX — liberação automática
                   </p>
                 </div>
               </div>
@@ -446,58 +383,41 @@ export default function CheckoutSimulationPage() {
                 </h3>
                 <div className="flex flex-col gap-3">
                   <button
-                    onClick={handleCardPayment}
+                    onClick={handleCaktoPayment}
                     disabled={processing}
-                    className="flex items-center gap-4 p-4 rounded-xl border-2 border-brand-accent/40 bg-brand-accent/5 hover:border-brand-accent hover:bg-brand-accent/10 transition-all duration-300 cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-4 p-5 rounded-xl border-2 border-brand-accent bg-brand-accent/10 hover:bg-brand-accent/15 transition-all duration-300 cursor-pointer disabled:opacity-50 shadow-[0_0_30px_rgba(212,175,55,0.15)]"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-brand-accent/20 flex items-center justify-center flex-shrink-0">
-                      <CreditCard className="w-6 h-6 text-brand-accent" />
+                    <div className="w-12 h-12 rounded-xl bg-brand-accent flex items-center justify-center flex-shrink-0">
+                      <Zap className="w-6 h-6 text-background" />
                     </div>
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2">
-                        <span className="text-text-primary text-sm font-bold">
-                          Cartão de Crédito
+                        <span className="text-text-primary text-base font-bold">
+                          PIX Instantâneo
                         </span>
-                        <span className="text-[9px] font-bold uppercase tracking-wider bg-brand-accent text-background px-2 py-0.5 rounded-full">
-                          Recomendado
-                        </span>
-                      </div>
-                      <span className="text-text-muted text-xs">
-                        Assinatura com renovação automática. Acesso contínuo.
-                      </span>
-                    </div>
-                    <RefreshCw className="w-4 h-4 text-brand-accent flex-shrink-0" />
-                  </button>
-
-                  <button
-                    onClick={handlePixPayment}
-                    disabled={processing}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-border bg-background hover:border-brand-accent/30 transition-all duration-300 cursor-pointer disabled:opacity-50"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
-                      <QrCode className="w-6 h-6 text-text-secondary" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <div className="flex items-center gap-2">
-                        <span className="text-text-primary text-sm font-semibold">
-                          PIX (Avulso)
-                        </span>
-                        <span className="text-[9px] font-bold uppercase tracking-wider bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5" /> 30 dias
+                        <span className="text-[9px] font-bold uppercase tracking-wider bg-green-500/15 text-green-500 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5" /> Cakto
                         </span>
                       </div>
                       <span className="text-text-muted text-xs">
-                        Acesso temporário de 30 dias. +R$ 5,00 de taxa.
+                        QR Code e copia e cola — liberação automática em segundos
                       </span>
                     </div>
+                    <QrCode className="w-5 h-5 text-brand-accent flex-shrink-0" />
                   </button>
+                  {processing && (
+                    <div className="flex items-center justify-center gap-2 py-2">
+                      <Loader2 className="w-4 h-4 text-brand-accent animate-spin" />
+                      <span className="text-brand-accent text-xs">Gerando QR Code...</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-background mb-4">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-brand-accent/5 border border-brand-accent/10 mb-4">
                 <Shield className="w-4 h-4 text-brand-accent flex-shrink-0" />
                 <span className="text-text-muted text-xs">
-                  Pagamento 100% seguro via Mercado Pago. Cobrado em Reais sem IOF.
+                  Pagamento 100% seguro via Cakto. Cobrado em Reais, sem IOF.
                 </span>
               </div>
 

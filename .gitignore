@@ -17,3 +17,7 @@ backend/*.db
 .mimocode/
 .kilo/
 node_modules/
+mcp.json
+.vscode/mcp.json
+.opencode/mcp.json
+mcp-credentials.json

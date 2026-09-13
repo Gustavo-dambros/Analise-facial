@@ -15,7 +15,7 @@ const MAX_POLL_ATTEMPTS = 60;
 export default function CheckoutPendingPage() {
   const navigate = useNavigate();
   const prefersReduced = useReducedMotion();
-  const { user, token, refreshProfile } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('pending');
   const [attempts, setAttempts] = useState(0);
@@ -30,7 +30,8 @@ export default function CheckoutPendingPage() {
     if (!paymentId) return;
 
     try {
-      const result = await getPaymentStatus(paymentId, token);
+      // O token vai no header Authorization via apiFetch/AuthContext.
+      const result = await getPaymentStatus(paymentId);
       setStatus(result.status);
       setAttempts(prev => prev + 1);
 
@@ -48,7 +49,7 @@ export default function CheckoutPendingPage() {
       setAttempts(prev => prev + 1);
       setError(getFriendlyErrorMessage(err));
     }
-  }, [paymentId, token, navigate, planId, user, refreshProfile]);
+  }, [paymentId, navigate, planId, user, refreshProfile]);
 
   useEffect(() => {
     if (!paymentId) return;
@@ -142,7 +143,7 @@ const isPending = status === 'pending' || status === 'in_process' || status === 
                   Pagamento Não Aprovado
                 </h1>
                 <p className="text-text-secondary text-sm mb-6">
-                  Seu pagamento foi rejeitado. Tente novamente ou utilize outro método.
+                  Seu pagamento via PIX (Cakto) não foi aprovado. Gere um novo PIX na tela de planos para tentar novamente.
                 </p>
                 <Button
                   onClick={handleTryAgain}

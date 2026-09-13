@@ -17,8 +17,14 @@ class PaymentStatus(str, enum.Enum):
 
 
 class PaymentMethod(str, enum.Enum):
+    # Somente "cakto" é aceito em novos pagamentos (schema PaymentCreateRequest).
+    # "pix" e "credit_card" são LEGADO do Mercado Pago (descontinuado): mantidos
+    # no enum para não quebrar a leitura de registros históricos no Postgres
+    # (remover valores de um ENUM nativo exige migração com DROP VALUE e
+    # falharia ao carregar linhas antigas). Não usar em código novo.
     pix = "pix"
     credit_card = "credit_card"
+    cakto = "cakto"
 
 
 class Payment(Base):
@@ -34,6 +40,10 @@ class Payment(Base):
     # Mercado Pago linkage
     mp_payment_id = Column(String(100), nullable=True, index=True)
     mp_preference_id = Column(String(100), nullable=True, index=True)
+    # Cakto linkage
+    cakto_payment_id = Column(String(255), nullable=True, index=True)
+    cakto_preference_id = Column(String(255), nullable=True, index=True)
+    offer_id = Column(String(255), nullable=True, index=True)
     plan_type = Column(String(20), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -50,6 +60,9 @@ class Payment(Base):
             "plan_id": self.plan_id,
             "mp_payment_id": self.mp_payment_id,
             "mp_preference_id": self.mp_preference_id,
+            "cakto_payment_id": self.cakto_payment_id,
+            "cakto_preference_id": self.cakto_preference_id,
+            "offer_id": self.offer_id,
             "plan_type": self.plan_type,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "paid_at": self.paid_at.isoformat() if self.paid_at else None,

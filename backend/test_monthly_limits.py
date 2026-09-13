@@ -63,65 +63,54 @@ def _make_repo_mock(counts_by_month: dict | None = None):
 
 
 @pytest.mark.asyncio
-async def test_free_plan_allows_below_limit():
-    """A free-plan user with 2 analyses should be allowed."""
-    user = _make_user(plan=PlanType.free)
-    service = AnalysisService(db=MagicMock())
-    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 2})
-
-    # Should not raise
-    await service.check_monthly_limit(user)
-
-
-@pytest.mark.asyncio
 async def test_free_plan_blocks_at_limit():
-    """A free-plan user with 3 analyses (the limit) must get HTTP 403."""
+    """A free-plan user always gets HTTP 403 (limit is 0)."""
     user = _make_user(plan=PlanType.free)
     service = AnalysisService(db=MagicMock())
-    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 3})
+    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 0})
 
     with pytest.raises(HTTPException) as exc_info:
         await service.check_monthly_limit(user)
 
     assert exc_info.value.status_code == 403
-    assert "Limite mensal" in exc_info.value.detail
-    assert "Gratuito" in exc_info.value.detail
+    assert "gratuito" in exc_info.value.detail.lower()
 
 
 @pytest.mark.asyncio
 async def test_pro_plan_blocks_at_limit():
-    """A pro-plan user with 5 analyses (the limit) must get HTTP 403."""
+    """A pro-plan legacy user with 6 analyses (the limit) must get HTTP 403."""
     user = _make_user(plan=PlanType.pro)
     service = AnalysisService(db=MagicMock())
-    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 5})
+    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 6})
 
     with pytest.raises(HTTPException) as exc_info:
         await service.check_monthly_limit(user)
 
     assert exc_info.value.status_code == 403
-    assert "Profissional" in exc_info.value.detail
 
 
 @pytest.mark.asyncio
 async def test_pro_plan_allows_below_limit():
-    """A pro-plan user with 4 analyses should be allowed (limit is 5)."""
+    """A pro-plan legacy user with 5 analyses should be allowed (limit is 6)."""
     user = _make_user(plan=PlanType.pro)
     service = AnalysisService(db=MagicMock())
-    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 4})
+    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 5})
 
     await service.check_monthly_limit(user)  # no exception
 
 
 @pytest.mark.asyncio
 async def test_enterprise_plan_unlimited():
-    """Enterprise plan should never be blocked."""
+    """Enterprise legacy plan is capped at 6 (Black) — blocks at 6."""
     user = _make_user(plan=PlanType.enterprise)
     service = AnalysisService(db=MagicMock())
 
-    # Even with a very high count, no exception
-    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 999})
-
-    await service.check_monthly_limit(user)  # no exception
+    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 5})
+    await service.check_monthly_limit(user)  # no exception at 5/6
+    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 6})
+    with pytest.raises(HTTPException) as exc_info:
+        await service.check_monthly_limit(user)
+    assert exc_info.value.status_code == 403
 
 
 @pytest.mark.asyncio
@@ -136,14 +125,14 @@ async def test_superuser_bypasses_limit():
 
 @pytest.mark.asyncio
 async def test_unknown_plan_defaults_to_free():
-    """An unknown plan value should default to free limits (3)."""
+    """An unknown plan value should default to free limits (0)."""
     user = MagicMock(spec=Profile)
     user.id = "test-user-id"
     user.plan = "unknown_plan"  # not in PLAN_MONTHLY_LIMITS
     user.is_superuser = False
 
     service = AnalysisService(db=MagicMock())
-    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 3})
+    service.analysis_repo = _make_repo_mock(counts_by_month={"test-user-id": 0})
 
     with pytest.raises(HTTPException) as exc_info:
         await service.check_monthly_limit(user)
@@ -152,7 +141,11 @@ async def test_unknown_plan_defaults_to_free():
 
 
 def test_plan_limits_constants():
-    """Verify the plan limit constants are defined correctly."""
-    assert PLAN_MONTHLY_LIMITS[PlanType.free] == 3
-    assert PLAN_MONTHLY_LIMITS[PlanType.pro] == 5
-    assert PLAN_MONTHLY_LIMITS[PlanType.enterprise] == -1  # unlimited
+    """Verify the plan limit constants are defined correctly (fine-grained + legacy)."""
+    assert PLAN_MONTHLY_LIMITS[PlanType.free] == 0
+    assert PLAN_MONTHLY_LIMITS[PlanType.pro] == 6
+    assert PLAN_MONTHLY_LIMITS[PlanType.enterprise] == 6
+    assert PLAN_MONTHLY_LIMITS["plan_avulsa"] == 1
+    assert PLAN_MONTHLY_LIMITS["plan_monthly"] == 2
+    assert PLAN_MONTHLY_LIMITS["plan_annual"] == 4
+    assert PLAN_MONTHLY_LIMITS["plan_black"] == 6

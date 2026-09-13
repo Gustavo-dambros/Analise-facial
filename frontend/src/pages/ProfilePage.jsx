@@ -219,13 +219,13 @@ export default function ProfilePage() {
                     <p className="text-[13px] text-text-secondary leading-relaxed" style={{ letterSpacing: '-0.011em' }}>Login e cadastro são gratuitos. Para enviar avaliações, escolha um plano.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
                       <div className="rounded-xl bg-white/[0.04] border border-border p-3">
-                        <p className="font-semibold text-text-primary">Regular</p><p className="text-text-muted">R$ 24,90/mês • 1 envio</p>
+                        <p className="font-semibold text-text-primary">Essencial</p><p className="text-text-muted">R$ 24,90/mes • 2 envios</p>
                       </div>
                       <div className="rounded-xl bg-brand-accent/10 border border-brand-accent/20 p-3">
-                        <p className="font-semibold text-brand-accent">Contínua</p><p className="text-text-muted">R$ 179/ano • 2/mês</p>
+                        <p className="font-semibold text-brand-accent">Continua</p><p className="text-text-muted">R$ 184/ano • 4/mes</p>
                       </div>
                       <div className="rounded-xl bg-white/[0.04] border border-border p-3">
-                        <p className="font-semibold text-text-primary">Elite</p><p className="text-text-muted">R$ 49,90/mês • 4/mês</p>
+                        <p className="font-semibold text-text-primary">Lite Estetica</p><p className="text-text-muted">R$ 54,90/mes • 6/mes</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-3">

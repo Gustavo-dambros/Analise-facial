@@ -1,103 +1,89 @@
-// Fonte única de verdade para os planos de assinatura.
-// Benefícios refletem exatamente o que o profissional avalia
-// (12 atributos faciais, terços, simetria, atratividade e visagismo).
+// Fonte unica de verdade para os planos de assinatura.
+// Beneficios refletem exatamente o que o profissional avalia
+// (12 atributos faciais, tercos, simetria, atratividade e visagismo).
 
 export const PLANS = {
-  plan_monthly: {
-    id: 'plan_monthly',
-    name: 'Acesso Regular',
-    price: '24,90',
-    priceRaw: 24.90,
-    pixPrice: '29,90',
-    pixPriceRaw: 29.90,
-    period: 'mês',
+  plan_avulsa: {
+    id: 'plan_avulsa',
+    name: 'Analise Avulsa',
+    price: '14,99',
+    priceRaw: 14.99,
+    pixPrice: '12,99',
+    pixPriceRaw: 12.99,
+    period: 'avulso',
     highlight: false,
     benefits: [
-      '1 Avaliação facial completa por mês',
-      'Análise dos 12 atributos faciais (escala 0-10)',
-      'Relatório de Terços Faciais e Simetria',
-      'Dicas de Visagismo (cabelo, barba e óculos)',
-      'Fila padrão (5 dias úteis)',
+      '1 Avaliacao facial completa (uso unico)',
+      'Analise dos 12 atributos faciais (escala 0-10)',
+      'Relatorio de Tercos Faciais e Simetria',
+      'Dicas de Visagismo (cabelo, barba e oculos)',
+      'Fila padrao (24 horas ou menos)',
+    ],
+  },
+  plan_monthly: {
+    id: 'plan_monthly',
+    name: 'Acesso Essencial',
+    price: '24,90',
+    priceRaw: 24.90,
+    pixPrice: '20,00',
+    pixPriceRaw: 20.00,
+    period: 'mes',
+    highlight: false,
+    benefits: [
+      '2 Avaliacoes faciais completas por mes',
+      'Analise dos 12 atributos faciais (escala 0-10)',
+      'Relatorio de Tercos Faciais e Simetria',
+      'Dicas de Visagismo (cabelo, barba e oculos)',
+      'Fila padrao (24 horas ou menos)',
     ],
   },
   plan_annual: {
     id: 'plan_annual',
-    name: 'Evolução Contínua',
-    price: '179,00',
-    priceRaw: 179.00,
-    pixPrice: '184,00',
-    pixPriceRaw: 184.00,
+    name: 'Evolucao Continua',
+    price: '184,00',
+    priceRaw: 184.00,
+    pixPrice: '179,00',
+    pixPriceRaw: 179.00,
     period: 'ano',
-    tag: 'Mais Vendido — Economize R$ 120',
+    tag: 'Mais Vendido — Economize R$ 60',
     highlight: true,
     benefits: [
-      '2 Avaliações faciais completas por mês',
-      'Painel de Evolução Temporal (compare seus scores)',
+      '4 Avaliacoes faciais completas por mes',
+      'Painel de Evolucao Temporal (compare seus scores)',
       'Score de Atratividade e Harmonia Facial detalhado',
-      'Relatório estendido de proporções e destaques',
-      'Fila Prioritária (48 horas)',
-      'Economia de R$ 120 ao ano',
+      'Relatorio estendido de proporcoes e destaques',
+      'Fila Prioritaria (16 horas ou menos)',
+      'Economia de R$ 60 ao ano',
     ],
   },
   plan_black: {
     id: 'plan_black',
-    name: 'Elite Estética',
-    price: '49,90',
-    priceRaw: 49.90,
-    pixPrice: '54,90',
-    pixPriceRaw: 54.90,
-    period: 'mês',
+    name: 'Lite Estetica',
+    price: '54,90',
+    priceRaw: 54.90,
+    pixPrice: '49,90',
+    pixPriceRaw: 49.90,
+    period: 'mes',
     highlight: false,
     benefits: [
-      '4 Avaliações por mês (acompanhamento semanal)',
-      'Análise completa dos 12 atributos + atratividade',
-      'Diagnóstico de Contraste Pessoal e Cores',
-      'Plano de Visagismo completo (rosto, cabelo, barba, óculos)',
-      'Relatório Estendido de Traços e proporções',
-      'Fila Expressa Ultra-VIP (12 horas)',
-    ],
-  },
-  enterprise: {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 'ilimitado',
-    priceRaw: -1,
-    pixPrice: 'ilimitado',
-    pixPriceRaw: -1,
-    period: 'ilimitado',
-    highlight: true,
-    benefits: [
-      'Avaliações ilimitadas por mês',
-      'Painel de Evolução Temporal (compare seus scores)',
-      'Score de Atratividade e Harmonia Facial detalhado',
-      'Relatório estendido de proporções e destaques',
-      'Fila Prioritária',
-      'Suporte dedicado',
-    ],
-  },
-  pro: {
-    id: 'pro',
-    name: 'Profissional',
-    price: '30',
-    priceRaw: 30,
-    pixPrice: '30',
-    pixPriceRaw: 30,
-    period: 'mês',
-    highlight: false,
-    benefits: [
-      '30 Avaliações faciais completas por mês',
-      'Análise dos 12 atributos faciais (escala 0-10)',
-      'Relatório de Terços Faciais e Simetria',
-      'Dicas de Visagismo (cabelo, barba e óculos)',
-      'Fila prioritária',
+      '6 Avaliacoes por mes (acompanhamento semanal)',
+      'Analise completa dos 12 atributos + atratividade',
+      'Diagnostico de Contraste Pessoal e Cores',
+      'Plano de Visagismo completo (rosto, cabelo, barba, oculos)',
+      'Relatorio Estendido de Tracos e proporcoes',
+      'Fila Expressa Ultra-VIP (8 horas ou menos)',
     ],
   },
 };
 
-export const PLAN_ORDER = ['plan_monthly', 'plan_annual', 'plan_black'];
+export const PLAN_ORDER = ['plan_avulsa', 'plan_monthly', 'plan_annual', 'plan_black'];
 
 // Mapeia o plano salvo no perfil/localStorage para um dos ids acima.
-// Retorna null se for free/sem plano (permite escolher qualquer um)
+// Retorna null se for free/sem plano (permite escolher qualquer um).
+// Ids legados ('pro', 'enterprise') — que existiram no frontend antigo mas
+// nunca tiveram preço/oferta no backend — também retornam null: o backend
+// continua honrando a cota desses usuários via último pagamento aprovado,
+// mas a UI os trata como sem plano atual (convite a assinar um plano válido).
 export function resolveCurrentPlan(user) {
   const fromStorage = typeof window !== 'undefined' ? localStorage.getItem('user_subscription') : null;
   const fromUser = user?.plan;

@@ -79,12 +79,32 @@ class Settings(BaseSettings):
     MAX_IMAGE_BASE64_SIZE_MB: int = 10
 
     # Plan Pricing (BRL) - Server-side pricing to prevent client-side manipulation
-    # Format: {plan_id: {"pix": <float>, "credit_card": <float>}}
-    # Valores batendo com o frontend: plan_monthly (29.90/24.90), plan_annual (184.00/179.00), plan_black (54.90/49.90)
+    # Pagamento atual: somente Cakto/PIX — cobra-se o valor "pix".
+    # A chave "credit_card" é mantida apenas como referência do preço cheio
+    # exibido no frontend (Âncora de preço); nenhum gateway de cartão existe.
+    # Avulso (12.99/14.99), Mensal (20.00/24.90), Anual (179.00/184.00), Black (49.90/54.90)
     PLAN_PRICES: dict[str, dict[str, float]] = {
-        "plan_monthly": {"pix": 29.90, "credit_card": 24.90},
-        "plan_annual": {"pix": 184.00, "credit_card": 179.00},
-        "plan_black": {"pix": 54.90, "credit_card": 49.90},
+        "plan_avulsa": {"pix": 12.99, "credit_card": 14.99},
+        "plan_monthly": {"pix": 20.00, "credit_card": 24.90},
+        "plan_annual": {"pix": 179.00, "credit_card": 184.00},
+        "plan_black": {"pix": 49.90, "credit_card": 54.90},
+    }
+
+    # Analysis limits per plan (monthly quota)
+    # Avulso: 1 total (not monthly), Monthly: 2, Annual: 4, Black: 6
+    PLAN_ANALYSIS_LIMITS: dict[str, int] = {
+        "plan_avulsa": 1,
+        "plan_monthly": 2,
+        "plan_annual": 4,
+        "plan_black": 6,
+    }
+
+    # Queue SLA in hours per plan
+    PLAN_QUEUE_SLA_HOURS: dict[str, int] = {
+        "plan_avulsa": 24,
+        "plan_monthly": 24,
+        "plan_annual": 16,
+        "plan_black": 8,
     }
 
     # Application URL (used in email links)
@@ -99,6 +119,18 @@ class Settings(BaseSettings):
     MERCADOPAGO_WEBHOOK_SECRET: str = ""
     MERCADOPAGO_ENV: str = "test"
     MERCADOPAGO_NOTIFICATION_URL: str = ""  # ex: https://facemax.pro/api/v1/payments/webhook
+    # Cakto (OAuth2 Public API) — never commit real secrets
+    CAKTO_CLIENT_ID: str = ""
+    CAKTO_CLIENT_SECRET: str = ""
+    CAKTO_WEBHOOK_SECRET: str = ""
+    CAKTO_BASE_URL: str = "https://api.cakto.com.br/public_api"
+    # Mapeamento plan_id -> offerId (short_id da oferta Cakto) — valores da Cakto (2026-09-12, key JNqA...)
+    PLAN_OFFER_MAP: dict[str, str] = {
+        "plan_avulsa": "inu9ish",
+        "plan_monthly": "94nx4bw",
+        "plan_annual": "33u8mkj",
+        "plan_black": "wxwek28",
+    }
 
     # SMTP Email (Gmail)
     MAIL_SERVER: str = "smtp.gmail.com"

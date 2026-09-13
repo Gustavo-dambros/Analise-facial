@@ -8,7 +8,7 @@ export default function TermsPage() {
         <p>1. Serviço destinado a maiores de 18 anos, de cunho estético, sem substituir orientação médica.</p>
         <p>2. Fotos são armazenadas em bucket privado e excluídas pós-laudo, salvo consentimento para histórico.</p>
         <p>3. Você é responsável pela conta e por enviar fotos suas, com consentimento.</p>
-        <p>4. Planos e cotas descritos em /checkout-simulation; pagamento via Mercado Pago.</p>
+        <p>4. Planos e cotas descritos em /checkout-simulation; pagamento via Cakto (PIX).</p>
       </div>
     </div>
   )

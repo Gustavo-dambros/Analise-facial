@@ -410,17 +410,44 @@ export default function LandingPage() {
             </p>
           </ScrollFadeUp>
 
-          <ScrollStaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-start">
+          <ScrollStaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 items-start">
+            {/* Card 0 - Avulso */}
+            <ScrollStaggerItem>
+              <div className="bg-card-bg border border-border rounded-2xl p-8 flex flex-col h-full hover:border-brand-accent/20 transition-colors duration-300">
+                <div className="mb-6">
+                  <h3 className="text-text-secondary text-sm font-medium uppercase tracking-wider mb-2">Analise Avulsa</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-text-muted text-lg">R$</span>
+                    <span className="text-4xl md:text-5xl font-black text-text-primary font-playfair">14</span>
+                    <span className="text-text-muted text-sm">,99</span>
+                  </div>
+                  <p className="text-text-muted text-xs mt-2">PIX R$ 12,99</p>
+                </div>
+                <SelectPlanButton planId="plan_avulsa" className="w-full py-3.5 px-6 rounded-xl border border-brand-accent/50 text-brand-accent font-semibold text-sm text-center hover:bg-brand-accent/10 transition-colors mb-8">
+                  Comprar Avulso
+                </SelectPlanButton>
+                <ul className="flex flex-col gap-3.5 flex-1">
+                  {PLANS.plan_avulsa.benefits.map((benefit, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <Check className="w-4 h-4 text-brand-accent flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                      <span className="text-text-secondary text-sm leading-relaxed">{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </ScrollStaggerItem>
+
             {/* Card 1 - Mensal */}
             <ScrollStaggerItem>
               <div className="bg-card-bg border border-border rounded-2xl p-8 flex flex-col h-full hover:border-brand-accent/20 transition-colors duration-300">
                 <div className="mb-6">
-                  <h3 className="text-text-secondary text-sm font-medium uppercase tracking-wider mb-2">Acesso Regular</h3>
+                  <h3 className="text-text-secondary text-sm font-medium uppercase tracking-wider mb-2">Acesso Essencial</h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-text-muted text-lg">R$</span>
                     <span className="text-4xl md:text-5xl font-black text-text-primary font-playfair">24</span>
-                    <span className="text-text-muted text-sm">,90 / mês</span>
+                    <span className="text-text-muted text-sm">,90 / mes</span>
                   </div>
+                  <p className="text-text-muted text-xs mt-2">PIX R$ 20,00</p>
                 </div>
                 <SelectPlanButton planId="plan_monthly" className="w-full py-3.5 px-6 rounded-xl border border-brand-accent/50 text-brand-accent font-semibold text-sm text-center hover:bg-brand-accent/10 transition-colors mb-8">
                   Assinar Mensal
@@ -441,17 +468,18 @@ export default function LandingPage() {
               <div className="bg-card-bg border-2 border-brand-accent/60 rounded-2xl p-8 flex flex-col h-full relative shadow-[0_0_30px_rgba(212,175,55,0.1)]">
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                   <span className="bg-brand-accent text-background text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(212,175,55,0.4)] whitespace-nowrap">
-                    Mais Vendido — Economize R$ 120
+                    Mais Vendido — Economize R$ 60
                   </span>
                 </div>
                 <div className="mb-6">
-                  <h3 className="text-brand-accent text-sm font-medium uppercase tracking-wider mb-2">Evolução Contínua</h3>
+                  <h3 className="text-brand-accent text-sm font-medium uppercase tracking-wider mb-2">Evolucao Continua</h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-text-muted text-lg">R$</span>
-                    <span className="text-4xl md:text-5xl font-black text-text-primary font-playfair">179</span>
+                    <span className="text-4xl md:text-5xl font-black text-text-primary font-playfair">184</span>
                     <span className="text-text-muted text-sm">,00 / ano</span>
                   </div>
-                  <p className="text-brand-accent/80 text-xs mt-2 font-medium">Equivale a R$ 14,92/mês</p>
+                  <p className="text-text-muted text-xs mt-2">PIX R$ 179,00</p>
+                  <p className="text-brand-accent/80 text-xs mt-1 font-medium">Equivale a R$ 15,33/mes</p>
                 </div>
                 <SelectPlanButton planId="plan_annual" className="w-full py-3.5 px-6 rounded-xl bg-brand-accent text-background font-bold text-sm text-center hover:opacity-90 transition-all duration-300 shadow-[0_0_30px_rgba(212,175,55,0.25)] hover:shadow-[0_0_50px_rgba(212,175,55,0.4)] mb-8 animate-glow-pulse">
                   Assinar Anual
@@ -473,13 +501,14 @@ export default function LandingPage() {
                 <div className="mb-6">
                   <h3 className="text-brand-accent text-sm font-medium uppercase tracking-wider mb-2 flex items-center gap-2">
                     <Crown className="w-4 h-4" />
-                    Elite Estética
+                    Lite Estetica
                   </h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-text-muted text-lg">R$</span>
-                    <span className="text-4xl md:text-5xl font-black text-text-primary font-playfair">49</span>
-                    <span className="text-text-muted text-sm">,90 / mês</span>
+                    <span className="text-4xl md:text-5xl font-black text-text-primary font-playfair">54</span>
+                    <span className="text-text-muted text-sm">,90 / mes</span>
                   </div>
+                  <p className="text-text-muted text-xs mt-2">PIX R$ 49,90</p>
                 </div>
                 <SelectPlanButton planId="plan_black" className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#1a1a1a] to-[#2a2a2a] border border-[#333] text-text-primary font-semibold text-sm text-center hover:border-brand-accent/40 transition-all duration-300 mb-8">
                   Assinar Black

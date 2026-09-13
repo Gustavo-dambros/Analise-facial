@@ -41,9 +41,11 @@ def _build_attribute_items(attrs_data):
 
 
 # ---- Mapping plan_id (frontend) -> PlanType + monthly limits ----
-# Frontend plan_ids: plan_monthly, plan_annual, plan_black ; backend PlanType: free/pro/enterprise
+# Frontend plan_ids: plan_avulsa, plan_monthly, plan_annual, plan_black
+# Backend PlanType: free/pro/enterprise
 PLAN_ID_TO_TYPE: dict[str, PlanType] = {
     "free": PlanType.free,
+    "plan_avulsa": PlanType.pro,
     "plan_monthly": PlanType.pro,
     "plan_annual": PlanType.enterprise,
     "plan_black": PlanType.enterprise,
@@ -52,15 +54,19 @@ PLAN_ID_TO_TYPE: dict[str, PlanType] = {
 }
 
 # Cotas por plan_id (COUNT no banco, sem coluna contador)
-# Free: 0 bloqueado (precisa assinar); monthly 1, annual 2, black 4
+# Avulso: 1 (uso unico), Monthly: 2, Annual: 4, Black: 6
+# Legacy PlanType.pro/enterprise fallbacks must NOT mask fine-grained limits:
+# new flow stores plan_id (e.g. "plan_monthly") in profiles.plan.
+# Legacy users com plan="pro"/"enterprise" são resolvidos via último pagamento.
 PLAN_MONTHLY_LIMITS: dict[str, int] = {
     "free": 0,
-    "plan_monthly": 1,
-    "plan_annual": 2,
-    "plan_black": 4,
+    "plan_avulsa": 1,
+    "plan_monthly": 2,
+    "plan_annual": 4,
+    "plan_black": 6,
     PlanType.free: 0,
-    PlanType.pro: 30,
-    PlanType.enterprise: -1,
+    PlanType.pro: 6,
+    PlanType.enterprise: 6,
 }
 
 
@@ -150,14 +156,36 @@ class AnalysisService:
             logger.info("User %s is superuser — skipping monthly limit check", user.id)
             return
 
-        # plan may be PlanType or plan_id string; free is blocked (0)
+        # plan may be plan_id ("plan_monthly") or legacy PlanType ("pro")
         plan = getattr(user, "plan", PlanType.free) or PlanType.free
-        # Prefer limit by exact plan value (supports both plan_id and PlanType keys)
-        limit = PLAN_MONTHLY_LIMITS.get(plan, None)
+        plan_str = str(plan)
+        # Exact plan_id match first (new flow stores plan_id in profiles.plan)
+        limit = PLAN_MONTHLY_LIMITS.get(plan_str, None)
         if limit is None:
-            # fallback: try mapping plan_id -> PlanType -> limit
-            mapped = PLAN_ID_TO_TYPE.get(str(plan))
+            limit = PLAN_MONTHLY_LIMITS.get(plan, None)
+        if limit is None:
+            # Legacy fallback: try mapping plan_id -> PlanType -> limit
+            mapped = PLAN_ID_TO_TYPE.get(plan_str)
             limit = PLAN_MONTHLY_LIMITS.get(mapped, PLAN_MONTHLY_LIMITS[PlanType.free]) if mapped else PLAN_MONTHLY_LIMITS[PlanType.free]
+        # If plan is generic legacy value (pro/enterprise), try to resolve
+        # via the user's last approved payment for a fine-grained limit.
+        if plan_str in ("pro", "enterprise", PlanType.pro.value, PlanType.enterprise.value):
+            try:
+                from sqlalchemy import select as _select
+                from app.models.payment import Payment, PaymentStatus as _PS
+                q = await self.db.execute(
+                    _select(Payment.plan_id)
+                    .where(Payment.user_id == user.id)
+                    .where(Payment.status == _PS.approved)
+                    .order_by(Payment.paid_at.desc().nullslast(), Payment.created_at.desc())
+                    .limit(1)
+                )
+                last_plan_id = q.scalar_one_or_none()
+                if last_plan_id and last_plan_id in PLAN_MONTHLY_LIMITS:
+                    limit = PLAN_MONTHLY_LIMITS[last_plan_id]
+                    plan = last_plan_id
+            except Exception:
+                pass
 
         # Unlimited (-1)
         if limit == -1:

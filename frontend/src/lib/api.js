@@ -215,18 +215,22 @@ export async function detectFace(base64Image) {
 }
 
 /**
- * Cria um pagamento Mercado Pago (PIX ou Checkout Pro)
- * POST /api/v1/payments/create
+ * Cria um pagamento Cakto (Pix) — único método de pagamento suportado.
+ * POST /api/v1/payments/create-cakto
  */
-export async function createPayment(params) {
-  return apiFetch('/api/v1/payments/create', {
+export async function createCaktoPayment(params) {
+  return apiFetch('/api/v1/payments/create-cakto', {
     method: 'POST',
     body: JSON.stringify({
       plan_id: params.planId,
-      amount: params.amount,
-      payment_method: params.paymentMethod,
+      payment_method: 'cakto',
       success_url: params.successUrl,
       pending_url: params.pendingUrl,
+      // Chave de idempotência gerada no frontend por tentativa de checkout.
+      // O backend a repassa como X-Idempotency-Key à Cakto, de modo que
+      // retries de rede não gerem cobranças duplicadas. `undefined` é
+      // omitido pelo JSON.stringify (backend gera uma chave nesse caso).
+      idempotency_key: params.idempotencyKey || undefined,
     }),
   });
 }

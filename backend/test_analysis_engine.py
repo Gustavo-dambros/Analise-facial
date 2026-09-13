@@ -117,9 +117,13 @@ class TestMapToResponse:
 
 class TestPlanLimits:
     def test_limits_defined(self):
-        assert PLAN_MONTHLY_LIMITS[PlanType.free] == 3
-        assert PLAN_MONTHLY_LIMITS[PlanType.pro] == 5
-        assert PLAN_MONTHLY_LIMITS[PlanType.enterprise] == -1
+        assert PLAN_MONTHLY_LIMITS[PlanType.free] == 0
+        assert PLAN_MONTHLY_LIMITS[PlanType.pro] == 6
+        assert PLAN_MONTHLY_LIMITS[PlanType.enterprise] == 6
+        assert PLAN_MONTHLY_LIMITS["plan_avulsa"] == 1
+        assert PLAN_MONTHLY_LIMITS["plan_monthly"] == 2
+        assert PLAN_MONTHLY_LIMITS["plan_annual"] == 4
+        assert PLAN_MONTHLY_LIMITS["plan_black"] == 6
 
 
 # ---------------------------------------------------------------------------

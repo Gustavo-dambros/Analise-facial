@@ -136,7 +136,7 @@ async def llms_full():
 {CANONICAL}/api/v1/openapi.json
 
 ## Stack
-Frontend React+Vite, Backend FastAPI, Supabase Auth, Mercado Pago, MediaPipe
+Frontend React+Vite, Backend FastAPI, Supabase Auth, Cakto (PIX), MediaPipe
 
 ## Páginas públicas (SSR)
 - / : Home — SoftwareApplication + Organization
