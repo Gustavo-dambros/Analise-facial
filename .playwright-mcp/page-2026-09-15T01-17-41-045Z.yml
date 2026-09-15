@@ -1,0 +1,53 @@
+- generic [ref=f2e2]:
+  - generic [ref=f2e334]:
+    - button "Voltar ao início" [ref=f2e335] [cursor=pointer]
+    - generic [ref=f2e338]:
+      - button "Trocar plano" [ref=f2e339] [cursor=pointer]
+      - generic [ref=f2e340]: "Plano: Acesso Essencial"
+    - generic [ref=f2e342]:
+      - generic [ref=f2e343]:
+        - generic [ref=f2e348]:
+          - heading "Finalizar Assinatura" [level=1] [ref=f2e349]
+          - paragraph [ref=f2e350]: Pagamento 100% via PIX — liberação automática
+        - paragraph [ref=f2e351]: O Único site de looksmaxxing que cobra em Reais. Sem IOF.
+      - generic [ref=f2e352]:
+        - generic [ref=f2e353]:
+          - generic [ref=f2e354]:
+            - heading "Acesso Essencial" [level=2] [ref=f2e355]
+            - paragraph [ref=f2e356]: Plano mensal
+          - generic [ref=f2e357]:
+            - text: R$ 24,90
+            - generic [ref=f2e358]: / mes
+        - generic [ref=f2e359]:
+          - heading "O que está incluído" [level=3] [ref=f2e360]
+          - list [ref=f2e361]:
+            - listitem [ref=f2e362]:
+              - generic [ref=f2e365]: 2 Avaliacoes faciais completas por mes
+            - listitem [ref=f2e366]:
+              - generic [ref=f2e369]: Analise dos 12 atributos faciais (escala 0-10)
+            - listitem [ref=f2e370]:
+              - generic [ref=f2e373]: Relatorio de Tercos Faciais e Simetria
+            - listitem [ref=f2e374]:
+              - generic [ref=f2e377]: Dicas de Visagismo (cabelo, barba e oculos)
+            - listitem [ref=f2e378]:
+              - generic [ref=f2e381]: Fila padrao (24 horas ou menos)
+        - generic [ref=f2e382]:
+          - heading "Método de Pagamento" [level=3] [ref=f2e383]
+          - button "PIX Instantâneo Cakto QR Code e copia e cola — liberação automática em segundos" [ref=f2e385] [cursor=pointer]:
+            - generic [ref=f2e389]:
+              - generic [ref=f2e390]:
+                - generic [ref=f2e391]: PIX Instantâneo
+                - generic [ref=f2e392]: Cakto
+              - text: QR Code e copia e cola — liberação automática em segundos
+        - generic [ref=f2e402]: Pagamento 100% seguro via Cakto. Cobrado em Reais, sem IOF.
+        - paragraph [ref=f2e406]: Ao continuar, você concorda com os Termos de Serviço e Política de Privacidade.
+  - region "Notifications alt+T"
+  - generic [ref=f2e321]:
+    - paragraph [ref=f2e322]:
+      - text: Usamos cookies essenciais (Supabase Auth) e, se aceito, analytics. Veja nossa
+      - link "Política" [ref=f2e323] [cursor=pointer]:
+        - /url: /privacidade
+      - text: .
+    - generic [ref=f2e324]:
+      - button "Recusar" [ref=f2e325] [cursor=pointer]
+      - button "Aceitar" [ref=f2e326] [cursor=pointer]

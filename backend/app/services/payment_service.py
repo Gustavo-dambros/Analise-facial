@@ -15,6 +15,7 @@ from app.repositories.payment_repository import PaymentRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.models.profile import PlanType
 from app.database.connection import AsyncSessionLocal
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,28 @@ PLAN_ID_TO_TYPE = {
 # ── Cakto token cache (module-level) ──────────────────────────────────
 _cakto_access_token: str | None = None
 _cakto_expires_at: float = 0.0
+
+
+async def _get_user_email_from_supabase(user_id: str) -> str | None:
+    """Busca email do usuário no Supabase via service role (admin API)."""
+    if not (settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY):
+        return None
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{settings.SUPABASE_URL}/auth/v1/admin/users/{user_id}",
+                headers={
+                    "apikey": settings.SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}",
+                },
+            )
+        if resp.status_code == 200:
+            data = resp.json()
+            return data.get("email")
+    except Exception as exc:
+        logger.warning("Falha ao buscar email no Supabase para user_id=%s: %s", user_id, exc)
+    return None
 
 
 def _coerce_uuid(value):
@@ -270,11 +293,15 @@ class PaymentService:
 
         try:
             token = await self._get_cakto_access_token()
+            # Email: tenta do perfil, se vazio busca no Supabase (service role)
+            user_email = getattr(user, "email", "") or ""
+            if not user_email:
+                user_email = await _get_user_email_from_supabase(str(user.id)) or ""
             payload = {
                 "paymentMethod": "pix",
                 "customer": {
                     "name": getattr(user, "full_name", "") or getattr(user, "name", "") or "Cliente FaceMax",
-                    "email": getattr(user, "email", "") or "",
+                    "email": user_email,
                     "phone": getattr(user, "phone", None) or getattr(user, "phone_number", None) or "00000000000",
                 },
                 "items": [{"offerId": offer_id}],

@@ -1,0 +1,177 @@
+- generic [ref=f2e2]:
+  - generic [ref=f2e3]:
+    - generic [ref=f2e6]:
+      - img "Logo" [ref=f2e9]
+      - list [ref=f2e13]:
+        - listitem [ref=f2e14]:
+          - button [ref=f2e15] [cursor=pointer]
+        - listitem [ref=f2e22]:
+          - button [ref=f2e23] [cursor=pointer]
+        - listitem [ref=f2e27]:
+          - button [ref=f2e28] [cursor=pointer]
+        - listitem [ref=f2e32]:
+          - button [ref=f2e33] [cursor=pointer]
+      - list [ref=f2e37]:
+        - listitem [ref=f2e38]:
+          - button [ref=f2e39] [cursor=pointer]
+        - listitem [ref=f2e42]:
+          - button [ref=f2e43] [cursor=pointer]
+    - main [ref=f2e48]:
+      - generic [ref=f2e50]:
+        - generic [ref=f2e51]:
+          - generic [ref=f2e52]:
+            - paragraph [ref=f2e54]: Olá! 👋
+            - heading "Nova Análise" [level=1] [ref=f2e55]
+            - paragraph [ref=f2e56]: Fotografe de frente, perfil esquerdo e direito com luz natural. Um especialista avalia em até 48h — o físico é opcional e melhora a consulta.
+            - generic [ref=f2e57]:
+              - generic [ref=f2e59]: 0/3
+              - generic [ref=f2e60]: Comece pela frontal
+          - generic [ref=f2e61]:
+            - generic [ref=f2e62]:
+              - generic [ref=f2e69]:
+                - paragraph [ref=f2e70]: "Foto: Frontal"
+                - paragraph [ref=f2e71]: Centralize o rosto, luz natural de frente, sem filtro.
+                - generic [ref=f2e72]:
+                  - generic [ref=f2e73]: JPG/PNG/WebP • até 5MB
+                  - button "Escolher arquivo" [ref=f2e74] [cursor=pointer]
+              - generic [ref=f2e75]:
+                - button "Ativar câmera" [ref=f2e76] [cursor=pointer]: Ativar Câmera
+                - button "Fazer upload" [ref=f2e80] [cursor=pointer]: Upload
+                - button "Ver guia de fotos" [ref=f2e84] [cursor=pointer]
+              - paragraph [ref=f2e85]: "Dica: fundo claro, sem óculos escuros. Você pode refazer qualquer foto antes de enviar."
+            - generic [ref=f2e86]:
+              - generic [ref=f2e87]:
+                - generic [ref=f2e88]:
+                  - heading "Fotos" [level=2] [ref=f2e89]
+                  - generic [ref=f2e90]: 0/3 obrigatórias
+                - generic [ref=f2e91]:
+                  - generic [ref=f2e92] [cursor=pointer]:
+                    - generic [ref=f2e98]:
+                      - paragraph [ref=f2e99]: Frontal
+                      - paragraph [ref=f2e100]: Rosto de frente
+                    - paragraph [ref=f2e102]: Frontal
+                  - generic [ref=f2e103] [cursor=pointer]:
+                    - generic [ref=f2e109]:
+                      - paragraph [ref=f2e110]: Perfil Esquerdo
+                      - paragraph [ref=f2e111]: Lado esquerdo
+                    - paragraph [ref=f2e113]: Perfil Esquerdo
+                  - generic [ref=f2e114] [cursor=pointer]:
+                    - generic [ref=f2e120]:
+                      - paragraph [ref=f2e121]: Perfil Direito
+                      - paragraph [ref=f2e122]: Lado direito
+                    - paragraph [ref=f2e124]: Perfil Direito
+                  - generic [ref=f2e125] [cursor=pointer]:
+                    - generic [ref=f2e131]:
+                      - paragraph [ref=f2e132]: Físico
+                      - paragraph [ref=f2e133]: Corpo de frente (opcional)
+                    - generic [ref=f2e134]:
+                      - paragraph [ref=f2e135]: Físico
+                      - generic [ref=f2e136]: Opcional
+              - paragraph [ref=f2e137]: Envie a frontal para começar
+              - generic [ref=f2e138]:
+                - checkbox "Consinto o tratamento das minhas fotos como dado sensível biométrico para avaliação estética por profissional, com armazenamento em bucket privado e exclusão pós-laudo — Política. Versão 1.0 03/09/2026" [ref=f2e139]
+                - generic [ref=f2e140]:
+                  - text: Consinto o tratamento das minhas fotos como dado sensível biométrico para avaliação estética por profissional, com armazenamento em bucket privado e exclusão pós-laudo —
+                  - link "Política" [ref=f2e141] [cursor=pointer]:
+                    - /url: /privacidade
+                  - text: . Versão 1.0 03/09/2026
+              - button "Enviar para Avaliação" [disabled] [ref=f2e142]
+        - generic [ref=f2e146]:
+          - generic [ref=f2e148]:
+            - heading "Conheça os nossos planos" [level=2] [ref=f2e149]
+            - paragraph [ref=f2e153]: Toda avaliação cobre os 12 atributos faciais, terços, simetria, atratividade e visagismo.
+          - generic [ref=f2e154]:
+            - generic [ref=f2e155]:
+              - heading "Analise Avulsa" [level=3] [ref=f2e157]
+              - generic [ref=f2e158]:
+                - generic [ref=f2e159]: R$
+                - generic [ref=f2e160]: 14,99
+                - generic [ref=f2e161]: / avulso
+              - list [ref=f2e162]:
+                - listitem [ref=f2e163]:
+                  - generic [ref=f2e166]: 1 Avaliacao facial completa (uso unico)
+                - listitem [ref=f2e167]:
+                  - generic [ref=f2e170]: Analise dos 12 atributos faciais (escala 0-10)
+                - listitem [ref=f2e171]:
+                  - generic [ref=f2e174]: Relatorio de Tercos Faciais e Simetria
+                - listitem [ref=f2e175]:
+                  - generic [ref=f2e178]: Dicas de Visagismo (cabelo, barba e oculos)
+                - listitem [ref=f2e179]:
+                  - generic [ref=f2e182]: Fila padrao (24 horas ou menos)
+              - button "Assinar Analise Avulsa" [ref=f2e183] [cursor=pointer]
+            - generic [ref=f2e186]:
+              - heading "Acesso Essencial" [level=3] [ref=f2e188]
+              - generic [ref=f2e189]:
+                - generic [ref=f2e190]: R$
+                - generic [ref=f2e191]: 24,90
+                - generic [ref=f2e192]: / mes
+              - list [ref=f2e193]:
+                - listitem [ref=f2e194]:
+                  - generic [ref=f2e197]: 2 Avaliacoes faciais completas por mes
+                - listitem [ref=f2e198]:
+                  - generic [ref=f2e201]: Analise dos 12 atributos faciais (escala 0-10)
+                - listitem [ref=f2e202]:
+                  - generic [ref=f2e205]: Relatorio de Tercos Faciais e Simetria
+                - listitem [ref=f2e206]:
+                  - generic [ref=f2e209]: Dicas de Visagismo (cabelo, barba e oculos)
+                - listitem [ref=f2e210]:
+                  - generic [ref=f2e213]: Fila padrao (24 horas ou menos)
+              - button "Assinar Acesso Essencial" [ref=f2e214] [cursor=pointer]
+            - generic [ref=f2e217]:
+              - generic [ref=f2e218]: Mais Vendido — Economize R$ 60
+              - heading "Evolucao Continua" [level=3] [ref=f2e220]
+              - generic [ref=f2e221]:
+                - generic [ref=f2e222]: R$
+                - generic [ref=f2e223]: 184,00
+                - generic [ref=f2e224]: / ano
+              - list [ref=f2e225]:
+                - listitem [ref=f2e226]:
+                  - generic [ref=f2e229]: 4 Avaliacoes faciais completas por mes
+                - listitem [ref=f2e230]:
+                  - generic [ref=f2e233]: Painel de Evolucao Temporal (compare seus scores)
+                - listitem [ref=f2e234]:
+                  - generic [ref=f2e237]: Score de Atratividade e Harmonia Facial detalhado
+                - listitem [ref=f2e238]:
+                  - generic [ref=f2e241]: Relatorio estendido de proporcoes e destaques
+                - listitem [ref=f2e242]:
+                  - generic [ref=f2e245]: Fila Prioritaria (16 horas ou menos)
+                - listitem [ref=f2e246]:
+                  - generic [ref=f2e249]: Economia de R$ 60 ao ano
+              - button "Assinar Evolucao Continua" [ref=f2e250] [cursor=pointer]
+            - generic [ref=f2e253]:
+              - heading "Lite Estetica" [level=3] [ref=f2e257]
+              - generic [ref=f2e258]:
+                - generic [ref=f2e259]: R$
+                - generic [ref=f2e260]: 54,90
+                - generic [ref=f2e261]: / mes
+              - list [ref=f2e262]:
+                - listitem [ref=f2e263]:
+                  - generic [ref=f2e266]: 6 Avaliacoes por mes (acompanhamento semanal)
+                - listitem [ref=f2e267]:
+                  - generic [ref=f2e270]: Analise completa dos 12 atributos + atratividade
+                - listitem [ref=f2e271]:
+                  - generic [ref=f2e274]: Diagnostico de Contraste Pessoal e Cores
+                - listitem [ref=f2e275]:
+                  - generic [ref=f2e278]: Plano de Visagismo completo (rosto, cabelo, barba, oculos)
+                - listitem [ref=f2e279]:
+                  - generic [ref=f2e282]: Relatorio Estendido de Tracos e proporcoes
+                - listitem [ref=f2e283]:
+                  - generic [ref=f2e286]: Fila Expressa Ultra-VIP (8 horas ou menos)
+              - button "Assinar Lite Estetica" [ref=f2e287] [cursor=pointer]
+    - navigation [ref=f2e290]:
+      - generic [ref=f2e291]:
+        - button "Análise" [ref=f2e292] [cursor=pointer]
+        - button "Relatórios" [ref=f2e300] [cursor=pointer]
+        - button "Progresso" [ref=f2e305] [cursor=pointer]
+        - button "Perfil" [ref=f2e309] [cursor=pointer]
+        - button "Sair" [ref=f2e315] [cursor=pointer]
+  - region "Notifications alt+T"
+  - generic [ref=f2e321]:
+    - paragraph [ref=f2e322]:
+      - text: Usamos cookies essenciais (Supabase Auth) e, se aceito, analytics. Veja nossa
+      - link "Política" [ref=f2e323] [cursor=pointer]:
+        - /url: /privacidade
+      - text: .
+    - generic [ref=f2e324]:
+      - button "Recusar" [ref=f2e325] [cursor=pointer]
+      - button "Aceitar" [ref=f2e326] [cursor=pointer]

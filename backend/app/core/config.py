@@ -124,12 +124,12 @@ class Settings(BaseSettings):
     CAKTO_CLIENT_SECRET: str = ""
     CAKTO_WEBHOOK_SECRET: str = ""
     CAKTO_BASE_URL: str = "https://api.cakto.com.br/public_api"
-    # Mapeamento plan_id -> offerId (short_id da oferta Cakto) — valores da Cakto (2026-09-12, key JNqA...)
+    # Mapeamento plan_id -> offerId (short_id da oferta Cakto) — novos produtos criados 2026-09-15
     PLAN_OFFER_MAP: dict[str, str] = {
-        "plan_avulsa": "inu9ish",
-        "plan_monthly": "94nx4bw",
-        "plan_annual": "33u8mkj",
-        "plan_black": "wxwek28",
+        "plan_avulsa": "bxvpzb5",
+        "plan_monthly": "g8jhmzt",
+        "plan_annual": "yh5verb",
+        "plan_black": "35vobpd",
     }
 
     # SMTP Email (Gmail)

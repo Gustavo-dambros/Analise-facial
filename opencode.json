@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "cakto": {
+      "type": "remote",
+      "url": "https://mcp.cakto.com.br",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "X-Cakto-Client-Id": "{env:CAKTO_CLIENT_ID}",
+        "X-Cakto-Client-Secret": "{env:CAKTO_CLIENT_SECRET}"
+      }
+    }
+  }
+}

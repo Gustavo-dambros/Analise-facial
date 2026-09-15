@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, Literal
 from decimal import Decimal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from app.models.payment import PaymentStatus, PaymentMethod
 
 
@@ -23,7 +23,7 @@ class PaymentCreateRequest(BaseModel):
 
 class PaymentCreateResponse(BaseModel):
     """Response returned by POST /payments/create-cakto."""
-    payment_id: str = Field(..., description="ID interno do registro de pagamento no Supabase/FastAPI DB.")
+    payment_id: str = Field(..., validation_alias="id", description="ID interno do registro de pagamento no Supabase/FastAPI DB.")
     payment_method: PaymentMethod
     status: PaymentStatus
     amount: Decimal
@@ -34,12 +34,12 @@ class PaymentCreateResponse(BaseModel):
     preference_id: Optional[str] = Field(default=None, description="ID da preferencia MP/Cakto")
     init_point: Optional[str] = Field(default=None, description="Link de checkout MP/Cakto")
 
-    model_config = {"extra": "ignore"}
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True, extra="ignore")
 
 
 class PaymentStatusResponse(BaseModel):
     """Response for status-check endpoints."""
-    payment_id: str
+    payment_id: str = Field(..., validation_alias="id")
     status: PaymentStatus
     amount: Decimal
     currency: str
@@ -53,7 +53,7 @@ class PaymentStatusResponse(BaseModel):
     created_at: Optional[datetime]
     paid_at: Optional[datetime]
 
-    model_config = {"extra": "ignore"}
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True, extra="ignore")
 
 
 class WebhookNotification(BaseModel):

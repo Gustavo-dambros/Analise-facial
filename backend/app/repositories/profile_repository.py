@@ -27,3 +27,9 @@ class ProfileRepository:
         self.db.add(profile)
         await self.db.commit()
         await self.db.refresh(profile)
+
+    async def update(self, profile: Profile) -> Profile:
+        self.db.add(profile)
+        await self.db.commit()
+        await self.db.refresh(profile)
+        return profile

@@ -100,6 +100,15 @@ async def get_current_user(
         # trigger de criacao). Criamos sob demanda para nao quebrar o app.
         user = Profile(id=user_id, email=email)
         await repo.create(user)
+    else:
+        # Garante que o objeto Profile tenha o email do Supabase para uso imediato
+        # (ex.: criacao de pagamento Cakto), mesmo que o banco ainda nao tenha sincronizado
+        if email and (not user.email or user.email != email):
+            old_email = user.email
+            user.email = email
+            # Persiste se mudou (old_email é o valor ANTES da alteração)
+            if old_email != email:
+                await repo.update(user)
     return user
 
 
