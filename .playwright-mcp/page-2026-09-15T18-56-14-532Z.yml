@@ -1,0 +1,231 @@
+- generic [ref=f2e2]:
+  - generic [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - img "Background" [ref=f2e6]
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - navigation:
+                - generic:
+                  - button "Open menu"
+                  - generic:
+                    - img "FaceMax"
+                  - button "Get Started"
+      - generic [ref=f2e9]:
+        - generic [ref=f2e10]: Pioneirismo Nacional em Estética Facial
+        - heading [level=1] [ref=f2e11]:
+          - generic [ref=f2e12]: A Elite da EstéticaBrasileira
+        - paragraph [ref=f2e14]: A melhor IA brasileira de avaliação facial trabalhando em conjunto com o olhar clínico de profissionais reais. Resultados que transformam vidas.
+        - generic [ref=f2e15]: O Único Site de Looksmaxxing que Cobra em Reais. Sem taxas abusivas de câmbio, sem IOF.
+        - generic [ref=f2e20]:
+          - link "Começar Agora — É Grátis" [ref=f2e22] [cursor=pointer]:
+            - /url: /login
+          - link "Como Funciona" [ref=f2e26] [cursor=pointer]:
+            - /url: "#como-funciona"
+    - generic [ref=f2e29]:
+      - generic [ref=f2e35]:
+        - paragraph [ref=f2e36]: Especialistas Reais
+        - paragraph [ref=f2e37]: Profissionais clínicos
+      - generic [ref=f2e42]:
+        - paragraph [ref=f2e43]: Entrega Expressa
+        - paragraph [ref=f2e44]: Até 12 horas úteis
+      - generic [ref=f2e50]:
+        - paragraph [ref=f2e51]: 100% Brasileiro
+        - paragraph [ref=f2e52]: Pioneirismo Nacional
+      - generic [ref=f2e58]:
+        - paragraph [ref=f2e59]: Privacidade Total
+        - paragraph [ref=f2e60]: Fotos nunca armazenadas
+    - generic [ref=f2e61]:
+      - generic [ref=f2e62]:
+        - generic [ref=f2e63]: Funcionalidades
+        - heading "Análise facial com inteligência artificial e olhar humano" [level=2] [ref=f2e64]
+        - paragraph [ref=f2e65]: Descubra os segredos da sua harmonia facial com tecnologia de ponta aliada a especialistas reais
+      - generic [ref=f2e66]:
+        - generic [ref=f2e70]:
+          - heading "Análise de Elite" [level=3] [ref=f2e80]
+          - paragraph [ref=f2e81]: IA proprietária que mapeia mais de 468 pontos faciais com precisão milimétrica, complementada pelo olhar clínico de um especialista real.
+        - generic [ref=f2e85]:
+          - heading "Relatório Premium" [level=3] [ref=f2e92]
+          - paragraph [ref=f2e93]: Dashboard interativo com terços faciais, simetria, harmonia e eixos estéticos traçados diretamente nas suas fotos.
+        - generic [ref=f2e97]:
+          - heading "Visagismo Profissional" [level=3] [ref=f2e103]
+          - paragraph [ref=f2e104]: Recomendações exclusivas de corte, barba e armações escritas por especialistas em estética facial.
+        - generic [ref=f2e108]:
+          - heading "Privacidade Absoluta" [level=3] [ref=f2e113]
+          - paragraph [ref=f2e114]: Suas fotos são processadas localmente e nunca saem do nosso servidor. Seu rosto é só seu.
+    - generic [ref=f2e115]:
+      - generic [ref=f2e116]:
+        - generic [ref=f2e117]: Processo Simples
+        - heading "Sua Jornada de Evolução em 3 Passos" [level=2] [ref=f2e118]
+      - generic [ref=f2e119]:
+        - generic [ref=f2e121]:
+          - generic [ref=f2e122]: "01"
+          - heading "Envio de Fotos" [level=3] [ref=f2e126]
+          - paragraph [ref=f2e127]: "Envie 3 fotos simples: uma de frente e duas de perfil. Nossa IA captura cada detalhe com precisão cirúrgica."
+        - generic [ref=f2e129]:
+          - generic [ref=f2e130]: "02"
+          - heading "Avaliação Humana" [level=3] [ref=f2e136]
+          - paragraph [ref=f2e137]: Um especialista em estética facial analisa sua simetria, estrutura e características únicas com olhar clínico.
+        - generic [ref=f2e139]:
+          - generic [ref=f2e140]: "03"
+          - heading "Protocolo Personalizado" [level=3] [ref=f2e143]
+          - paragraph [ref=f2e144]: Receba seu relatório completo com notas, gráficos e um guia visual de visagismo sob medida para você.
+    - generic [ref=f2e146]:
+      - generic [ref=f2e147]:
+        - generic [ref=f2e148]: Seu Relatório por Dentro
+        - heading "Um relatório de elite, direto ao ponto" [level=2] [ref=f2e149]
+        - paragraph [ref=f2e150]: Cada análise gera um relatório completo com métricas precisas, gráficos interativos e recomendações personalizadas por um especialista real. Tudo organizado para você entender exatamente o seu perfil facial.
+        - list [ref=f2e151]:
+          - listitem [ref=f2e152]: Gráficos de simetria e harmonia facial
+          - listitem [ref=f2e154]: Divisão precisa dos terços faciais
+          - listitem [ref=f2e156]: Dicas exclusivas do especialista
+      - generic [ref=f2e159]:
+        - generic [ref=f2e161]:
+          - generic [ref=f2e162]:
+            - heading "Pontuação de Harmonia" [level=4] [ref=f2e163]
+            - paragraph [ref=f2e164]: Análise Biométrica em Tempo Real
+          - generic [ref=f2e165]: Relatório
+        - generic [ref=f2e166]:
+          - generic [ref=f2e172]:
+            - generic [ref=f2e173]: "0"
+            - generic [ref=f2e174]: Pontuação Geral
+          - generic [ref=f2e175]:
+            - heading "Proporção dos Terços Faciais" [level=5] [ref=f2e176]
+            - generic [ref=f2e177]:
+              - generic [ref=f2e179]:
+                - generic [ref=f2e180]: Terço Superior
+                - generic [ref=f2e181]: 33%
+              - generic [ref=f2e185]:
+                - generic [ref=f2e186]: Terço Médio
+                - generic [ref=f2e187]: 33%
+              - generic [ref=f2e191]:
+                - generic [ref=f2e192]: Terço Inferior
+                - generic [ref=f2e193]: 34%
+          - generic [ref=f2e202]:
+            - generic [ref=f2e203]: Dica do Especialista
+            - paragraph [ref=f2e204]: Seus terços estão equilibrados. Um corte com volume lateral pode realçar ainda mais a harmonia do seu rosto.
+    - generic [ref=f2e206]:
+      - generic [ref=f2e207]:
+        - generic [ref=f2e208]: Elite da Estética
+        - heading "Escolha o seu plano de transformação" [level=2] [ref=f2e209]
+        - paragraph [ref=f2e210]: Acesso direto a avaliadores e especialistas reais em visagismo. Sem automações, sem respostas genéricas de IA. Apenas olhos clínicos de profissionais.
+      - generic [ref=f2e211]:
+        - generic [ref=f2e213]:
+          - generic [ref=f2e214]:
+            - heading "Analise Avulsa" [level=3] [ref=f2e215]
+            - generic [ref=f2e216]:
+              - generic [ref=f2e217]: R$
+              - generic [ref=f2e218]: "14"
+              - generic [ref=f2e219]: ",99"
+            - paragraph [ref=f2e220]: PIX R$ 12,99
+          - button "Comprar Avulso" [ref=f2e221] [cursor=pointer]
+          - list [ref=f2e222]:
+            - listitem [ref=f2e223]:
+              - generic [ref=f2e226]: 1 Avaliacao facial completa (uso unico)
+            - listitem [ref=f2e227]:
+              - generic [ref=f2e230]: Analise dos 12 atributos faciais (escala 0-10)
+            - listitem [ref=f2e231]:
+              - generic [ref=f2e234]: Relatorio de Tercos Faciais e Simetria
+            - listitem [ref=f2e235]:
+              - generic [ref=f2e238]: Dicas de Visagismo (cabelo, barba e oculos)
+            - listitem [ref=f2e239]:
+              - generic [ref=f2e242]: Fila padrao (24 horas ou menos)
+        - generic [ref=f2e244]:
+          - generic [ref=f2e245]:
+            - heading "Acesso Essencial" [level=3] [ref=f2e246]
+            - generic [ref=f2e247]:
+              - generic [ref=f2e248]: R$
+              - generic [ref=f2e249]: "24"
+              - generic [ref=f2e250]: ",90 / mes"
+            - paragraph [ref=f2e251]: PIX R$ 20,00
+          - button "Assinar Mensal" [ref=f2e252] [cursor=pointer]
+          - list [ref=f2e253]:
+            - listitem [ref=f2e254]:
+              - generic [ref=f2e257]: 2 Avaliacoes faciais completas por mes
+            - listitem [ref=f2e258]:
+              - generic [ref=f2e261]: Analise dos 12 atributos faciais (escala 0-10)
+            - listitem [ref=f2e262]:
+              - generic [ref=f2e265]: Relatorio de Tercos Faciais e Simetria
+            - listitem [ref=f2e266]:
+              - generic [ref=f2e269]: Dicas de Visagismo (cabelo, barba e oculos)
+            - listitem [ref=f2e270]:
+              - generic [ref=f2e273]: Fila padrao (24 horas ou menos)
+        - generic [ref=f2e275]:
+          - generic [ref=f2e276]: Mais Vendido — Economize R$ 60
+          - generic [ref=f2e277]:
+            - heading "Evolucao Continua" [level=3] [ref=f2e278]
+            - generic [ref=f2e279]:
+              - generic [ref=f2e280]: R$
+              - generic [ref=f2e281]: "184"
+              - generic [ref=f2e282]: ",00 / ano"
+            - paragraph [ref=f2e283]: PIX R$ 179,00
+            - paragraph [ref=f2e284]: Equivale a R$ 15,33/mes
+          - button "Assinar Anual" [ref=f2e285] [cursor=pointer]
+          - list [ref=f2e286]:
+            - listitem [ref=f2e287]:
+              - generic [ref=f2e290]: 4 Avaliacoes faciais completas por mes
+            - listitem [ref=f2e291]:
+              - generic [ref=f2e294]: Painel de Evolucao Temporal (compare seus scores)
+            - listitem [ref=f2e295]:
+              - generic [ref=f2e298]: Score de Atratividade e Harmonia Facial detalhado
+            - listitem [ref=f2e299]:
+              - generic [ref=f2e302]: Relatorio estendido de proporcoes e destaques
+            - listitem [ref=f2e303]:
+              - generic [ref=f2e306]: Fila Prioritaria (16 horas ou menos)
+            - listitem [ref=f2e307]:
+              - generic [ref=f2e310]: Economia de R$ 60 ao ano
+        - generic [ref=f2e312]:
+          - generic [ref=f2e313]:
+            - heading "Lite Estetica" [level=3] [ref=f2e314]
+            - generic [ref=f2e317]:
+              - generic [ref=f2e318]: R$
+              - generic [ref=f2e319]: "54"
+              - generic [ref=f2e320]: ",90 / mes"
+            - paragraph [ref=f2e321]: PIX R$ 49,90
+          - button "Assinar Black" [ref=f2e322] [cursor=pointer]
+          - list [ref=f2e323]:
+            - listitem [ref=f2e324]:
+              - generic [ref=f2e327]: 6 Avaliacoes por mes (acompanhamento semanal)
+            - listitem [ref=f2e328]:
+              - generic [ref=f2e331]: Analise completa dos 12 atributos + atratividade
+            - listitem [ref=f2e332]:
+              - generic [ref=f2e335]: Diagnostico de Contraste Pessoal e Cores
+            - listitem [ref=f2e336]:
+              - generic [ref=f2e339]: Plano de Visagismo completo (rosto, cabelo, barba, oculos)
+            - listitem [ref=f2e340]:
+              - generic [ref=f2e343]: Relatorio Estendido de Tracos e proporcoes
+            - listitem [ref=f2e344]:
+              - generic [ref=f2e347]: Fila Expressa Ultra-VIP (8 horas ou menos)
+      - paragraph [ref=f2e349]: Transações 100% seguras via Stripe. Cancele ou altere o seu plano a qualquer momento.
+    - generic [ref=f2e356]:
+      - heading "Pronto para descobrir o seu verdadeiro potencial?" [level=2] [ref=f2e360]
+      - paragraph [ref=f2e361]: Junte-se a milhares de brasileiros que já transformaram sua auto-imagem com o FaceMax. Comece agora gratuitamente.
+      - link "Criar Minha Conta Grátis" [ref=f2e362] [cursor=pointer]:
+        - /url: /login
+      - paragraph [ref=f2e367]: Sem cartão de crédito. Cancele quando quiser.
+    - contentinfo [ref=f2e368]:
+      - generic [ref=f2e369]:
+        - link [ref=f2e370] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f2e373] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f2e376] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f2e379] [cursor=pointer]:
+          - /url: "#"
+      - paragraph [ref=f2e383]: A melhor IA brasileira de avaliação facial. Mapeamos mais de 468 pontos faciais para revelar o seu potencial visual único.
+      - generic [ref=f2e385]:
+        - text: 2026 —
+        - strong [ref=f2e386]: FaceMax
+        - text: — Elite da Estética
+  - region "Notifications alt+T"
+  - generic [ref=f2e388]:
+    - paragraph [ref=f2e389]:
+      - text: Usamos cookies essenciais (Supabase Auth) e, se aceito, analytics. Veja nossa
+      - link "Política" [ref=f2e390] [cursor=pointer]:
+        - /url: /privacidade
+      - text: .
+    - generic [ref=f2e391]:
+      - button "Recusar" [ref=f2e392] [cursor=pointer]
+      - button "Aceitar" [ref=f2e393] [cursor=pointer]

@@ -2,3 +2,13 @@
 [     842ms] [ERROR] [api] setAccessToken: token-presente @ https://facemax.pro/assets/index-DAiSukvf.js:94
 [   69626ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://facemax-api.onrender.com/api/v1/payments/create-cakto:0
 [26484742ms] [ERROR] [api] setAccessToken: token-presente @ https://facemax.pro/assets/index-DAiSukvf.js:94
+[59529928ms] [ERROR] Failed to load resource: net::ERR_INTERNET_DISCONNECTED @ https://lchmfruaaukeqorfmwvg.supabase.co/auth/v1/token?grant_type=refresh_token:0
+[59530131ms] [ERROR] Failed to load resource: net::ERR_INTERNET_DISCONNECTED @ https://lchmfruaaukeqorfmwvg.supabase.co/auth/v1/token?grant_type=refresh_token:0
+[59530533ms] [ERROR] Failed to load resource: net::ERR_INTERNET_DISCONNECTED @ https://lchmfruaaukeqorfmwvg.supabase.co/auth/v1/token?grant_type=refresh_token:0
+[59532545ms] [ERROR] [api] setAccessToken: token-presente @ https://facemax.pro/assets/index-DAiSukvf.js:94
+[59533791ms] [ERROR] Failed to load resource: net::ERR_NETWORK_CHANGED @ https://facemax-api.onrender.com/api/v1/profile/:0
+[59533791ms] [ERROR] Falha ao carregar perfil: Error: Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.
+    at Xo (https://facemax.pro/assets/index-DAiSukvf.js:95:58906)
+    at async https://facemax.pro/assets/index-DAiSukvf.js:95:61256
+    at async https://facemax.pro/assets/index-DAiSukvf.js:95:61843 @ https://facemax.pro/assets/index-DAiSukvf.js:94
+[59533791ms] [ERROR] [api] setAccessToken: token-nulo @ https://facemax.pro/assets/index-DAiSukvf.js:94

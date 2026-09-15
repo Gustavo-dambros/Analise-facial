@@ -1,0 +1,16 @@
+[     891ms] [ERROR] [api] setAccessToken: token-presente @ https://facemax.pro/assets/index-DAiSukvf.js:94
+[     892ms] [ERROR] [api] setAccessToken: token-presente @ https://facemax.pro/assets/index-DAiSukvf.js:94
+[    3322ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://facemax-api.onrender.com/api/v1/profile/:0
+[    3323ms] [ERROR] Falha ao carregar perfil: Error: Erro interno ao processar a solicitacao. Entre em contato com o suporte.
+    at pZ (https://facemax.pro/assets/index-DAiSukvf.js:95:58590)
+    at async Xo (https://facemax.pro/assets/index-DAiSukvf.js:95:58762)
+    at async https://facemax.pro/assets/index-DAiSukvf.js:95:61256
+    at async https://facemax.pro/assets/index-DAiSukvf.js:95:61623 @ https://facemax.pro/assets/index-DAiSukvf.js:94
+[    4065ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://facemax-api.onrender.com/api/v1/profile/:0
+[    4066ms] [ERROR] Falha ao carregar perfil: Error: Erro interno ao processar a solicitacao. Entre em contato com o suporte.
+    at pZ (https://facemax.pro/assets/index-DAiSukvf.js:95:58590)
+    at async Xo (https://facemax.pro/assets/index-DAiSukvf.js:95:58762)
+    at async https://facemax.pro/assets/index-DAiSukvf.js:95:61256
+    at async https://facemax.pro/assets/index-DAiSukvf.js:95:61843 @ https://facemax.pro/assets/index-DAiSukvf.js:94
+[    4066ms] [ERROR] [api] setAccessToken: token-nulo @ https://facemax.pro/assets/index-DAiSukvf.js:94
+[  124446ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://facemax.pro/login:0
