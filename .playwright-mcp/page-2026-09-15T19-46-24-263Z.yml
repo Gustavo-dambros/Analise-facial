@@ -1,0 +1,68 @@
+- main [ref=e2]:
+  - generic [ref=e9]:
+    - heading "FaceMax - Análise Avulsa" [level=2] [ref=e13]
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]: Nome completo
+        - textbox "Nome completo" [ref=e18]:
+          - /placeholder: Preencha seu nome
+      - generic [ref=e21]:
+        - generic [ref=e22]: Email
+        - textbox "Email" [ref=e24]:
+          - /placeholder: Preencha seu email
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]: CPF/CNPJ
+          - textbox "CPF/CNPJ" [ref=e29]:
+            - /placeholder: Preencha seu CPF/CNPJ
+        - generic [ref=e30]:
+          - generic [ref=e31]: Celular
+          - textbox "Celular" [ref=e33]:
+            - /placeholder: Preencha seu celular
+      - generic [ref=e34]:
+        - generic [ref=e35]: Oferta
+        - generic [ref=e36]:
+          - generic [ref=e37]: 3 X de R$ 5,49
+          - generic [ref=e38]: R$ 14,99 à vista
+      - generic [ref=e39]:
+        - generic [ref=e40]: Forma de Pagamento
+        - tablist [ref=e41]:
+          - tab "Apple Pay" [selected] [ref=e42] [cursor=pointer]
+          - tab "Cartão de Crédito" [ref=e46] [cursor=pointer]
+          - tab "Google Pay" [ref=e50] [cursor=pointer]
+          - tab "PicPay" [ref=e54] [cursor=pointer]
+          - tab "PIX" [ref=e58] [cursor=pointer]
+        - tabpanel "Apple Pay" [ref=e64]:
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - generic [ref=e69]: Parcelas
+              - generic [ref=e70]: NOVO
+            - combobox "Parcelas" [disabled] [ref=e73]:
+              - option "Carregando..." [selected]
+      - generic [ref=e74]:
+        - generic [ref=e75]: Resumo do pedido
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - generic [ref=e80]: FaceMax - Análise Avulsa
+              - generic [ref=e81]: Pagamento único
+            - generic [ref=e82]: R$ 14,99
+          - generic [ref=e83]:
+            - generic "Taxa de serviço cobrada pela plataforma" [ref=e84]: Taxa de serviço
+            - generic [ref=e86]: R$ 0,99
+          - generic [ref=e88]:
+            - generic [ref=e89]: Total
+            - generic [ref=e90]: 3x de R$ 0,33
+      - button "Pagar com Apple Pay" [ref=e94] [cursor=pointer]
+    - generic [ref=e95]:
+      - paragraph [ref=e96]: Compra segura
+      - paragraph [ref=e99]:
+        - text: Ao prosseguir, você concorda com os Termos de uso de face.max0904@gmail.com, além dos
+        - link "Termos" [ref=e100] [cursor=pointer]:
+          - /url: https://www.cakto.com.br/termo-de-compra-e-venda
+        - text: e
+        - link "Políticas" [ref=e101] [cursor=pointer]:
+          - /url: https://www.cakto.com.br/politica-de-privacidade
+        - text: da Cakto.
+      - paragraph [ref=e102]: Processado por Cakto
+  - region "Notifications alt+T"

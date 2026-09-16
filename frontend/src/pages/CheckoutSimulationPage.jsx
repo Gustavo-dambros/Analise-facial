@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import {
   Check, Shield, ArrowLeft, Sparkles, Copy, CheckCircle,
-  QrCode, Zap, Loader2
+  QrCode, Zap, Loader2, MessageCircle
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -177,12 +178,22 @@ export default function CheckoutSimulationPage() {
               )}
 
               <>
-                  {paymentData.qr_code_base64 ? (
-                    <img
-                      src={paymentData.qr_code_base64}
-                      alt="QR Code PIX"
-                      className="w-48 h-48 mx-auto rounded-lg mb-4"
-                    />
+                  {paymentData.qr_code ? (
+                    <div className="w-48 h-48 mx-auto bg-white rounded-xl p-3 flex items-center justify-center mb-4">
+                      <QRCodeSVG
+                        value={paymentData.qr_code}
+                        size={128}
+                        bgColor="#FFFFFF"
+                        fgColor="#000000"
+                        includeMargin={true}
+                        imageSettings={{
+                          src: undefined,
+                          height: 0,
+                          width: 0,
+                          excavate: false,
+                        }}
+                      />
+                    </div>
                   ) : (
                     <div className="w-48 h-48 mx-auto bg-white rounded-xl p-3 flex items-center justify-center mb-4">
                       <div className="flex items-center justify-center">
@@ -236,9 +247,12 @@ export default function CheckoutSimulationPage() {
                 </div>
               )}
 
-              <p className="text-text-muted text-[10px] text-center">
-                Após a confirmação, sua assinatura será ativada automaticamente.
-              </p>
+<p className="text-text-muted text-[10px] text-center">
+                  Após a confirmação, sua assinatura será ativada automaticamente.
+                </p>
+                <p className="text-center text-text-muted text-[10px] mt-2">
+                  Problemas? <a href="https://instagram.com/seu_instagram" target="_blank" rel="noopener noreferrer" className="text-brand-accent hover:underline">@seu_instagram</a>
+                </p>
             </CardContent>
           </Card>
         </motion.div>
@@ -421,9 +435,12 @@ export default function CheckoutSimulationPage() {
                 </span>
               </div>
 
-              <p className="text-center text-text-muted text-xs">
-                Ao continuar, você concorda com os Termos de Serviço e Política de Privacidade.
-              </p>
+<p className="text-center text-text-muted text-xs">
+                  Ao continuar, você concorda com os Termos de Serviço e Política de Privacidade.
+                </p>
+                <p className="text-center text-text-muted text-xs mt-2">
+                  Problemas? Entre em contato: <a href="https://instagram.com/seu_instagram" target="_blank" rel="noopener noreferrer" className="text-brand-accent hover:underline font-medium">@seu_instagram</a>
+                </p>
             </div>
           </CardContent>
         </Card>

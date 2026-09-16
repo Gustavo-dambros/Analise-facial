@@ -252,3 +252,52 @@ export async function getAnalysisHistory() {
 }
 
 // (fim do arquivo)
+
+/**
+ * Cria uma sugestão/recomendação
+ * POST /api/v1/recommendations
+ */
+export async function createRecommendation(data) {
+  return apiFetch('/api/v1/recommendations', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Lista minhas recomendações
+ * GET /api/v1/recommendations
+ */
+export async function listMyRecommendations(limit = 20, offset = 0) {
+  return apiFetch(`/api/v1/recommendations?limit=${limit}&offset=${offset}`);
+}
+
+/**
+ * Cria atribuição de plano (professional/admin)
+ * POST /api/v1/recommendations/plan-assignment
+ */
+export async function createPlanAssignment(data) {
+  return apiFetch('/api/v1/recommendations/plan-assignment', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Lista atribuições de plano feitas pelo profissional
+ * GET /api/v1/recommendations/plan-assignment
+ */
+export async function listPlanAssignments(limit = 50, offset = 0) {
+  return apiFetch(`/api/v1/recommendations/plan-assignment?limit=${limit}&offset=${offset}`);
+}
+
+/**
+ * Aplica atribuição de plano pendente (usuário logado)
+ * POST /api/v1/recommendations/plan-assignment/apply
+ */
+export async function applyPlanAssignment(email) {
+  return apiFetch('/api/v1/recommendations/plan-assignment/apply', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}

@@ -204,6 +204,8 @@ class PaymentService:
         now = time.time()
         if _cakto_access_token and now < _cakto_expires_at - 60:
             return _cakto_access_token
+        # DEBUG
+        logger.info(f"Cakto creds - Client ID: {settings.CAKTO_CLIENT_ID[:10] if settings.CAKTO_CLIENT_ID else 'NONE'}..., Secret: {settings.CAKTO_CLIENT_SECRET[:10] if settings.CAKTO_CLIENT_SECRET else 'NONE'}..., Base URL: {settings.CAKTO_BASE_URL}")
         if not settings.CAKTO_CLIENT_ID or not settings.CAKTO_CLIENT_SECRET:
             raise SanitizedHTTPException(
                 status_code=500,
@@ -244,6 +246,7 @@ class PaymentService:
         pending_url: str,
         idempotency_key: str | None = None,
     ) -> dict:
+        logger.info(f"DEBUG create_cakto_payment: plan_id={plan_id}, offer_id={settings.PLAN_OFFER_MAP.get(plan_id)}")
         if plan_id not in settings.PLAN_PRICES:
             raise SanitizedHTTPException(status_code=400, public_message="Plano inválido.", internal_detail=f"plan_id {plan_id}")
         # Resolve offerId via PLAN_OFFER_MAP; suporta tanto plan_id completo quanto chave curta

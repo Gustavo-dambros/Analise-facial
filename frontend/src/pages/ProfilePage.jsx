@@ -1,6 +1,6 @@
 // Apple UI Design System – Verified: 8pt Grid, SF Typography, Material-Depth, Natural Spring Motion
 import { useState, useEffect, useRef } from 'react';
-import { Camera, Save, CheckCircle2, User, Mail, Sparkles, LogOut, Key, Trash2, ShieldCheck, Loader2, Crown, Zap } from 'lucide-react';
+import { Camera, Save, CheckCircle2, User, Mail, Sparkles, LogOut, Key, Trash2, ShieldCheck, Loader2, Crown, Zap, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { getProfile, updateProfile, deleteAccount } from '@/lib/api';
@@ -14,6 +14,7 @@ import { FadeIn, ScaleIn } from '@/components/ui/page-transition';
 import { motion } from 'framer-motion';
 import { PLANS, resolveCurrentPlan } from '@/lib/plans';
 import { useNavigate } from 'react-router-dom';
+import { RecommendationButton } from '@/components/recommendation/RecommendationDialog';
 
 const GENDER_OPTIONS = ['Masculino', 'Feminino', 'Neutro'];
 const STYLE_OPTIONS = ['Harmonia Facial','Simetria e Proporcao','Estilo Pessoal','Pre-Procedure','Autoconhecimento'];
@@ -196,7 +197,8 @@ export default function ProfilePage() {
           {/* Plano — Apple card 20, 8pt, material */}
           <ScaleIn delay={0.08}>
             <Card className="apple-card apple-material-gold overflow-hidden">
-              <CardHeader className="pb-3">
+<CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center">
                     <Crown className="w-4 h-4 text-brand-accent" />
@@ -208,7 +210,9 @@ export default function ProfilePage() {
                     </CardDescription>
                   </div>
                 </div>
-              </CardHeader>
+                <RecommendationButton />
+              </div>
+            </CardHeader>
               <CardContent className="space-y-4">
                 {isFree ? (
                   <div className="space-y-3">

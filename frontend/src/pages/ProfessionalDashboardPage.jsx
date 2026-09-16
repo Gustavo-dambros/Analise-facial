@@ -2,9 +2,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { LogOut, ScanFace, ClipboardList, Users, Clock, ChevronRight, Loader2, BarChart3, Crown, Search, Bell, Filter, ArrowUpRight, Activity, Zap, Eye, Trash2, Edit2, ChevronLeft } from 'lucide-react';
+import { LogOut, ScanFace, ClipboardList, Users, Clock, ChevronRight, Loader2, BarChart3, Crown, Search, Bell, Filter, ArrowUpRight, Activity, Zap, Eye, Trash2, Edit2, ChevronLeft, MessageCircle, Crown as CrownIcon, Mail, Plus, UserPlus, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { RecommendationButton, PlanAssignmentPanel } from '@/components/recommendation/RecommendationDialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -117,16 +118,18 @@ export default function ProfessionalDashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
-            <button className="w-9 h-9 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center hover:bg-white/[0.08] apple-transition">
-              <Bell className="w-4 h-4 text-white/60" />
-            </button>
-            <div className="hidden sm:flex flex-col text-right">
-              <span className="text-[12px] font-medium leading-none">{user?.email}</span>
-              <span className="text-[11px] text-white/40">Online</span>
+<div className="flex items-center gap-2 ml-auto">
+              <RecommendationButton />
+              <PlanAssignmentButton />
+              <button className="w-9 h-9 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center hover:bg-white/[0.08] apple-transition">
+                <Bell className="w-4 h-4 text-white/60" />
+              </button>
+              <div className="hidden sm:flex flex-col text-right">
+                <span className="text-[12px] font-medium leading-none">{user?.email}</span>
+                <span className="text-[11px] text-white/40">Online</span>
+              </div>
+              <button onClick={handleLogout} className="h-9 px-3 rounded-full border border-white/10 text-white/60 hover:text-white text-xs apple-transition">Sair</button>
             </div>
-            <button onClick={handleLogout} className="h-9 px-3 rounded-full border border-white/10 text-white/60 hover:text-white text-xs apple-transition">Sair</button>
-          </div>
         </div>
       </header>
 
@@ -333,6 +336,8 @@ export default function ProfessionalDashboardPage() {
                 <p className="text-xs text-white/60 mt-1 leading-relaxed">Use a busca para filtrar por nome ou ID. Combine com filtro de status para alta densidade sem poluição.</p>
               </CardContent>
             </Card>
+            {/* Plan Assignment Panel */}
+            <PlanAssignmentPanel />
           </div>
         </div>
       </main>
