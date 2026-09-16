@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client';
 import { LogOut, ScanFace, ClipboardList, Users, Clock, ChevronRight, Loader2, BarChart3, Crown, Search, Bell, Filter, ArrowUpRight, Activity, Zap, Eye, Trash2, Edit2, ChevronLeft, MessageCircle, Crown as CrownIcon, Mail, Plus, UserPlus, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { RecommendationButton, PlanAssignmentPanel } from '@/components/recommendation/RecommendationDialog';
+import { RecommendationButton, PlanAssignmentButton, PlanAssignmentPanel } from '@/components/recommendation/RecommendationDialog';
+import { AdminRecommendationsView } from '@/components/recommendation/AdminRecommendationsView';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -338,6 +339,8 @@ export default function ProfessionalDashboardPage() {
             </Card>
             {/* Plan Assignment Panel */}
             <PlanAssignmentPanel />
+            {/* Recomendações dos Clientes */}
+            <AdminRecommendationsView />
           </div>
         </div>
       </main>

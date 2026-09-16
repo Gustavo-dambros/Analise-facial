@@ -301,3 +301,26 @@ export async function applyPlanAssignment(email) {
     body: JSON.stringify({ email }),
   });
 }
+
+/**
+ * Lista TODAS as recomendações (admin/professional)
+ * GET /api/v1/recommendations/admin/all
+ */
+export async function listAllRecommendations(limit = 50, offset = 0, statusFilter = null) {
+  let url = `/api/v1/recommendations/admin/all?limit=${limit}&offset=${offset}`;
+  if (statusFilter) {
+    url += `&status_filter=${statusFilter}`;
+  }
+  return apiFetch(url);
+}
+
+/**
+ * Atualiza recomendação (admin/professional)
+ * PATCH /api/v1/recommendations/admin/{rec_id}
+ */
+export async function updateRecommendation(recId, data) {
+  return apiFetch(`/api/v1/recommendations/admin/${recId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}

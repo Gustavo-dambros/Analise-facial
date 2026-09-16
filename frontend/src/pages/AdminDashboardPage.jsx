@@ -34,6 +34,8 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
 import { parseJsonSafe, API_BASE as API_ROOT } from "@/lib/api"
+import { AdminRecommendationsView } from '@/components/recommendation/AdminRecommendationsView'
+import { PlanAssignmentButton, PlanAssignmentPanel } from '@/components/recommendation/RecommendationDialog'
 
 const API_BASE = `${API_ROOT}/api/v1`
 
@@ -415,9 +417,26 @@ export default function AdminDashboardPage() {
         </StaggerContainer>
 
         {/* Tables */}
-        <StaggerContainer className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <StaggerContainer className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <StaggerItem><OrdersTable orders={orders} loading={loading} /></StaggerItem>
           <StaggerItem><UsersTable users={users} loading={loading} /></StaggerItem>
+        </StaggerContainer>
+
+        {/* Recomendações dos Clientes */}
+        <StaggerContainer className="mb-8">
+          <FadeIn>
+            <AdminRecommendationsView />
+          </FadeIn>
+        </StaggerContainer>
+
+        {/* Atribuição de Planos */}
+        <StaggerContainer className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <StaggerItem>
+            <PlanAssignmentButton />
+          </StaggerItem>
+          <StaggerItem>
+            <PlanAssignmentPanel />
+          </StaggerItem>
         </StaggerContainer>
       </StaggerContainer>
     </div>

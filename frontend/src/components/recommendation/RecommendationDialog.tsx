@@ -616,6 +616,11 @@ export function PlanAssignmentPanel() {
   );
 }
 
+export function PlanAssignmentDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  if (!isOpen) return null;
+  return <PlanAssignmentPanel />;
+}
+
 export function PlanAssignmentButton() {
   const [isOpen, setIsOpen] = useState(false);
   return (
