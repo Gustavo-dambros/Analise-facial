@@ -101,7 +101,7 @@ export function RecommendationDialog({ isOpen, onClose }: { isOpen: boolean; onC
   if (!isOpen) return null;
 
   return (
-    <ToastProvider>
+    <>
       <motion.div
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         initial={{ opacity: 0 }}
@@ -313,7 +313,7 @@ export function RecommendationDialog({ isOpen, onClose }: { isOpen: boolean; onC
           </div>
         </motion.div>
       </motion.div>
-    </ToastProvider>
+    </>
   );
 }
 
@@ -432,7 +432,7 @@ export function PlanAssignmentPanel() {
   }
 
   return (
-    <ToastProvider>
+    <>
       <motion.div
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         initial={{ opacity: 0 }}
@@ -612,7 +612,7 @@ export function PlanAssignmentPanel() {
           </div>
         </motion.div>
       </motion.div>
-    </ToastProvider>
+    </>
   );
 }
 

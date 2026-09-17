@@ -1,4 +1,5 @@
 import { ScanFace, BarChart3, UserCircle, Plus, FileText, Camera, ClipboardList } from "lucide-react"
+import { FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
 import logo from "@/assets/logo.png"
@@ -121,6 +122,18 @@ export function AppSidebar({ ...props }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
+          <div className="h-px bg-border my-2" />
+          <div className="hidden lg:flex items-center justify-center gap-2 py-1">
+            {[
+              { Icon: FaInstagram, href: "https://www.instagram.com/face.max0904", label: "Instagram da FaceMax" },
+              { Icon: FaTiktok, href: "https://www.tiktok.com/@face_max0", label: "TikTok da FaceMax" },
+              { Icon: FaYoutube, href: "https://www.youtube.com/@facemax04", label: "YouTube da FaceMax" },
+            ].map(({ Icon, href, label }) => (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-brand-accent transition-colors">
+                <Icon className="w-4 h-4" />
+              </a>
+            ))}
+          </div>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
