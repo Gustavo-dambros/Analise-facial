@@ -14,6 +14,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 // Toast removed - using inline notifications instead
 
+// Feature flag: false = esconde todos os pontos de criacao de sugestoes (reativar depois)
+export const RECOMMENDATIONS_ENABLED = false;
+
 const CATEGORIES = [
   { value: 'feature', label: 'Nova funcionalidade', icon: Lightbulb },
   { value: 'bug', label: 'Reportar bug', icon: Bug },
@@ -319,6 +322,7 @@ export function RecommendationDialog({ isOpen, onClose }: { isOpen: boolean; onC
 
 export function RecommendationButton() {
   const [isOpen, setIsOpen] = useState(false);
+  if (!RECOMMENDATIONS_ENABLED) return null;
   return (
     <>
       <Button
