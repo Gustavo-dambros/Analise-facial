@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { RecommendationButton, PlanAssignmentButton, PlanAssignmentPanel } from '@/components/recommendation/RecommendationDialog';
 import { AdminRecommendationsView } from '@/components/recommendation/AdminRecommendationsView';
+import { deleteAnalysis } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -91,6 +92,20 @@ export default function ProfessionalDashboardPage() {
 
   const handleLogout = async () => { await signOut(); navigate('/professional/login'); };
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '--';
+
+  const [deletingId, setDeletingId] = useState(null);
+  const handleDelete = async (id) => {
+    if (!window.confirm('Apagar esta avaliação? Esta ação não pode ser desfeita.')) return;
+    setDeletingId(id);
+    try {
+      await deleteAnalysis(id);
+      await fetchAnalyses();
+    } catch (err) {
+      alert(err.message || 'Erro ao apagar avaliação');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#050507] text-white">
@@ -273,7 +288,7 @@ export default function ProfessionalDashboardPage() {
                             <div className="flex items-center justify-end gap-1">
                               <Button size="sm" variant="ghost" onClick={() => navigate(`/professional/dashboard/evaluate/${row.id}`)} className="h-8 w-8 p-0 rounded-full hover:bg-white/[0.06]"><Eye className="w-3.5 h-3.5" /></Button>
                               <Button size="sm" variant="ghost" onClick={() => navigate(`/professional/dashboard/evaluate/${row.id}`)} className="h-8 w-8 p-0 rounded-full hover:bg-white/[0.06] hidden sm:inline-flex"><Edit2 className="w-3.5 h-3.5" /></Button>
-                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-full hover:bg-red-500/10 text-white/40 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => handleDelete(row.id)} disabled={deletingId === row.id} title="Apagar avaliação" className="h-8 w-8 p-0 rounded-full hover:bg-red-500/10 text-white/40 hover:text-red-400 disabled:opacity-50">{deletingId === row.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}</Button>
                             </div>
                           </TableCell>
                         </TableRow>

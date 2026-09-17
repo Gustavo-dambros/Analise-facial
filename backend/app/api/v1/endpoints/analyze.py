@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,3 +49,26 @@ async def get_pending_analyses(
     """Get all analyses pending manual review. Professional/Admin only."""
     repo = AnalysisRepository(db)
     return await repo.get_pending()
+
+
+@router.delete("/{analysis_id}", status_code=status.HTTP_200_OK)
+@limiter.limit(settings.RATE_LIMIT_GENERAL)
+async def delete_analysis(
+    analysis_id: str,
+    request: Request,
+    current_user: Profile = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Apagar avaliação. Permitido ao dono ou a professional/admin."""
+    repo = AnalysisRepository(db)
+    analysis = await repo.get_by_id(analysis_id)
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Avaliação não encontrada")
+
+    is_owner = str(analysis.user_id) == str(current_user.id)
+    is_staff = current_user.role in ("professional", "admin")
+    if not (is_owner or is_staff):
+        raise HTTPException(status_code=403, detail="Sem permissão para apagar esta avaliação")
+
+    await repo.delete(analysis)
+    return {"ok": True, "id": analysis_id}

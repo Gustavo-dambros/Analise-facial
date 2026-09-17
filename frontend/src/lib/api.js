@@ -251,6 +251,16 @@ export async function getAnalysisHistory() {
   return apiFetch('/api/v1/analyze/history');
 }
 
+/**
+ * Apaga uma avaliação (dono ou professional/admin)
+ * DELETE /api/v1/analyze/{id}
+ */
+export async function deleteAnalysis(analysisId) {
+  return apiFetch(`/api/v1/analyze/${analysisId}`, {
+    method: 'DELETE',
+  });
+}
+
 // (fim do arquivo)
 
 /**

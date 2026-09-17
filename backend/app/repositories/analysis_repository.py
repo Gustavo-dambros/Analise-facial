@@ -46,6 +46,16 @@ class AnalysisRepository:
         await self.db.refresh(analysis)
         return analysis
 
+    async def delete(self, analysis: Analysis) -> None:
+        """Remove a análise e suas denúncias vinculadas (evaluation_reports)."""
+        from sqlalchemy import text
+        await self.db.execute(
+            text("DELETE FROM evaluation_reports WHERE analysis_id = :aid"),
+            {"aid": str(analysis.id)},
+        )
+        await self.db.delete(analysis)
+        await self.db.commit()
+
     async def get_pending(self) -> list[dict]:
         result = await self.db.execute(
             select(Analysis, Profile.full_name)

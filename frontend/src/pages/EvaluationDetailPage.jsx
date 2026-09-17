@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowLeft, Loader2, User, Flag, AlertTriangle, CheckCircle2, Calendar, Check, Minus, Dumbbell, Clock } from 'lucide-react';
+import { ArrowLeft, Loader2, User, Flag, AlertTriangle, CheckCircle2, Calendar, Check, Minus, Dumbbell, Clock, Trash2 } from 'lucide-react';
 import ChartRadialText from '@/components/evaluation/ChartRadialText';
 import RadarAttributes from '@/components/evaluation/RadarAttributes';
 import FacialThirds from '@/components/evaluation/FacialThirds';
@@ -11,6 +11,7 @@ import AttributeTable from '@/components/evaluation/AttributeTable';
 import BodyRadarChart from '@/components/evaluation/BodyRadarChart';
 import ScoreCard from '@/components/evaluation/ScoreCard';
 import { FadeIn, ScaleIn, SlideInLeft, SlideInRight, StaggerContainer, StaggerItem } from '@/components/ui/page-transition';
+import { deleteAnalysis } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -83,6 +84,19 @@ export default function EvaluationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState(null);
   const [completedExercises, setCompletedExercises] = useState({});
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!window.confirm('Apagar esta avaliação? Esta ação não pode ser desfeita.')) return;
+    setDeleting(true);
+    try {
+      await deleteAnalysis(id);
+      navigate('/dashboard/progress');
+    } catch (err) {
+      alert(err.message || 'Erro ao apagar avaliação');
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     fetchEntry();
@@ -263,6 +277,15 @@ export default function EvaluationDetailPage() {
             <Badge variant={isPending ? 'secondary' : 'success'} className="shrink-0 text-xs">
               {isPending ? <><Clock className="w-3 h-3 mr-1" /> Aguardando</> : <><CheckCircle2 className="w-3 h-3 mr-1" /> Avaliada</>}
             </Badge>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              title="Apagar avaliação"
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs shrink-0 disabled:opacity-50 ml-auto"
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              <span className="hidden sm:inline">Apagar</span>
+            </button>
           </div>
         </FadeIn>
 
