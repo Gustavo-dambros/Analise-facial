@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   MessageCircle, Bug, Lightbulb, Layout, DollarSign, HelpCircle,
-  Loader2, ChevronDown, ChevronUp, Filter, X, Edit2, Eye,
+  Loader2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, X, Edit2, Eye,
   AlertCircle, CheckCircle, Clock, User
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { listAllRecommendations, updateRecommendation } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
