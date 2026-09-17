@@ -78,12 +78,14 @@ class PlanAssignmentRepository:
         target_email: str,
         plan_type: str,
         notes: Optional[str] = None,
+        target_user_id: Optional[UUID] = None,
     ) -> PlanAssignment:
         assignment = PlanAssignment(
             assigned_by=assigned_by,
             target_email=target_email.lower().strip(),
             plan_type=plan_type,
             notes=notes,
+            target_user_id=target_user_id,
         )
         self.db.add(assignment)
         await self.db.commit()

@@ -138,25 +138,36 @@ async def create_plan_assignment(
     current_user: Profile = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Atribuir plano a usuário via email (professional/admin only)."""
+    """Atribuir plano a usuário via email ou ID (professional/admin only)."""
     if current_user.role not in ("admin", "professional"):
         raise HTTPException(status_code=403, detail="Acesso restrito a admin/professional")
 
     repo = PlanAssignmentRepository(db)
 
+    # Resolve o email alvo: aceita email direto ou ID do usuário
+    target_user_id = payload.target_user_id
+    if target_user_id:
+        target_profile = await db.get(Profile, target_user_id)
+        if not target_profile or not target_profile.email:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado para este ID")
+        target_email = target_profile.email
+    else:
+        target_email = str(payload.target_email)
+
     # Verifica se já existe pendente para este email
-    pending = await repo.get_pending_by_email(payload.target_email)
+    pending = await repo.get_pending_by_email(target_email)
     if pending:
         raise HTTPException(
             status_code=400,
-            detail="Já existe atribuição pendente para este email. Aguarde a aplicação ou cancele a anterior.",
+            detail="Já existe atribuição pendente para este usuário. Aguarde a aplicação ou cancele a anterior.",
         )
 
     assignment = await repo.create(
         assigned_by=current_user.id,
-        target_email=payload.target_email,
+        target_email=target_email,
         plan_type=payload.plan_type,
         notes=payload.notes,
+        target_user_id=target_user_id,
     )
     return assignment
 

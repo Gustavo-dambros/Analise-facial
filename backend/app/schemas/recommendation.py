@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic import BaseModel, Field, EmailStr, ConfigDict, model_validator
 from datetime import datetime
 from uuid import UUID
 from app.models.recommendation import RecommendationStatus
@@ -44,8 +44,17 @@ class PlanAssignmentBase(BaseModel):
     notes: Optional[str] = Field(None, max_length=1000, description="Observações internas")
 
 
-class PlanAssignmentCreate(PlanAssignmentBase):
-    pass
+class PlanAssignmentCreate(BaseModel):
+    target_email: Optional[EmailStr] = Field(None, description="Email do usuário alvo")
+    target_user_id: Optional[UUID] = Field(None, description="ID do usuário alvo (alternativa ao email)")
+    plan_type: str = Field(..., pattern="^(free|pro|enterprise)$", description="Tipo de plano")
+    notes: Optional[str] = Field(None, max_length=1000, description="Observações internas")
+
+    @model_validator(mode="after")
+    def _require_target(self):
+        if not self.target_email and not self.target_user_id:
+            raise ValueError("Informe o email ou o ID do usuário")
+        return self
 
 
 class PlanAssignmentResponse(PlanAssignmentBase):
