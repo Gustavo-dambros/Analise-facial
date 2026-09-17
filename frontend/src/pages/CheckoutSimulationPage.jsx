@@ -251,7 +251,7 @@ export default function CheckoutSimulationPage() {
                   Após a confirmação, sua assinatura será ativada automaticamente.
                 </p>
                 <p className="text-center text-text-muted text-[10px] mt-2">
-                  Problemas? <a href="https://instagram.com/seu_instagram" target="_blank" rel="noopener noreferrer" className="text-brand-accent hover:underline">@seu_instagram</a>
+                  Problemas? <a href="https://www.instagram.com/face.max0904" target="_blank" rel="noopener noreferrer" className="text-brand-accent hover:underline">@face.max0904</a>
                 </p>
             </CardContent>
           </Card>
@@ -439,7 +439,7 @@ export default function CheckoutSimulationPage() {
                   Ao continuar, você concorda com os Termos de Serviço e Política de Privacidade.
                 </p>
                 <p className="text-center text-text-muted text-xs mt-2">
-                  Problemas? Entre em contato: <a href="https://instagram.com/seu_instagram" target="_blank" rel="noopener noreferrer" className="text-brand-accent hover:underline font-medium">@seu_instagram</a>
+                  Problemas? Entre em contato: <a href="https://www.instagram.com/face.max0904" target="_blank" rel="noopener noreferrer" className="text-brand-accent hover:underline font-medium">@face.max0904</a>
                 </p>
             </div>
           </CardContent>

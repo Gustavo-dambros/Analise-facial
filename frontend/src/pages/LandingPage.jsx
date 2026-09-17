@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform, useReducedMotion, useInView } from 'fr
 import { useRef, useEffect } from 'react';
 import { useAnimatedNumber } from '@/hooks/useAnimatedNumber';
 import { ScanFace, BarChart3, Lightbulb, ShieldCheck, Camera, Users, BookOpen, Sparkles, TrendingUp, Check, Lock, Crown, Zap, Award, Globe } from 'lucide-react';
-import { FaInstagram, FaTwitter, FaLinkedin, FaGithub } from 'react-icons/fa';
+import { FaInstagram, FaTiktok, FaYoutube } from 'react-icons/fa';
 import GradientText from '@/components/ui/GradientText';
 import CardNav from '@/components/ui/CardNav';
 import GlassSurface from '@/components/ui/GlassSurface';
@@ -44,7 +44,7 @@ const navItems = [
     textColor: "#fff",
     links: [
       { label: "Suporte", href: "mailto:suporte@facemax.com.br", ariaLabel: "Suporte" },
-      { label: "Instagram", href: "#instagram", ariaLabel: "Instagram" }
+      { label: "Instagram", href: "https://www.instagram.com/face.max0904", ariaLabel: "Instagram" }
     ]
   }
 ];
@@ -561,8 +561,12 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="relative z-20 w-full bg-card-bg text-center flex flex-col items-center gap-4 py-12 border-t border-border">
         <div className="flex gap-3">
-          {[FaInstagram, FaTwitter, FaLinkedin, FaGithub].map((Icon, i) => (
-            <a key={i} href="#" className="w-10 h-10 flex items-center justify-center rounded-lg border border-border text-text-secondary hover:text-brand-accent hover:border-brand-accent/40 transition-colors">
+          {[
+            { Icon: FaInstagram, href: "https://www.instagram.com/face.max0904", label: "Instagram da FaceMax" },
+            { Icon: FaTiktok, href: "https://www.tiktok.com/@face_max0", label: "TikTok da FaceMax" },
+            { Icon: FaYoutube, href: "https://www.youtube.com/@facemax04", label: "YouTube da FaceMax" },
+          ].map(({ Icon, href, label }, i) => (
+            <a key={i} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="w-10 h-10 flex items-center justify-center rounded-lg border border-border text-text-secondary hover:text-brand-accent hover:border-brand-accent/40 transition-colors">
               <Icon className="w-5 h-5" />
             </a>
           ))}

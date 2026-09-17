@@ -36,7 +36,7 @@ export const jsonLdOrganization = {
   "name": "FaceMax",
   "url": CANONICAL,
   "logo": `${CANONICAL}/logo.png`,
-  "sameAs": ["https://instagram.com/facemax","https://linkedin.com/company/facemax"],
+  "sameAs": ["https://www.instagram.com/face.max0904","https://www.tiktok.com/@face_max0","https://www.youtube.com/@facemax04"],
   "contactPoint": { "@type": "ContactPoint", "email": "suporte@facemax.pro", "contactType": "customer support", "availableLanguage": ["pt-BR"] }
 }
 
