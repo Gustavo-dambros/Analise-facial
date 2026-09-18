@@ -67,7 +67,7 @@ def _stamp_alembic() -> None:
 async def _sync_schema() -> None:
     """Detect and add any columns defined in the models but missing in the DB."""
     from app.database.connection import engine
-    from app.models import Profile, FacialAnalysis, Payment, WeeklyRoutine, Order
+    from app.models import Profile, FacialAnalysis, Payment, WeeklyRoutine, Order, Recommendation, PlanAssignment
     from sqlalchemy import inspect, text
     from sqlalchemy.sql import func
 
@@ -77,6 +77,8 @@ async def _sync_schema() -> None:
         "payments": Payment,
         "weekly_routines": WeeklyRoutine,
         "orders": Order,
+        "recommendations": Recommendation,
+        "plan_assignments": PlanAssignment,
     }
 
     async with engine.begin() as conn:

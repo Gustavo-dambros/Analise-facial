@@ -203,23 +203,29 @@ async def apply_pending_plan_assignment(
     db: AsyncSession = Depends(get_db),
 ):
     """Aplicar plano atribuído ao usuário logado (quando ele faz login)."""
+    if current_user.email is None:
+        raise HTTPException(status_code=400, detail="Usuário sem email cadastrado")
+
+    if payload.email.lower().strip() != current_user.email.lower().strip():
+        raise HTTPException(status_code=403, detail="Só é permitido aplicar atribuição do próprio email")
+
     repo = PlanAssignmentRepository(db)
-    pending = await repo.get_pending_by_email(payload.email)
+    pending = await repo.get_pending_by_email(current_user.email)
 
     if not pending:
-        raise HTTPException(status_code=404, detail="Nenhuma atribuição pendente para este email")
+        raise HTTPException(status_code=404, detail="Nenhuma atribuição pendente para seu email")
 
-    # Aplica a primeira pendente (mais antiga)
     assignment = pending[0]
+    if assignment.target_user_id is not None and assignment.target_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Atribuição vinculada a outro usuário")
+
     success = await repo.mark_applied(assignment.id, current_user.id)
 
     if not success:
         raise HTTPException(status_code=400, detail="Não foi possível aplicar a atribuição")
 
-    # Atualiza o plano do usuário
     current_user.plan = assignment.plan_type
     await db.commit()
 
-    # Retorna assignment atualizado
     updated = await repo.get_by_id(assignment.id)
     return updated
