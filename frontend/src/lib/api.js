@@ -313,6 +313,16 @@ export async function applyPlanAssignment(email) {
 }
 
 /**
+ * Cancela atribuição de plano pendente (professional/admin)
+ * DELETE /api/v1/recommendations/plan-assignment/{assignmentId}
+ */
+export async function cancelPlanAssignment(assignmentId) {
+  return apiFetch(`/api/v1/recommendations/plan-assignment/${assignmentId}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
  * Lista TODAS as recomendações (admin/professional)
  * GET /api/v1/recommendations/admin/all
  */

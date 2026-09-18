@@ -4,10 +4,10 @@ import {
   Send, MessageCircle, Star, Bug, Lightbulb, Layout,
   DollarSign, HelpCircle, CheckCircle, AlertCircle,
   Loader2, X, ChevronDown, UserPlus, CheckCircle2,
-  Mail, Crown as CrownIcon, Plus
+  Mail, Crown as CrownIcon, Plus, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { createRecommendation, listMyRecommendations, createPlanAssignment, listPlanAssignments } from '@/lib/api';
+import { createRecommendation, listMyRecommendations, createPlanAssignment, listPlanAssignments, cancelPlanAssignment } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -512,6 +512,21 @@ function AssignmentHistory({ assignments, loadingList, listError, onRefresh }: {
   listError: string;
   onRefresh: () => void;
 }) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleCancel = async (assignmentId: string) => {
+    if (!window.confirm('Cancelar esta atribuição pendente?')) return;
+    setDeletingId(assignmentId);
+    try {
+      await cancelPlanAssignment(assignmentId);
+      onRefresh();
+    } catch (err: any) {
+      alert(err.message || 'Erro ao cancelar atribuição');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="pt-5 mt-5 border-t border-border">
       <div className="flex items-center justify-between mb-3">
@@ -559,6 +574,23 @@ function AssignmentHistory({ assignments, loadingList, listError, onRefresh }: {
               </div>
               {a.notes && (
                 <p className="mt-1.5 text-xs text-text-muted line-clamp-1">{a.notes}</p>
+              )}
+              {a.status === 'pending' && (
+                <div className="mt-2 flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCancel(a.id)}
+                    disabled={deletingId === a.id}
+                    className="text-red-400 hover:bg-red-500/10 h-7 px-2"
+                  >
+                    {deletingId === a.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
           ))}

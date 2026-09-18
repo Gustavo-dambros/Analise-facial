@@ -202,7 +202,7 @@ async def apply_pending_plan_assignment(
     current_user: Profile = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Aplicar plano atribuído ao usuário logado (quando ele faz login)."""
+    """Aplicar plano atribuído ao usuário logado."""
     if current_user.email is None:
         raise HTTPException(status_code=400, detail="Usuário sem email cadastrado")
 
@@ -229,3 +229,29 @@ async def apply_pending_plan_assignment(
 
     updated = await repo.get_by_id(assignment.id)
     return updated
+
+
+@router.delete("/plan-assignment/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def cancel_plan_assignment(
+    assignment_id: UUID,
+    current_user: Profile = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Cancelar atribuição pendente (professional/admin only)."""
+    if current_user.role not in ("admin", "professional"):
+        raise HTTPException(status_code=403, detail="Acesso restrito a admin/professional")
+
+    repo = PlanAssignmentRepository(db)
+    assignment = await repo.get_by_id(assignment_id)
+
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Atribuição não encontrada")
+
+    if assignment.assigned_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Só é possível cancelar suas próprias atribuições")
+
+    if assignment.status != "pending":
+        raise HTTPException(status_code=400, detail="Só é possível cancelar atribuições pendentes")
+
+    await repo.mark_failed(assignment.id, "Cancelada pelo profissional")
+    return None

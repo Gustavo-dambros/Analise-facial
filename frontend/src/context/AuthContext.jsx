@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProfile, setAccessToken } from '@/lib/api';
+import { getProfile, setAccessToken, applyPlanAssignment } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 import { translateAuthError } from '@/lib/authErrors';
 
@@ -63,7 +63,17 @@ export function AuthProvider({ children }) {
           queueMicrotask(async () => {
             if (!isMounted.current) return;
             try {
-              await fetchProfile();
+              const profile = await fetchProfile();
+              // Auto-aplicar plano pendente se houver
+              if (profile?.email) {
+                try {
+                  await applyPlanAssignment(profile.email);
+                  // Recarregar perfil para pegar o plano atualizado
+                  await fetchProfile();
+                } catch {
+                  // Ignora erro se não houver atribuição pendente
+                }
+              }
             } catch {
               // Profile failed — clear stale token
               setAccessToken(null);
