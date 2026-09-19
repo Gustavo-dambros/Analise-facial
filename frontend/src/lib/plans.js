@@ -84,10 +84,25 @@ export const PLAN_ORDER = ['plan_avulsa', 'plan_monthly', 'plan_annual', 'plan_b
 // nunca tiveram preço/oferta no backend — também retornam null: o backend
 // continua honrando a cota desses usuários via último pagamento aprovado,
 // mas a UI os trata como sem plano atual (convite a assinar um plano válido).
+// Mapeamento backend → frontend PLANS keys
+const BACKEND_PLAN_MAP = {
+  free: null,
+  pro: 'plan_monthly',
+  enterprise: 'plan_annual',
+};
+
 export function resolveCurrentPlan(user) {
   const fromStorage = typeof window !== 'undefined' ? localStorage.getItem('user_subscription') : null;
   const fromUser = user?.plan;
   const candidate = fromStorage || fromUser || null;
   if (!candidate || candidate === 'free') return null;
-  return PLANS[candidate] ? candidate : null;
+  
+  // Check if candidate is a direct PLANS key
+  if (PLANS[candidate]) return candidate;
+  
+  // Check if candidate is a backend plan value that maps to a PLANS key
+  const mapped = BACKEND_PLAN_MAP[candidate];
+  if (mapped && PLANS[mapped]) return mapped;
+  
+  return null;
 }
