@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { PLANS, resolveCurrentPlan } from '@/lib/plans';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import CouponCard from '@/components/coupon/CouponCard';
 
 const doTips = [
   {
@@ -95,6 +96,15 @@ export default function PhotoGuidePage() {
               </CardContent>
             </Card>
           </FadeIn>
+
+          {/* Cupom promocional — visível para quem ainda não tem plano */}
+          {isFree && (
+            <FadeIn delay={0.07}>
+              <div className="mb-8">
+                <CouponCard />
+              </div>
+            </FadeIn>
+          )}
 
           {/* Important Notice */}
           <FadeIn delay={0.1}>

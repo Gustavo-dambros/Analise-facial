@@ -10,6 +10,7 @@ from app.models.analysis import (
     WeeklyRoutine,
 )
 from app.models.payment import Payment, PaymentStatus, PaymentMethod
+from app.models.coupon import CouponRedemption
 from app.models.recommendation import Recommendation, RecommendationStatus, PlanAssignment
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     "Payment",
     "PaymentStatus",
     "PaymentMethod",
+    "CouponRedemption",
     "Recommendation",
     "RecommendationStatus",
     "PlanAssignment",

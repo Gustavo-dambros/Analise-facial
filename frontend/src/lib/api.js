@@ -261,6 +261,25 @@ export async function deleteAnalysis(analysisId) {
   });
 }
 
+/**
+ * Resgata um cupom promocional (ex: EXPOCEEP) — libera avaliações extras
+ * POST /api/v1/coupons/redeem
+ */
+export async function redeemCoupon(code) {
+  return apiFetch('/api/v1/coupons/redeem', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+}
+
+/**
+ * Lista cupons resgatados e o total de avaliações bônus
+ * GET /api/v1/coupons/me
+ */
+export async function getMyCoupons() {
+  return apiFetch('/api/v1/coupons/me');
+}
+
 // (fim do arquivo)
 
 /**

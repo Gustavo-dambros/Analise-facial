@@ -193,21 +193,36 @@ class AnalysisService:
 
         count = await self.analysis_repo.count_monthly_analyses(user.id)
 
-        if limit == 0:
+        # Bonus de cupons promocionais (ex: EXPOCEEP) — soma a cota do plano.
+        from app.services import coupon_service as _coupons
+        try:
+            bonus = await _coupons.bonus_for_user(self.db, user.id)
+        except Exception:
+            bonus = 0
+        effective_limit = (limit or 0) + (bonus or 0)
+
+        if effective_limit == 0:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Plano gratuito não inclui envios — assine um plano para enviar análises.",
             )
-        if count >= limit:
+        if count >= effective_limit:
             plan_label = "Gratuito" if str(plan) == "free" else str(plan)
+            if bonus:
+                detail = (
+                    f"Limite mensal de analises atingido no plano {plan_label} "
+                    f"({count}/{effective_limit}, incluindo {bonus} bônus de cupom)."
+                )
+            else:
+                detail = f"Limite mensal de analises atingido no plano {plan_label} ({count}/{effective_limit})."
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Limite mensal de analises atingido no plano {plan_label} ({count}/{limit}).",
+                detail=detail,
             )
 
         logger.info(
-            "User %s plan=%s — monthly usage %d/%d",
-            user.id, plan, count, limit,
+            "User %s plan=%s — monthly usage %d/%d (bonus cupom=%d)",
+            user.id, plan, count, effective_limit, bonus,
         )
 
     async def _call_ai(self, image_b64: str) -> dict:

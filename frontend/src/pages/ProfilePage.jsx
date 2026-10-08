@@ -13,6 +13,7 @@ import { Field, FieldLabel, FieldContent, FieldDescription, FieldGroup } from '@
 import { FadeIn, ScaleIn } from '@/components/ui/page-transition';
 import { motion } from 'framer-motion';
 import { PLANS, resolveCurrentPlan } from '@/lib/plans';
+import CouponCard from '@/components/coupon/CouponCard';
 import { useNavigate } from 'react-router-dom';
 import { RecommendationButton } from '@/components/recommendation/RecommendationDialog';
 
@@ -259,6 +260,11 @@ export default function ProfilePage() {
                 )}
               </CardContent>
             </Card>
+          </ScaleIn>
+
+          {/* Cupom promocional — resgate EXPOCEEP */}
+          <ScaleIn delay={0.1}>
+            <CouponCard />
           </ScaleIn>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
